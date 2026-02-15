@@ -270,7 +270,7 @@ export default function SubirIndividualPage() {
 
       // Calcular dimensiones del texto
       const localidadLines = pdf.splitTextToSize(localidadText, pageWidth - qrRight - marginRight - 8)
-      const localidadTextWidth = Math.max(...localidadLines.map(line => pdf.getTextWidth(line)))
+      const localidadTextWidth = Math.max(...localidadLines.map((line: string) => pdf.getTextWidth(line)))
       const lineHeight = 14
       const localidadTextHeight = localidadLines.length * lineHeight
       const padding = 8
