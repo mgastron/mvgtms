@@ -1,0 +1,7 @@
+target/
+.git
+.gitignore
+*.md
+data/
+logs/
+.DS_Store

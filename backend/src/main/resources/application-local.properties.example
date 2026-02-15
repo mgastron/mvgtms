@@ -1,0 +1,16 @@
+# Copiar este archivo a application-local.properties y completar con tus valores reales.
+# application-local.properties no se sube a Git (está en .gitignore).
+# Spring Boot carga application-local.properties automáticamente en desarrollo.
+# En producción (AWS ECS) se usan variables de entorno, no este archivo.
+
+mercadolibre.client.id=your-mercadolibre-client-id
+mercadolibre.client.secret=your-mercadolibre-client-secret
+
+tiendanube.client.id=your-tiendanube-client-id
+tiendanube.client.secret=your-tiendanube-client-secret
+
+shopify.client.id=your-shopify-client-id
+shopify.client.secret=your-shopify-client-secret
+
+spring.mail.username=your-email@gmail.com
+spring.mail.password=your-gmail-app-password
