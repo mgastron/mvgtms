@@ -1082,7 +1082,6 @@ export default function EstadoOrdenesPage() {
 
       return true
     })
-    return filtered
   }, [pedidos, filters])
 
   // Calcular paginación
