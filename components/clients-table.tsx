@@ -110,6 +110,9 @@ interface ClientsTableProps {
     codigo: string
     nombreFantasia: string
     integraciones: string
+    razonSocial?: string
+    numeroDocumento?: string
+    habilitado?: string
   }
   newClient?: any
   onClientAdded?: () => void
@@ -367,7 +370,7 @@ export function ClientsTable({
         const updatedClients = prevClients.filter((c) => c.codigo !== clientToDelete.codigo)
         
         // Ajustar la página si es necesario
-        const filteredAfterDelete = updatedClients.filter((client) => {
+        const filteredAfterDelete = updatedClients.filter((client: Client) => {
           if (filters.codigo && !client.codigo.toLowerCase().includes(filters.codigo.toLowerCase())) return false
           if (filters.nombreFantasia && !client.nombreFantasia.toLowerCase().includes(filters.nombreFantasia.toLowerCase())) return false
           if (filters.razonSocial && !client.razonSocial.toLowerCase().includes(filters.razonSocial.toLowerCase())) return false
