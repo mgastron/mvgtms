@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect } from "react"
+import { Suspense, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { getApiBaseUrl } from "@/lib/api-config"
 
-export default function ShopifyCallbackPage() {
+function ShopifyCallbackContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -61,3 +61,16 @@ export default function ShopifyCallbackPage() {
   )
 }
 
+export default function ShopifyCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#95BF47] border-t-transparent" />
+        </div>
+      }
+    >
+      <ShopifyCallbackContent />
+    </Suspense>
+  )
+}

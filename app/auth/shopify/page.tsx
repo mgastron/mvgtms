@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { CheckCircle2, Package, Shield, Lock, Phone, Mail } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
 
-export default function ShopifyAuthPage() {
+function ShopifyAuthContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const clienteId = searchParams.get("clienteId")
@@ -173,3 +173,16 @@ export default function ShopifyAuthPage() {
   )
 }
 
+export default function ShopifyAuthPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#95BF47] border-t-transparent" />
+        </div>
+      }
+    >
+      <ShopifyAuthContent />
+    </Suspense>
+  )
+}

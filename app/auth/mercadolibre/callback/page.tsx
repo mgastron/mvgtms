@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { getApiBaseUrl } from "@/lib/api-config"
 
-export default function MercadoLibreCallbackPage() {
+function MercadoLibreCallbackContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const code = searchParams.get("code")
@@ -103,3 +103,16 @@ export default function MercadoLibreCallbackPage() {
   )
 }
 
+export default function MercadoLibreCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#1B4F9C] border-t-transparent" />
+        </div>
+      }
+    >
+      <MercadoLibreCallbackContent />
+    </Suspense>
+  )
+}
