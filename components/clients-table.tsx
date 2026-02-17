@@ -70,9 +70,12 @@ export function ClientsTable({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Cargar clientes del backend (se usa al montar, al cambiar refreshTrigger y tras eliminar)
+  // Cargar clientes solo desde el backend (sin localStorage)
   const loadClientsFromBackend = async () => {
     try {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("tms_clientes")
+      }
       const apiBaseUrl = getApiBaseUrl()
       const response = await fetch(`${apiBaseUrl}/clientes?size=100`)
       if (response.ok) {
@@ -101,9 +104,12 @@ export function ClientsTable({
           vtexIdLogistica: c.vtexIdLogistica || "",
         }))
         setClients(backendClients)
+      } else {
+        setClients([])
       }
     } catch (error) {
       console.warn("No se pudo cargar clientes del backend:", error)
+      setClients([])
     }
   }
 

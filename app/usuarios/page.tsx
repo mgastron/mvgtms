@@ -71,10 +71,13 @@ export default function UsuariosPage() {
     usuario: "",
     perfil: "Todos",
   })
-  // Cargar usuarios solo desde el backend
+  // Cargar usuarios solo desde el backend (limpiar localStorage legacy para no mostrar datos viejos)
   useEffect(() => {
     const loadUsers = async () => {
       try {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("tms_usuarios")
+        }
         const apiBaseUrl = getApiBaseUrl()
         const response = await fetch(`${apiBaseUrl}/usuarios?size=1000`)
         if (response.ok) {
