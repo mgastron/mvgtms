@@ -27,7 +27,7 @@ function extractLocalidadAndCP(addressComponents: any[]): { localidad: string; c
       c.types?.includes("administrative_area_level_1") &&
       !c.types?.some((t: string) => ignoreTypes.includes(t))
   )
-  let provinceName = provinceComponent ? getLong(provinceComponent).toLowerCase() : ""
+  const provinceName = provinceComponent ? getLong(provinceComponent).toLowerCase() : ""
   const isCABA =
     provinceName.includes("ciudad autónoma") ||
     provinceName.includes("autonomous city") ||
@@ -84,9 +84,10 @@ let scriptLoaded = false
 export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const autocompleteRef = useRef<any>(null)
+  const placesServiceRef = useRef<any>(null)
   const [isScriptLoaded, setIsScriptLoaded] = useState(false)
 
-  // Cargar script de Google Maps con la biblioteca Places (necesaria para Autocomplete clásico)
+  // Cargar script de Google Maps con la biblioteca Places
   useEffect(() => {
     if (typeof window === "undefined") return
 
@@ -131,7 +132,7 @@ export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutoco
       console.warn(
         "Google Places: NEXT_PUBLIC_GOOGLE_PLACES_API_KEY no está configurada. Podés escribir la dirección a mano; las sugerencias no aparecerán."
       )
-      setIsScriptLoaded(true) // Permitir usar el input igual
+      setIsScriptLoaded(true)
       return
     }
 
@@ -153,27 +154,52 @@ export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutoco
     document.head.appendChild(script)
   }, [])
 
-  // Vincular Autocomplete al input cuando el script y el input estén listos
   useEffect(() => {
     if (!isScriptLoaded || !window.google?.maps?.places || !inputRef.current) return
 
     const input = inputRef.current
-    // Si ya hay un Autocomplete en este input, no crear otro (evitar duplicados al re-render)
     if (autocompleteRef.current) return
 
     try {
       const autocomplete = new window.google.maps.places.Autocomplete(input, {
         componentRestrictions: { country: "ar" },
         types: ["address"],
-        fields: ["formatted_address", "address_components"],
       })
+      // Pedir explícitamente los campos para tener dirección completa, localidad y CP
+      autocomplete.setFields(["formatted_address", "address_components", "place_id"])
 
       autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace()
-        if (!place || !place.formatted_address) return
+        if (!place) return
 
-        const formattedAddress = place.formatted_address
-        const addressComponents = place.address_components || []
+        const formattedAddress = place.formatted_address || (input?.value ?? "")
+        let addressComponents: any[] = place.address_components || []
+
+        // Si getPlace() no devolvió address_components (común en algunas configuraciones), pedir Place Details
+        if (place.place_id && addressComponents.length === 0) {
+          if (!placesServiceRef.current) {
+            const div = document.createElement("div")
+            placesServiceRef.current = new window.google.maps.places.PlacesService(div)
+          }
+          placesServiceRef.current.getDetails(
+            {
+              placeId: place.place_id,
+              fields: ["formatted_address", "address_components"],
+            },
+            (detail: any, status: string) => {
+              if (status === window.google.maps.places.PlacesServiceStatus.OK && detail) {
+                const addr = detail.formatted_address || formattedAddress
+                const components = detail.address_components || []
+                const { localidad, codigoPostal } = extractLocalidadAndCP(components)
+                onChange(addr, localidad, codigoPostal)
+              } else {
+                onChange(formattedAddress, undefined, undefined)
+              }
+            }
+          )
+          return
+        }
+
         const { localidad, codigoPostal } = extractLocalidadAndCP(addressComponents)
         onChange(formattedAddress, localidad, codigoPostal)
       })
@@ -190,10 +216,10 @@ export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutoco
         } catch (_) {}
       }
       autocompleteRef.current = null
+      placesServiceRef.current = null
     }
   }, [isScriptLoaded, onChange])
 
-  // El input siempre visible: lo que escribís se guarda aunque no elijas una sugerencia
   return (
     <input
       ref={inputRef}
