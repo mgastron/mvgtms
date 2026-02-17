@@ -21,15 +21,16 @@ export function RouteGuardClient({ children }: { children: React.ReactNode }) {
     const isAuthenticated = sessionStorage.getItem("isAuthenticated")
     const userProfile = sessionStorage.getItem("userProfile")
 
-    // Rutas de vinculación (MercadoLibre, Tienda Nube, Shopify): accesibles sin login
-    const isAuthLinkingPath = pathname?.startsWith("/auth/") ?? false
+    // Rutas públicas: vinculación y tracking de envíos (no requieren login)
+    const isPublicPath =
+      (pathname?.startsWith("/auth/") ?? false) || (pathname?.startsWith("/tracking/") ?? false)
 
-    if (!isAuthenticated && pathname !== "/" && !isAuthLinkingPath) {
+    if (!isAuthenticated && pathname !== "/" && !isPublicPath) {
       router.replace("/")
       return
     }
 
-    if (userProfile === "Cliente" && !isPathAllowedForCliente(pathname) && !isAuthLinkingPath) {
+    if (userProfile === "Cliente" && !isPathAllowedForCliente(pathname) && !isPublicPath) {
       router.replace("/envios")
     }
   }, [pathname, router])
