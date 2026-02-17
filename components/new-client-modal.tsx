@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { X, Check, Copy, CheckCircle2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 import { getApiBaseUrl } from "@/lib/api-config"
 import Image from "next/image"
 
@@ -44,6 +45,8 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
   const [activeTab, setActiveTab] = useState<TabType>("general")
   const [isSaving, setIsSaving] = useState(false)
   const [listasPrecios, setListasPrecios] = useState<ListaPrecio[]>([])
+  const [listasPreciosError, setListasPreciosError] = useState<string | null>(null)
+  const [listasPreciosLoading, setListasPreciosLoading] = useState(false)
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [sincronizando, setSincronizando] = useState(false)
   const [clienteCompleto, setClienteCompleto] = useState<any>(null)
@@ -69,93 +72,67 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
     vtexIdLogistica: "",
   })
 
-  // Cargar listas de precios
+  const loadListasPrecios = async () => {
+    setListasPreciosError(null)
+    setListasPreciosLoading(true)
+    const apiBaseUrl = getApiBaseUrl()
+    try {
+      const response = await fetch(`${apiBaseUrl}/lista-precios?size=1000`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        const content = data.content || []
+        const listasData = content.map((lp: any) => ({
+          id: lp.id,
+          codigo: lp.codigo,
+          nombre: lp.nombre,
+        }))
+        setListasPrecios(listasData)
+        return
+      }
+      const errorText = await response.text()
+      console.error("Error listas de precios:", response.status, errorText)
+      const savedListasPrecios = localStorage.getItem("tms_lista_precios")
+      if (savedListasPrecios) {
+        try {
+          const listasData = JSON.parse(savedListasPrecios)
+          setListasPrecios(listasData.map((lp: any) => ({ id: lp.id, codigo: lp.codigo, nombre: lp.nombre })))
+        } catch {
+          setListasPrecios([])
+          setListasPreciosError("No se pudieron cargar las listas. Verificá que el backend (api.mvgtms.com.ar) esté accesible.")
+        }
+      } else {
+        setListasPrecios([])
+        setListasPreciosError("No se pudieron cargar las listas. Verificá que el backend (api.mvgtms.com.ar) esté accesible.")
+      }
+    } catch (error: any) {
+      console.error("Error al cargar listas de precios:", error)
+      const savedListasPrecios = localStorage.getItem("tms_lista_precios")
+      if (savedListasPrecios) {
+        try {
+          const listasData = JSON.parse(savedListasPrecios)
+          setListasPrecios(listasData.map((lp: any) => ({ id: lp.id, codigo: lp.codigo, nombre: lp.nombre })))
+        } catch {
+          setListasPrecios([])
+          setListasPreciosError("No se pudieron cargar las listas. Verificá que el backend (api.mvgtms.com.ar) esté accesible.")
+        }
+      } else {
+        setListasPrecios([])
+        setListasPreciosError("No se pudieron cargar las listas. Verificá que el backend (api.mvgtms.com.ar) esté accesible.")
+      }
+    } finally {
+      setListasPreciosLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (open) {
-      const loadListasPrecios = async () => {
-        const apiBaseUrl = getApiBaseUrl()
-        try {
-          console.log("Cargando listas de precios desde:", apiBaseUrl)
-          console.log("URL completa:", `${apiBaseUrl}/lista-precios?size=1000`)
-          const response = await fetch(`${apiBaseUrl}/lista-precios?size=1000`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          })
-          if (response.ok) {
-            const data = await response.json()
-            console.log("Respuesta del backend de listas de precios:", data)
-            if (data.content && data.content.length > 0) {
-              const listasData = data.content.map((lp: any) => ({
-                id: lp.id,
-                codigo: lp.codigo,
-                nombre: lp.nombre,
-              }))
-              console.log("Listas de precios cargadas del backend:", listasData.length, "listas")
-              setListasPrecios(listasData)
-              return
-            } else {
-              console.warn("El backend respondió pero no hay listas de precios en data.content o está vacío")
-              setListasPrecios([])
-            }
-          } else {
-            const errorText = await response.text()
-            console.error("Error del backend al cargar listas de precios:", response.status, response.statusText, errorText)
-            console.error("URL intentada:", `${apiBaseUrl}/lista-precios?size=1000`)
-            // Fallback a localStorage
-            const savedListasPrecios = localStorage.getItem("tms_lista_precios")
-            if (savedListasPrecios) {
-              try {
-                const listasData = JSON.parse(savedListasPrecios)
-                setListasPrecios(listasData.map((lp: any) => ({
-                  id: lp.id,
-                  codigo: lp.codigo,
-                  nombre: lp.nombre,
-                })))
-                console.log("Listas de precios cargadas desde localStorage:", listasData.length, "listas")
-              } catch (e) {
-                console.warn("Error al parsear listas de precios de localStorage:", e)
-                setListasPrecios([])
-              }
-            } else {
-              setListasPrecios([])
-            }
-          }
-        } catch (error: any) {
-          console.error("Error al cargar listas de precios del backend:", error)
-          console.error("Tipo de error:", error?.name, error?.message)
-          console.error("URL intentada:", `${apiBaseUrl}/lista-precios?size=1000`)
-          if (error?.message === "Failed to fetch" || error?.name === "TypeError") {
-            console.error("⚠️ Este error generalmente significa que el backend no es accesible desde esta red.")
-            console.error("Verifica que NEXT_PUBLIC_BACKEND_TUNNEL_URL esté configurado en .env.local")
-          }
-          // Fallback a localStorage
-          const savedListasPrecios = localStorage.getItem("tms_lista_precios")
-          if (savedListasPrecios) {
-            try {
-              const listasData = JSON.parse(savedListasPrecios)
-              setListasPrecios(listasData.map((lp: any) => ({
-                id: lp.id,
-                codigo: lp.codigo,
-                nombre: lp.nombre,
-              })))
-              console.log("Listas de precios cargadas desde localStorage (fallback):", listasData.length, "listas")
-            } catch (e) {
-              console.warn("Error al parsear listas de precios de localStorage:", e)
-              setListasPrecios([])
-            }
-          } else {
-            console.warn("No hay listas de precios disponibles ni en el backend ni en localStorage")
-            setListasPrecios([])
-          }
-        }
-      }
-
       loadListasPrecios()
     } else {
-      // Limpiar cuando se cierra el modal
       setListasPrecios([])
+      setListasPreciosError(null)
     }
   }, [open])
 
@@ -392,12 +369,31 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
                 <label className="mb-1.5 block text-xs text-gray-500">
                   Lista precios <span className="text-red-500">*</span>
                 </label>
+                {listasPreciosError && (
+                  <div className="mb-2 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    <p>{listasPreciosError}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 border-amber-400 text-amber-800 hover:bg-amber-100"
+                      onClick={() => loadListasPrecios()}
+                      disabled={listasPreciosLoading}
+                    >
+                      {listasPreciosLoading ? "Cargando…" : "Reintentar"}
+                    </Button>
+                  </div>
+                )}
+                {listasPreciosLoading && !listasPreciosError && (
+                  <p className="mb-2 text-xs text-gray-500">Cargando listas de precios…</p>
+                )}
                 <Select
                   value={formData.listaPreciosId}
                   onValueChange={(value) => handleInputChange("listaPreciosId", value)}
+                  disabled={listasPreciosLoading && listasPrecios.length === 0}
                 >
                   <SelectTrigger className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-[#6B46FF] focus:outline-none h-auto">
-                    <SelectValue placeholder="Seleccionar lista de precios" />
+                    <SelectValue placeholder={listasPrecios.length === 0 && !listasPreciosLoading ? "Sin listas (crear una en Lista precios)" : "Seleccionar lista de precios"} />
                   </SelectTrigger>
                   <SelectContent>
                     {listasPrecios.map((lista) => (

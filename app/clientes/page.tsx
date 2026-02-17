@@ -6,7 +6,7 @@ import { ModernHeader } from "@/components/modern-header"
 import { ClientsTable } from "@/components/clients-table"
 import { FilterSection } from "@/components/filter-section"
 import { NewClientModal } from "@/components/new-client-modal"
-import { UserPlus } from "lucide-react"
+import { UserPlus, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getApiBaseUrl } from "@/lib/api-config"
 import {
@@ -238,16 +238,26 @@ export default function ClientsPage() {
                 <p className="mt-1 text-sm text-gray-500">Gestiona tus clientes y sus integraciones</p>
               </div>
             </div>
-            <Button
-              className="gap-2 bg-gradient-to-r from-[#6B46FF] to-[#8B5CF6] shadow-lg shadow-purple-500/30 hover:from-[#5a3ad6] hover:to-[#7c4dd4] transition-all duration-200"
-              onClick={() => {
-                setEditingClient(null)
-                setIsModalOpen(true)
-              }}
-            >
-              <UserPlus className="h-5 w-5" />
-              Nuevo Cliente
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => setRefreshKey((k) => k + 1)}
+              >
+                <RefreshCw className="h-4 w-4" />
+                Refrescar lista
+              </Button>
+              <Button
+                className="gap-2 bg-gradient-to-r from-[#6B46FF] to-[#8B5CF6] shadow-lg shadow-purple-500/30 hover:from-[#5a3ad6] hover:to-[#7c4dd4] transition-all duration-200"
+                onClick={() => {
+                  setEditingClient(null)
+                  setIsModalOpen(true)
+                }}
+              >
+                <UserPlus className="h-5 w-5" />
+                Nuevo Cliente
+              </Button>
+            </div>
           </div>
 
           {/* Filter Section */}

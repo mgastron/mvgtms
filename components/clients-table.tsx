@@ -136,49 +136,46 @@ export function ClientsTable({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Cargar clientes del backend solo al montar el componente
-  useEffect(() => {
-    const loadClients = async () => {
-      try {
-        const apiBaseUrl = getApiBaseUrl()
-        const response = await fetch(`${apiBaseUrl}/clientes?size=100`)
-        if (response.ok) {
-          const data = await response.json()
-          if (data.content && data.content.length > 0) {
-            // Convertir los datos del backend al formato de la interfaz Client
-            const backendClients: Client[] = data.content.map((c: any) => ({
-              id: c.id,
-              codigo: c.codigo,
-              nombreFantasia: c.nombreFantasia || "",
-              razonSocial: c.razonSocial || "",
-              numDoc: c.numeroDocumento || "",
-              habilitado: c.habilitado !== undefined ? c.habilitado : true,
-              tokenApi: c.integraciones || "",
-              listaPreciosId: c.listaPreciosId || undefined,
-              flexIdVendedor: c.flexIdVendedor || "",
-              flexUsername: c.flexUsername || "",
-              tiendanubeUrl: c.tiendanubeUrl || "",
-              tiendanubeMetodoEnvio: c.tiendanubeMetodoEnvio || "",
-              tiendanubeAccessToken: c.tiendanubeAccessToken || "",
-              tiendanubeStoreId: c.tiendanubeStoreId || "",
-              shopifyUrl: c.shopifyUrl || "",
-              shopifyClaveUnica: c.shopifyClaveUnica || "",
-              vtexUrl: c.vtexUrl || "",
-              vtexKey: c.vtexKey || "",
-              vtexToken: c.vtexToken || "",
-              vtexIdLogistica: c.vtexIdLogistica || "",
-            }))
-            setClients(backendClients)
-          }
-        }
-      } catch (error) {
-        console.warn("No se pudo cargar clientes del backend, usando datos mock:", error)
-        // Si el backend no está disponible, mantener los datos mock
+  // Cargar clientes del backend (se usa al montar, al cambiar refreshTrigger y tras eliminar)
+  const loadClientsFromBackend = async () => {
+    try {
+      const apiBaseUrl = getApiBaseUrl()
+      const response = await fetch(`${apiBaseUrl}/clientes?size=100`)
+      if (response.ok) {
+        const data = await response.json()
+        const content = data.content || []
+        const backendClients: Client[] = content.map((c: any) => ({
+          id: c.id,
+          codigo: c.codigo,
+          nombreFantasia: c.nombreFantasia || "",
+          razonSocial: c.razonSocial || "",
+          numDoc: c.numeroDocumento || "",
+          habilitado: c.habilitado !== undefined ? c.habilitado : true,
+          tokenApi: c.integraciones || "",
+          listaPreciosId: c.listaPreciosId || undefined,
+          flexIdVendedor: c.flexIdVendedor || "",
+          flexUsername: c.flexUsername || "",
+          tiendanubeUrl: c.tiendanubeUrl || "",
+          tiendanubeMetodoEnvio: c.tiendanubeMetodoEnvio || "",
+          tiendanubeAccessToken: c.tiendanubeAccessToken || "",
+          tiendanubeStoreId: c.tiendanubeStoreId || "",
+          shopifyUrl: c.shopifyUrl || "",
+          shopifyClaveUnica: c.shopifyClaveUnica || "",
+          vtexUrl: c.vtexUrl || "",
+          vtexKey: c.vtexKey || "",
+          vtexToken: c.vtexToken || "",
+          vtexIdLogistica: c.vtexIdLogistica || "",
+        }))
+        setClients(backendClients)
       }
+    } catch (error) {
+      console.warn("No se pudo cargar clientes del backend, usando datos mock:", error)
     }
+  }
 
-    loadClients()
-  }, [])
+  useEffect(() => {
+    loadClientsFromBackend()
+  }, [refreshTrigger])
 
   // Agregar o actualizar cliente cuando se crea o edita uno
   useEffect(() => {
@@ -390,11 +387,15 @@ export function ClientsTable({
       setClientToDelete(null)
       setIsDeleteDialogOpen(false)
 
-      // Mostrar mensaje de éxito
       if (backendAvailable) {
-        console.log("Cliente eliminado exitosamente del backend y del estado local")
+        // Refrescar la lista desde el backend para mantener consistencia
+        loadClientsFromBackend()
       } else {
-        console.log("Cliente eliminado del estado local (backend no disponible)")
+        alert(
+          "El cliente se quitó de la lista pero no se pudo eliminar en el servidor. " +
+            "Al actualizar podría reaparecer. Comprobá que el backend esté accesible en api.mvgtms.com.ar"
+        )
+        loadClientsFromBackend()
       }
     } catch (error) {
       console.error("Error inesperado al eliminar cliente:", error)
