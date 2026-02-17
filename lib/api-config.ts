@@ -22,10 +22,13 @@ export function getApiBaseUrl(): string {
       return 'http://localhost:8080/api'
     }
     
-    // Si estamos en el túnel Cloudflare y tenemos configurada la URL del backend
-    if (BACKEND_TUNNEL_URL && BACKEND_TUNNEL_URL.trim() !== '') {
-      // Asegurarse de que la URL no termine con /api para evitar duplicación
-      let baseUrl = BACKEND_TUNNEL_URL.trim()
+    // URL del backend: variable de entorno o fallback según el origen
+    const isProduction = origin.includes('mvgtms.com.ar')
+    const baseFromEnv = BACKEND_TUNNEL_URL?.trim() || ''
+    const resolvedBase = baseFromEnv || (isProduction ? 'https://api.mvgtms.com.ar' : '')
+
+    if (resolvedBase) {
+      let baseUrl = resolvedBase
       if (baseUrl.endsWith('/api')) {
         baseUrl = baseUrl
       } else if (baseUrl.endsWith('/')) {
@@ -33,25 +36,13 @@ export function getApiBaseUrl(): string {
       } else {
         baseUrl = `${baseUrl}/api`
       }
-      console.log('✅ Usando túnel del backend:', baseUrl)
+      console.log('✅ Usando backend:', baseUrl)
       return baseUrl
     }
-    
-    // Si estamos en el túnel pero no hay URL configurada, mostrar error más claro
-    console.error('⚠️ ERROR: Backend no accesible desde el túnel.')
-    console.error('Estás accediendo desde:', origin)
-    console.error('Pero no hay NEXT_PUBLIC_BACKEND_TUNNEL_URL configurado.')
-    console.error('')
-    console.error('SOLUCIÓN:')
-    console.error('1. Expone el backend con Cloudflare Tunnel:')
-    console.error('   cloudflared tunnel --url http://localhost:8080')
-    console.error('2. Crea/actualiza el archivo .env.local en la raíz del proyecto con:')
-    console.error('   NEXT_PUBLIC_BACKEND_TUNNEL_URL=https://tu-backend-url.trycloudflare.com')
-    console.error('3. Reinicia el servidor Next.js (npm run dev)')
-    console.error('')
-    console.error('⚠️ Intentando usar localhost (probablemente fallará desde otra red)...')
-    
-    // Intentar usar localhost (fallará desde fuera, pero al menos no romperá el código)
+
+    // Desarrollo (no localhost y sin túnel): pedir config
+    console.error('⚠️ Backend no configurado. Origen:', origin)
+    console.error('Configurá NEXT_PUBLIC_BACKEND_TUNNEL_URL en .env.local (desarrollo) o en Amplify (producción).')
     return 'http://localhost:8080/api'
   }
   

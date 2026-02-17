@@ -40,6 +40,7 @@ backend/data/
 backend/logs/
 backend/.idea/
 backend/*.iml
-# Secretos locales: copiar application-local.properties.example a application-local.properties y completar valores
+# Secretos locales: no subir el example (tiene valores reales) ni application-local.properties
 backend/src/main/resources/application-local.properties
+backend/src/main/resources/application-local.properties.example
 

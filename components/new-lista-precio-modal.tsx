@@ -176,7 +176,7 @@ export function NewListaPrecioModal({
     }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validar campos básicos
     if (!formData.codigo.trim() || !formData.nombre.trim()) {
       alert("Por favor completa todos los campos obligatorios")
@@ -202,14 +202,19 @@ export function NewListaPrecioModal({
     }
 
     if (onSave) {
-      onSave({
-        id: editingListaPrecio?.id,
-        codigo: formData.codigo,
-        nombre: formData.nombre,
-        tipoZonas: formData.tipoZonas,
-        listaPrecioSeleccionada: formData.listaPrecioSeleccionada || null,
-        zonas: formData.tipoZonas === "Zonas propias" ? zonas : null,
-      })
+      try {
+        const result = onSave({
+          id: editingListaPrecio?.id,
+          codigo: formData.codigo,
+          nombre: formData.nombre,
+          tipoZonas: formData.tipoZonas,
+          listaPrecioSeleccionada: formData.listaPrecioSeleccionada || null,
+          zonas: formData.tipoZonas === "Zonas propias" ? zonas : null,
+        })
+        await Promise.resolve(result)
+      } catch (_) {
+        return
+      }
     }
     handleClose()
   }

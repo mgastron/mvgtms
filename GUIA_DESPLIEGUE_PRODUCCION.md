@@ -140,16 +140,36 @@ Objetivo: crear la base PostgreSQL en AWS que usará el backend en producción. 
 2. **Master username**: ej. `tmsadmin` (o el que quieras; anotalo).
 3. **Master password** y **Confirm password**: contraseña segura. **Anotala en un gestor de contraseñas**; la vas a usar en las variables de entorno del backend. No la compartas ni la subas a Git.
 
-#### 3.2.4 Tamaño y almacenamiento
+#### 3.2.4 Instance configuration (clase e instancia)
 
-1. **Instance configuration**:  
-   - Dev/Test: puede servir **Burstable classes** (ej. `db.t3.micro` o `db.t4g.micro`) para bajar costo.  
-   - Producción: mínimo `db.t3.small` o superior (ej. `db.t3.medium`).
-2. **Storage**:  
-   - **Allocated storage**: ej. 20 GB (podés subir después).  
-   - Marcá **Enable storage autoscaling** y poné un máximo (ej. 100 GB) para que crezca solo si hace falta.
+En **DB instance class** solo suelen aparecer tres opciones: **Standard classes (m)**, **Memory optimized (r)** y **Compute optimized (c)**. La opción "Burstable (t classes)" a veces no está según región o versión de PostgreSQL.
 
-#### 3.2.5 Conectividad (VPC y seguridad)
+- **Recomendado para este proyecto**: dejá **Standard classes (includes m classes)** y en **Instance type** elegí **db.m5d.large** (2 vCPUs, 8 GiB RAM). Sirve bien para producción y no necesitás r (más memoria) ni c (más CPU).
+- Si en el dropdown ves **db.m6gd.large** (misma idea que m5d), también vale. No hace falta subir a xlarge salvo que más adelante necesites más capacidad.
+- **Memory optimized (r)** y **Compute optimized (c)** son para cargas muy específicas; para un TMS tipo CRUD con PostgreSQL alcanza con Standard (m).
+
+#### 3.2.5 Storage (tipo, tamaño, IOPS y autoscaling)
+
+1. **Storage type**  
+   - **Recomendado**: **General Purpose SSD (gp3)** si está disponible. Es más barato y para este tipo de app suele sobrar.  
+   - Si solo ves **Provisioned IOPS SSD (io2)**: también sirve, pero es más caro; usalo si gp3 no aparece para tu motor/región.
+
+2. **Allocated storage**  
+   - Con **gp3**: podés poner el mínimo que te deje la consola (a veces 20 GiB). Para arrancar, 20–50 GiB está bien.  
+   - Con **io2**: el mínimo suele ser **100 GiB**. Poné **100** si es lo único que acepta; podés ampliar después desde la consola.
+
+3. **Provisioned IOPS** (solo si elegiste **io2**)  
+   - La consola pide entre 1.000 y 80.000 IOPS, y que la relación IOPS/GiB esté entre 0,5 y 1.000.  
+   - Para 100 GiB: poné **1.000 IOPS** (el mínimo). Para este TMS no hace falta más al inicio.
+
+4. **Enable storage autoscaling**  
+   - Si la casilla aparece **deshabilitada** con el texto "(not available for Multi-AZ DB cluster)", es porque elegiste despliegue tipo **Multi-AZ DB cluster**. En ese modo no se puede activar autoscaling.  
+   - Opciones:  
+     - Dejar **100 GiB** (o el mínimo) sin autoscaling y ampliar manualmente si hace falta (RDS → Modify).  
+     - O, si querés autoscaling, en el paso inicial de "Create database" elegir **Multi-AZ DB instance deployment** (una instancia principal + una standby) en lugar de "Multi-AZ DB cluster"; en ese modo la opción "Enable storage autoscaling" suele estar disponible.  
+   - Para arrancar, 100 GiB fijos sin autoscaling es aceptable.
+
+#### 3.2.6 Conectividad (VPC y seguridad)
 
 1. **Connectivity**:  
    - **Compute resource**: Don't connect to an EC2 compute resource (el backend irá en ECS, no en una EC2 suelta).  
@@ -163,13 +183,42 @@ Objetivo: crear la base PostgreSQL en AWS que usará el backend en producción. 
 3. **Availability Zone**: dejá **No preference** (o elegí una si querés fijar la AZ).
 4. **Database authentication**: **Password authentication**.
 
-#### 3.2.6 Nombre de la base
+#### 3.2.7 Monitoring (opcional pero recomendado)
+
+Esta sección define cómo se monitorea la base (métricas, logs, detección de anomalías). No es obligatoria para que la base funcione, pero conviene dejar algo útil sin pasarse de costo.
+
+**Database Insights**
+
+- **Database Insights - Standard** vs **Advanced**:  
+  - **Standard**: guarda 7 días de historial de rendimiento (suficiente para investigar problemas recientes). Más barato.  
+  - **Advanced**: 15 meses de historial, monitoreo a nivel “flota” e integración con CloudWatch Application Signals. Más caro.  
+  **Recomendación:** para arrancar elegí **Standard**. Si más adelante necesitás más historial, se puede cambiar (o pagar retención extra en Standard).
+
+- **Enable Performance Insights**: dejalo **marcado**. Sirve para ver carga de la base, consultas lentas, etc. desde el dashboard de RDS.
+
+- **Retention period**: si elegiste Standard, suele venir 7 días; si Advanced, 15 months. Dejá el valor por defecto que aparezca.
+
+- **AWS KMS key**: dejá **(default) aws/rds**. No lo cambies a menos que tengas una política de seguridad que exija una clave propia. **Importante:** después de crear la base no se puede cambiar esta clave para estos datos de monitoreo.
+
+**Additional monitoring settings (Enhanced Monitoring, Log exports, DevOps Guru)**
+
+- **Enable Enhanced monitoring**: podés **marcarlo**. Métricas de CPU por proceso a nivel SO; útil para depurar. Granularidad **60 seconds** y rol **default** (que RDS cree `rds-monitoring-role`) está bien.
+
+- **Log exports**:  
+  - Marcá **PostgreSQL log**. Eso publica los logs de PostgreSQL en CloudWatch (errores, consultas lentas, etc.) y ayuda mucho a depurar.  
+  - `iam-db-auth-error` y `Upgrade log` son opcionales; podés dejarlos sin marcar.
+
+- **Turn on DevOps Guru**: **desmarcalo** al principio. DevOps Guru detecta anomalías y da recomendaciones pero tiene costo por recurso por hora (~USD 3/mes por instancia). Podés activarlo más adelante si querés monitoreo proactivo.
+
+**Resumen rápido:** Database Insights **Standard**, Performance Insights **activado**, KMS **default**, Enhanced Monitoring **activado** (60 s, default role), **PostgreSQL log** exportado a CloudWatch, DevOps Guru **desactivado**. Con eso tenés monitoreo útil sin pasarte de costo.
+
+#### 3.2.8 Nombre de la base
 
 1. En **Additional configuration** (expandir si está colapsado):  
    - **Initial database name**: ej. `tmsdb`. Es el nombre de la base que Spring Boot usará en la URL JDBC.  
    - El resto podés dejarlo por defecto (backups, mantenimiento, etc.). Para producción conviene tener **Enable automated backups** activado.
 
-#### 3.2.7 Crear y anotar datos de conexión
+#### 3.2.9 Crear y anotar datos de conexión
 
 1. Clic en **Create database**.  
 2. Esperá a que el **Status** pase a **Available** (puede tardar varios minutos).  
@@ -183,6 +232,21 @@ Objetivo: crear la base PostgreSQL en AWS que usará el backend en producción. 
    Ejemplo: `jdbc:postgresql://tms-db.abc123.sa-east-1.rds.amazonaws.com:5432/tmsdb`
 
 **Recordatorio:** cuando tengas el security group del backend (ECS), editá el security group de RDS (`rds-tms-sg`) y agregá una regla **Inbound**: tipo PostgreSQL, puerto 5432, origen = security group del backend (ECS). Así solo el backend podrá conectarse.
+
+**Datos de conexión de tu instancia RDS (Status: Available):**
+
+| Campo        | Valor |
+|-------------|--------|
+| **Endpoint** | `database-1.cz46kskaun36.eu-north-1.rds.amazonaws.com` |
+| **Port**     | 5432 |
+| **Database** | tmsdb |
+| **User**     | tmsadmin |
+| **Password** | (la que definiste al crear la base; guardala solo en tu gestor de contraseñas) |
+
+**URL JDBC para Spring Boot (variables de entorno en ECS):**  
+`jdbc:postgresql://database-1.cz46kskaun36.eu-north-1.rds.amazonaws.com:5432/tmsdb`
+
+**Región:** eu-north-1 (anotala; la vas a usar para ECR, ECS y ALB en la misma región).
 
 ---
 
@@ -206,9 +270,15 @@ El proyecto ya tiene un **Dockerfile** en `backend/Dockerfile` (multi-stage: com
 3. **Visibility**: Private.  
 4. **Repository name**: ej. `tms-backend`.  
 5. Dejá el resto por defecto → **Create repository**.  
-6. Entrá al repo que creaste. Arriba verás la **URI** de la imagen, algo como:  
-   `123456789012.dkr.ecr.sa-east-1.amazonaws.com/tms-backend`  
-   Anotá: **REGION** (ej. `sa-east-1`) y **ACCOUNT_ID** (el número de 12 dígitos, ej. `123456789012`). Los vas a usar en los comandos siguientes.
+6. Entrá al repo que creaste. Arriba verás la **URI** de la imagen; anotá **REGION** y **ACCOUNT_ID** para los comandos de login, tag y push.
+
+**Datos de tu repositorio ECR:**
+
+| Campo | Valor |
+|-------|--------|
+| **URI** | `708750714395.dkr.ecr.eu-north-1.amazonaws.com/tms-backend` |
+| **ACCOUNT_ID** | 708750714395 |
+| **REGION** | eu-north-1 |
 
 #### 3.3.4 Construir la imagen en tu PC
 
@@ -228,31 +298,19 @@ El proyecto ya tiene un **Dockerfile** en `backend/Dockerfile` (multi-stage: com
 
 #### 3.3.5 Conectar Docker con ECR y subir la imagen
 
-1. Reemplazá **REGION** y **ACCOUNT_ID** por los que anotaste (ej. `sa-east-1` y `123456789012`).  
+1. Usá **REGION** = `eu-north-1` y **ACCOUNT_ID** = `708750714395` (o los que anotaste en 3.3.3).  
 2. Login en ECR:
    ```bash
-   aws ecr get-login-password --region REGION | docker login --username AWS --password-stdin ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com
-   ```
-   Ejemplo:
-   ```bash
-   aws ecr get-login-password --region sa-east-1 | docker login --username AWS --password-stdin 123456789012.dkr.ecr.sa-east-1.amazonaws.com
+   aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 708750714395.dkr.ecr.eu-north-1.amazonaws.com
    ```
    Debe decir “Login Succeeded”.  
 3. Etiquetar la imagen para ECR:
    ```bash
-   docker tag tms-backend:latest ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/tms-backend:latest
-   ```
-   Ejemplo:
-   ```bash
-   docker tag tms-backend:latest 123456789012.dkr.ecr.sa-east-1.amazonaws.com/tms-backend:latest
+   docker tag tms-backend:latest 708750714395.dkr.ecr.eu-north-1.amazonaws.com/tms-backend:latest
    ```
 4. Subir la imagen:
    ```bash
-   docker push ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/tms-backend:latest
-   ```
-   Ejemplo:
-   ```bash
-   docker push 123456789012.dkr.ecr.sa-east-1.amazonaws.com/tms-backend:latest
+   docker push 708750714395.dkr.ecr.eu-north-1.amazonaws.com/tms-backend:latest
    ```
 5. En la consola AWS, en ECR → **Repositories** → **tms-backend**, deberías ver la imagen con tag `latest`.  
 Cada vez que cambies el backend, repetí: `docker build`, `docker tag`, `docker push` y después actualizá el servicio ECS para que tome la nueva imagen.
@@ -281,7 +339,7 @@ Anotá la **VPC** y las **subnets** que use el cluster (si no ves detalles, las 
    - Type: HTTP, Port: 80, Source: **Anywhere-IPv4** (0.0.0.0/0).  
    - Otra regla: HTTPS, Port: 443, Source: **Anywhere-IPv4**.  
 5. **Create security group**.  
-Anotá el **ID** del security group (ej. `sg-0abc123`).
+Anotá el **ID** del security group (ej. `sg-0abc123`): sg-005ecb58ad4334e98
 
 #### 3.4.3 Security group para ECS (backend)
 
@@ -292,7 +350,7 @@ Anotá el **ID** del security group (ej. `sg-0abc123`).
    - Type: Custom TCP, Port: 8080, Source: el **security group del ALB** (`alb-tms-sg`). Así solo el ALB puede hablar con las tareas en el puerto 8080.  
 5. **Outbound**: por defecto permite todo; las tareas necesitan salida a internet (APIs externas) y al puerto 5432 de RDS.  
 6. **Create security group**.  
-Anotá el **ID** (ej. `sg-0def456`).  
+Anotá el **ID** (ej. `sg-0def456`): sg-0b3624f8e2cb71298
 **Importante:** volvé a **RDS** → tu base de datos → **Security group** (VPC security group) → editar **Inbound rules** y agregar: Type PostgreSQL, Port 5432, Source = **ecs-tms-sg** (el que acabás de crear). Así solo el backend ECS puede conectarse a RDS.
 
 #### 3.4.4 Target group (para el ALB)
@@ -320,23 +378,113 @@ Dejá esta ventana abierta; vas a asociar el target group al ALB.
    - **Listener 1**: HTTP, 80. **Default action**: Forward to → **tms-backend-tg** (el target group).  
    - **Listener 2**: HTTPS, 443. Para este necesitás un certificado SSL (ACM). Si ya tenés uno para `api.mvgtms.com.ar`, seleccionalo y Forward to **tms-backend-tg**. Si aún no tenés certificado, podés crear el ALB solo con el listener 80 y después agregar el 443 cuando tengas el certificado en ACM.  
 8. **Create load balancer**.  
-9. Anotá el **DNS name** del ALB (ej. `tms-alb-1234567890.sa-east-1.elb.amazonaws.com`). Ese nombre es al que apuntará después el CNAME `api.mvgtms.com.ar`.
+9. Anotá el **DNS name** del ALB (ej. `tms-alb-1234567890.sa-east-1.elb.amazonaws.com`). Ese nombre es al que apuntará después el CNAME `api.mvgtms.com.ar`: tms-alb-1410389913.eu-north-1.elb.amazonaws.com
 
 #### 3.4.6 Task definition (definición de la tarea ECS)
 
-1. **ECS** → **Task definitions** → **Create new task definition** → **Create new task definition with JSON** o el formulario.  
-2. **Family**: ej. `tms-backend`.  
-3. **Launch type**: AWS Fargate.  
-4. **Task execution role**: si ya existe **ecsTaskExecutionRole**, usalo (permite descargar la imagen de ECR y escribir logs). Si no, creá un rol con la política `AmazonECSTaskExecutionRolePolicy` y asignalo.  
-5. **Task size**: **CPU** ej. 0.5 vCPU, **Memory** ej. 1 GB (para producción podés subir a 1 vCPU y 2 GB).  
-6. **Container - Add container**:  
-   - **Name**: `tms-backend`.  
-   - **Image URI**: la URI completa de tu imagen en ECR, ej. `ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/tms-backend:latest`.  
-   - **Port mappings**: 8080, TCP.  
-   - **Environment variables**: agregá todas las de la **sección 4.1** de esta guía (SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD, MERCADOLIBRE_REDIRECT_URI, FRONTEND_BASE_URL, etc.). Reemplazá ENDPOINT_RDS por el endpoint real de RDS que anotaste en 3.2.  
-   - **Log configuration**: **Log driver** = awslogs; **awslogs-group** = `/ecs/tms-backend`; **awslogs-region** = tu región. Si el grupo no existe, en **CloudWatch** → **Log groups** → **Create log group** con nombre `/ecs/tms-backend`.  
-7. **Create** (task definition).  
-Quedó definida la “receta” de la tarea; ahora hay que crear el servicio que la ejecute.
+La task definition es la “receta” de un contenedor: qué imagen correr, cuánta CPU/memoria, qué variables de entorno y logs. No ejecuta nada por sí sola; el **servicio** (3.4.7) es el que lanza las tareas usando esta definición.
+
+**Paso A: Crear el log group en CloudWatch (si no existe)**
+
+Así las tareas pueden escribir logs y podés depurar si algo falla.
+
+1. En la consola AWS, buscá **CloudWatch**.  
+2. Menú izquierdo → **Logs** → **Log Management**. Ahí se gestionan los log groups (en algunas cuentas aparece directamente “Log groups” bajo Logs).  
+3. **Create log group** (o “Create”).  
+4. **Log group name**: `/ecs/tms-backend` (exactamente así).  
+5. **Create log group**.  
+Dejá la retención por defecto o la que prefieras.
+
+**Paso B: Abrir el asistente de task definition**
+
+1. Consola AWS → **ECS** (buscá “ECS” o “Elastic Container Service”).  
+2. En el menú izquierdo, **Task definitions**.  
+3. **Create new task definition**.  
+4. Elegí **Create new task definition with form** (formulario visual). No uses JSON a menos que ya lo conozcas.
+
+**Paso C: Sección “Task definition configuration”**
+
+1. **Task definition family**: nombre que identifica esta definición, ej. `tms-backend`. Todas las revisiones compartirán este nombre.  
+2. **Launch type**: **AWS Fargate** (serverless; no elegir EC2).  
+3. **Task execution role**:  
+   - Si en el desplegable aparece **ecsTaskExecutionRole**, seleccionalo. Ese rol permite a ECS descargar la imagen de ECR y escribir en CloudWatch Logs.  
+   - **Si no aparece o “Create new role” se traba**, crealo desde IAM y después seleccionalo acá:  
+     - Consola AWS → **IAM** → **Roles** → **Create role**.  
+     - **Trusted entity**: AWS service. **Use case**: buscá **Elastic Container Service** y elegí la opción para **Task** (Elastic Container Service - Task).  
+     - Next → debe quedar marcada la política **AmazonECSTaskExecutionRolePolicy** → Next.  
+     - **Role name**: `ecsTaskExecutionRole` (exactamente así). Create role.  
+     - Volvé a ECS → Task definitions → en **Task execution role** elegí **ecsTaskExecutionRole**.  
+4. **Task role** (opcional): dejalo en “None” por ahora. Solo lo necesitás si la app accede a otros servicios AWS (Secrets Manager, S3, etc.).  
+5. **Task size**:  
+   - **CPU**: ej. **0.5 vCPU**.  
+   - **Memory**: ej. **1 GB**.  
+   Para producción con más carga podés subir después a 1 vCPU y 2 GB.  
+6. No cambies “Operating system / Architecture” salvo que sepas lo que hacés (dejá el valor por defecto).
+
+**Paso D: Contenedor – datos básicos**
+
+1. En la sección **Container - 1**, hacé clic en **Add container** (o “Configure” si ya hay un contenedor placeholder).  
+2. **Container name**: `tms-backend` (nombre interno; puede ser cualquiera, pero usalo consistente para el load balancer después).  
+3. **Image URI**: la URI completa de tu imagen en ECR. En tu caso:  
+   `708750714395.dkr.ecr.eu-north-1.amazonaws.com/tms-backend:latest`  
+   Podés pegar tal cual o elegir “Browse” y buscar el repo **tms-backend** en ECR y el tag **latest**.  
+4. **Port mappings**:  
+   - **Container port**: **8080**.  
+   - **Protocol**: **TCP**.  
+   - **App protocol**: podés dejarlo en blanco o **HTTP**.  
+5. Dejá el resto de opciones del contenedor (health check, etc.) por defecto por ahora.
+
+**Paso E: Variables de entorno del contenedor**
+
+En la misma pantalla del contenedor, bajá hasta **Environment variables** (o “Environment”). Ahí vas a agregar una por una (o en bloque si la consola lo permite).
+
+- **Environment type**: **Key-value** (no “ValueFrom” salvo que uses Secrets Manager).  
+- Agregá cada fila con **Key** y **Value** según la tabla. Los **Client ID** que figuran abajo son los que usa este proyecto en desarrollo; si en tu cuenta son otros, reemplazá. Los **Client secret** y la contraseña de mail no van en la guía: copialos de tu archivo `backend/src/main/resources/application-local.properties` (desarrollo) o del panel de cada proveedor.
+
+| Key | Valor |
+|-----|--------|
+| SPRING_DATASOURCE_URL | `jdbc:postgresql://database-1.cz46kskaun36.eu-north-1.rds.amazonaws.com:5432/tmsdb` |
+| SPRING_DATASOURCE_USERNAME | tmsadmin |
+| SPRING_DATASOURCE_PASSWORD | Elefante488! |
+| SPRING_DATASOURCE_DRIVER_CLASS_NAME | `org.postgresql.Driver` |
+| SPRING_H2_CONSOLE_ENABLED | `false` |
+| MERCADOLIBRE_REDIRECT_URI | `https://mvgtms.com.ar/auth/mercadolibre/callback` |
+| TIENDANUBE_REDIRECT_URI | `https://mvgtms.com.ar/auth/tiendanube/callback` |
+| SHOPIFY_REDIRECT_URI | `https://api.mvgtms.com.ar/api/clientes/shopify/callback` |
+| FRONTEND_BASE_URL | `https://mvgtms.com.ar` |
+| MERCADOLIBRE_CLIENT_ID | `5552011749820676` (Mercado Libre; si usás otro app, poné el que tengas) |
+| MERCADOLIBRE_CLIENT_SECRET | Copiar de `application-local.properties` o de [desarrolladores.mercadolibre.com](https://developers.mercadolibre.com.ar) → tu app → Client secret |
+| TIENDANUBE_CLIENT_ID | `25636` (Tienda Nube; si usás otro app, poné el que tengas) |
+| TIENDANUBE_CLIENT_SECRET | Copiar de `application-local.properties` o del Dev Dashboard de Tienda Nube → tu app → Credentials |
+| SHOPIFY_CLIENT_ID | `b1865e06d2c94f72c8af76cde5f91fae` (Shopify; si usás otra app, poné el que tengas) |
+| SHOPIFY_CLIENT_SECRET | Copiar de `application-local.properties` o de [partners.shopify.com](https://partners.shopify.com) → tu app → Settings → Client credentials |
+| SPRING_MAIL_USERNAME | matiasgastron@gmail.com |
+| SPRING_MAIL_PASSWORD | Contraseña de aplicación del correo. Copiar de `application-local.properties` o generarla de nuevo en la cuenta de Gmail (Seguridad → Contraseñas de aplicaciones). |
+
+**Si olvidaste el usuario o la contraseña de RDS**
+
+- **SPRING_DATASOURCE_USERNAME (usuario):** Podés verlo en la consola AWS. Entrá a **RDS** → **Databases** → clic en tu base (**database-1**) → pestaña **Configuration**. Ahí aparece **Master username** (ej. `tmsadmin`).  
+- **SPRING_DATASOURCE_PASSWORD (contraseña):** AWS no la muestra nunca. Si no la tenés anotada ni en `application-local.properties`, tenés que **cambiarla**: RDS → **Databases** → seleccioná la base → **Modify** → en **Settings** buscá **Master password** → elegí **Self managed** y poné una contraseña nueva → **Continue** → **Apply immediately** → **Modify DB instance**. Usá esa contraseña nueva en la variable de entorno.
+
+Si el endpoint de RDS que anotaste en 3.2 es distinto al de la tabla, usá tu endpoint en `SPRING_DATASOURCE_URL`.  
+En la consola suele haber “Add environment variable” o un botón “+” para cada nueva fila; completá Key y Value y repetí hasta tener todas.
+
+**Paso F: Configuración de logs del contenedor**
+
+En el mismo contenedor, buscá **Log configuration** (o “Logging”).
+
+1. **Log driver**: **awslogs**.  
+2. **awslogs-group**: `/ecs/tms-backend` (el grupo que creaste en el Paso A).  
+3. **awslogs-region**: **eu-north-1** (la región donde está el cluster y el log group).  
+4. **awslogs-stream-prefix**: podés poner `ecs` o dejarlo en blanco.  
+Dejá el resto por defecto. Así los logs del backend aparecerán en CloudWatch → Log groups → `/ecs/tms-backend`.
+
+**Paso G: Crear la task definition**
+
+1. Revisá que no quede ningún campo obligatorio en rojo.  
+2. Clic en **Create** (abajo del formulario).  
+3. Deberías ver la nueva task definition con familia **tms-backend** y revisión **1** (o la siguiente disponible).  
+Listo: la “receta” está guardada. El siguiente paso es crear el **servicio** ECS (3.4.7) que use esta task definition y la conecte al ALB.
 
 #### 3.4.7 Servicio ECS
 
@@ -421,16 +569,70 @@ Al terminar el deploy, Amplify te da una URL tipo `https://main.xxxxx.amplifyapp
 
 ### 3.6 DNS (mvgtms.com.ar y api.mvgtms.com.ar)
 
-Donde tengas el dominio (panel del registrador o Route 53):
+El frontend **mvgtms.com.ar** ya está en Amplify con dominio custom. Para que el backend responda en **https://api.mvgtms.com.ar** hay que hacer cuatro cosas: certificado SSL (ACM), registro DNS en Route 53, listener HTTPS en el ALB y variable de entorno en Amplify.
 
-| Qué | Tipo | Nombre / Host | Valor / Apunta a |
-|-----|------|----------------|-------------------|
-| Frontend | CNAME (o lo que pida Amplify) | Lo que te indique Amplify (ej. raíz o `www`) | El valor que te dio Amplify (ej. `xxxxx.cloudfront.net`) |
-| Backend | CNAME | `api` | DNS name del ALB (ej. `tms-alb-1234567890.sa-east-1.elb.amazonaws.com`) |
+**Datos que vas a usar:**
 
-- Para **api.mvgtms.com.ar**: en tu DNS creás un registro **CNAME** con nombre `api` (o `api.mvgtms.com.ar` según el panel) y valor = DNS del ALB.  
-- Para **HTTPS en el backend**: en **ACM** (Certificate Manager) pedís un certificado para `api.mvgtms.com.ar`, validás el dominio (DNS o email), y en el ALB agregás un listener **443** que use ese certificado y envíe el tráfico al mismo target group.  
-La propagación DNS puede tardar unos minutos u horas.
+| Recurso | Valor (eu-north-1) |
+|--------|---------------------|
+| ALB DNS name | `tms-alb-1410389913.eu-north-1.elb.amazonaws.com` |
+| Target group | `tms-backend-tg` |
+| Hosted zone | La de `mvgtms.com.ar` (creada por Amplify al agregar el dominio) |
+
+---
+
+#### 3.6.1 Certificado SSL para api.mvgtms.com.ar (ACM)
+
+1. En la consola AWS, región **eu-north-1**, buscá **Certificate Manager** (ACM).  
+2. **Request certificate**.  
+3. **Certificate type**: Request a public certificate.  
+4. **Domain names**: agregá `api.mvgtms.com.ar` (solo ese).  
+5. **Validation method**: DNS validation.  
+6. **Request**.  
+7. En la lista, abrí el certificado y en **Domains** verás un **CNAME name** y **CNAME value** para validar. Anotalos.
+
+CNAMe name: _9ce067074aa142ad3c587614ef16271b.api.mvgtms.com.ar.
+CNAME value: _b2631595086ef170d0511214bb483edc.jkddzztszm.acm-validations.aws.
+---
+
+#### 3.6.2 Registrar el CNAME de validación en Route 53
+
+1. **Route 53** → **Hosted zones** → hosted zone de **mvgtms.com.ar**.  
+2. **Create record**: **Record name** = solo la parte del CNAME name de ACM antes de `.mvgtms.com.ar` (ej. si ACM dice `_abc123.api.mvgtms.com.ar`, poné `_abc123.api`). **Type** = CNAME. **Value** = CNAME value de ACM. **Create records**.  
+3. En ACM, en unos minutos el certificado pasará a **Issued**.
+
+---
+
+#### 3.6.3 Registro DNS api → ALB (Route 53)
+
+En la misma hosted zone **mvgtms.com.ar**:
+
+1. **Create record**. **Record name**: `api`. **Record type**: **A**. Activá **Alias**.  
+2. **Route traffic to**: Alias to Application and Classic Load Balancer → **Region** eu-north-1 → ALB **tms-alb**. **Create records**.  
+3. Si no ves Alias a ALB: creá un **CNAME** name `api`, value `tms-alb-1410389913.eu-north-1.elb.amazonaws.com`.
+
+---
+
+#### 3.6.4 Listener HTTPS (443) en el ALB
+
+1. **EC2** → **Load Balancers** → **tms-alb** → pestaña **Listeners** → **Add listener**.  
+2. **Protocol**: HTTPS. **Port**: 443. **Default action**: Forward to **tms-backend-tg**. **Certificate**: el de ACM para api.mvgtms.com.ar. **Add**.
+
+---
+
+#### 3.6.5 Variable de entorno en Amplify (frontend)
+
+1. **Amplify** → app **mvgtms** → **Environment variables**.  
+2. Agregá: **Key** `NEXT_PUBLIC_BACKEND_TUNNEL_URL`, **Value** `https://api.mvgtms.com.ar` (sin `/api`). Guardá y **Redeploy** del branch **main**.
+
+---
+
+#### 3.6.6 Comprobar
+
+- `https://api.mvgtms.com.ar/actuator/health` debe responder.  
+- En **https://mvgtms.com.ar** las tablas que usan el backend deben cargar datos.
+
+Orden: **ACM** → **CNAME validación en Route 53** → **registro A (alias) o CNAME api en Route 53** → **listener 443 en ALB** → **variable en Amplify + redeploy**.
 
 ---
 

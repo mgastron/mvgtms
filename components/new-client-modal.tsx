@@ -72,56 +72,32 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
     vtexIdLogistica: "",
   })
 
+  const parseListaFromItem = (lp: any) => ({
+    id: Number(lp.id),
+    codigo: lp.codigo ?? "",
+    nombre: lp.nombre ?? "",
+  })
+
   const loadListasPrecios = async () => {
     setListasPreciosError(null)
     setListasPreciosLoading(true)
     const apiBaseUrl = getApiBaseUrl()
     try {
-      const response = await fetch(`${apiBaseUrl}/lista-precios?size=1000`, {
+      const response = await fetch(`${apiBaseUrl}/lista-precios?page=0&size=1000`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       })
-      if (response.ok) {
-        const data = await response.json()
-        const content = data.content || []
-        const listasData = content.map((lp: any) => ({
-          id: lp.id,
-          codigo: lp.codigo,
-          nombre: lp.nombre,
-        }))
-        setListasPrecios(listasData)
-        return
-      }
-      const errorText = await response.text()
-      console.error("Error listas de precios:", response.status, errorText)
-      const savedListasPrecios = localStorage.getItem("tms_lista_precios")
-      if (savedListasPrecios) {
-        try {
-          const listasData = JSON.parse(savedListasPrecios)
-          setListasPrecios(listasData.map((lp: any) => ({ id: lp.id, codigo: lp.codigo, nombre: lp.nombre })))
-        } catch {
-          setListasPrecios([])
-          setListasPreciosError("No se pudieron cargar las listas. Verificá que el backend (api.mvgtms.com.ar) esté accesible.")
-        }
-      } else {
-        setListasPrecios([])
+      const data = await response.json().catch(() => ({}))
+      const rawList = Array.isArray(data) ? data : (data.content ?? [])
+      const listasData = rawList.map(parseListaFromItem)
+      setListasPrecios(listasData)
+      if (!response.ok && listasData.length === 0) {
         setListasPreciosError("No se pudieron cargar las listas. Verificá que el backend (api.mvgtms.com.ar) esté accesible.")
       }
     } catch (error: any) {
       console.error("Error al cargar listas de precios:", error)
-      const savedListasPrecios = localStorage.getItem("tms_lista_precios")
-      if (savedListasPrecios) {
-        try {
-          const listasData = JSON.parse(savedListasPrecios)
-          setListasPrecios(listasData.map((lp: any) => ({ id: lp.id, codigo: lp.codigo, nombre: lp.nombre })))
-        } catch {
-          setListasPrecios([])
-          setListasPreciosError("No se pudieron cargar las listas. Verificá que el backend (api.mvgtms.com.ar) esté accesible.")
-        }
-      } else {
-        setListasPrecios([])
-        setListasPreciosError("No se pudieron cargar las listas. Verificá que el backend (api.mvgtms.com.ar) esté accesible.")
-      }
+      setListasPrecios([])
+      setListasPreciosError("No se pudieron cargar las listas. Verificá que el backend (api.mvgtms.com.ar) esté accesible.")
     } finally {
       setListasPreciosLoading(false)
     }

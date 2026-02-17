@@ -44,6 +44,55 @@ public class ListaPrecioService {
         );
     }
 
+    @Transactional
+    public ListaPrecioDTO crearListaPrecio(ListaPrecioDTO dto) {
+        ListaPrecio entity = new ListaPrecio();
+        entity.setCodigo(dto.getCodigo());
+        entity.setNombre(dto.getNombre());
+        entity.setZonaPropia(dto.getZonaPropia() != null ? dto.getZonaPropia() : true);
+        entity.setListaPrecioSeleccionada(dto.getListaPrecioSeleccionada() != null && !dto.getListaPrecioSeleccionada().trim().isEmpty()
+            ? Long.parseLong(dto.getListaPrecioSeleccionada()) : null);
+        entity.setZonas(new ArrayList<>());
+        if (dto.getZonas() != null) {
+            for (ZonaDTO zDto : dto.getZonas()) {
+                Zona z = new Zona();
+                z.setCodigo(zDto.getCodigo());
+                z.setNombre(zDto.getNombre());
+                z.setCps(zDto.getCps());
+                z.setValor(zDto.getValor() != null ? zDto.getValor() : "");
+                z.setListaPrecio(entity);
+                entity.getZonas().add(z);
+            }
+        }
+        entity = listaPrecioRepository.save(entity);
+        return toDTOSimple(entity);
+    }
+
+    @Transactional
+    public ListaPrecioDTO actualizarListaPrecio(Long id, ListaPrecioDTO dto) {
+        ListaPrecio existing = listaPrecioRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Lista de precios no encontrada con id: " + id));
+        existing.setCodigo(dto.getCodigo());
+        existing.setNombre(dto.getNombre());
+        existing.setZonaPropia(dto.getZonaPropia() != null ? dto.getZonaPropia() : true);
+        existing.setListaPrecioSeleccionada(dto.getListaPrecioSeleccionada() != null && !dto.getListaPrecioSeleccionada().trim().isEmpty()
+            ? Long.parseLong(dto.getListaPrecioSeleccionada()) : null);
+        if (dto.getZonas() != null) {
+            existing.getZonas().clear();
+            for (ZonaDTO zDto : dto.getZonas()) {
+                Zona z = new Zona();
+                z.setCodigo(zDto.getCodigo());
+                z.setNombre(zDto.getNombre());
+                z.setCps(zDto.getCps());
+                z.setValor(zDto.getValor() != null ? zDto.getValor() : "");
+                z.setListaPrecio(existing);
+                existing.getZonas().add(z);
+            }
+        }
+        existing = listaPrecioRepository.save(existing);
+        return toDTOSimple(existing);
+    }
+
     @Transactional(readOnly = true)
     public ListaPrecioDTO obtenerListaPrecioPorId(Long id) {
         Optional<ListaPrecio> listaPrecioOpt = listaPrecioRepository.findById(id);

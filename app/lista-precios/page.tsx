@@ -120,60 +120,33 @@ export default function ListaPreciosPage() {
   })
   const isInitialLoad = useRef(true)
 
-  // Cargar lista de precios del backend solo al montar el componente
-  useEffect(() => {
-    const loadListaPrecios = async () => {
-      try {
-        const apiBaseUrl = getApiBaseUrl()
-        const response = await fetch(`${apiBaseUrl}/lista-precios?size=1000`)
-        if (response.ok) {
-          const data = await response.json()
-          if (data.content && data.content.length > 0) {
-            // Convertir los datos del backend al formato de la interfaz ListaPrecio
-            const backendListaPrecios: ListaPrecio[] = data.content.map((lp: any) => ({
-              id: lp.id,
-              codigo: lp.codigo || "",
-              nombre: lp.nombre || "",
-              zonaPropia: lp.zonaPropia !== undefined ? lp.zonaPropia : false,
-            }))
-            setListaPrecios(backendListaPrecios)
-            // Guardar en localStorage
-            localStorage.setItem("tms_lista_precios", JSON.stringify(backendListaPrecios))
-            isInitialLoad.current = false
-            return
-          }
-        }
-      } catch (error) {
-        console.warn("No se pudo cargar lista de precios del backend:", error)
+  const loadListaPreciosFromBackend = async () => {
+    try {
+      const apiBaseUrl = getApiBaseUrl()
+      const response = await fetch(`${apiBaseUrl}/lista-precios?page=0&size=1000`)
+      if (response.ok) {
+        const data = await response.json()
+        const content = data.content || []
+        const backendListaPrecios: ListaPrecio[] = content.map((lp: any) => ({
+          id: lp.id,
+          codigo: lp.codigo || "",
+          nombre: lp.nombre || "",
+          zonaPropia: lp.zonaPropia !== undefined ? lp.zonaPropia : false,
+        }))
+        setListaPrecios(backendListaPrecios)
+        isInitialLoad.current = false
+        return
       }
-      
-      // Si el backend no tiene datos o no está disponible, intentar cargar de localStorage
-      const savedListaPrecios = localStorage.getItem("tms_lista_precios")
-      if (savedListaPrecios) {
-        try {
-          const parsedListaPrecios = JSON.parse(savedListaPrecios)
-          setListaPrecios(parsedListaPrecios)
-        } catch (e) {
-          console.warn("Error al parsear lista de precios de localStorage:", e)
-          // Si hay error, usar datos mock
-          setListaPrecios(mockListaPrecios)
-        }
-      } else {
-        // Si no hay datos guardados, usar datos mock
-        setListaPrecios(mockListaPrecios)
-      }
-      isInitialLoad.current = false
+    } catch (error) {
+      console.warn("No se pudo cargar lista de precios del backend:", error)
     }
+    setListaPrecios(mockListaPrecios)
+    isInitialLoad.current = false
+  }
 
-    loadListaPrecios()
+  useEffect(() => {
+    loadListaPreciosFromBackend()
   }, [])
-
-  // Guardar lista de precios en localStorage cada vez que cambien (excepto durante la carga inicial)
-  useEffect(() => {
-    if (!isInitialLoad.current && listaPrecios.length > 0) {
-      localStorage.setItem("tms_lista_precios", JSON.stringify(listaPrecios))
-    }
-  }, [listaPrecios])
 
   // Filtrar lista de precios
   const filteredListaPrecios = useMemo(() => {
@@ -508,34 +481,41 @@ export default function ListaPreciosPage() {
           setIsNewListaPrecioModalOpen(false)
           setEditingListaPrecio(null)
         }}
-        onSave={(listaPrecioData) => {
-          if (listaPrecioData.id) {
-            // Actualizar lista de precios existente
-            setListaPrecios((prev) =>
-              prev.map((p) =>
-                p.id === listaPrecioData.id
-                  ? {
-                      ...p,
-                      codigo: listaPrecioData.codigo,
-                      nombre: listaPrecioData.nombre,
-                      zonaPropia: listaPrecioData.tipoZonas === "Zonas propias",
-                      zonas: listaPrecioData.zonas || undefined,
-                      listaPrecioSeleccionada: listaPrecioData.listaPrecioSeleccionada || undefined,
-                    }
-                  : p
-              )
-            )
-          } else {
-            // Crear nueva lista de precios
-            const newListaPrecio: ListaPrecio = {
-              id: listaPrecios.length > 0 ? Math.max(...listaPrecios.map((p) => p.id)) + 1 : 1,
-              codigo: listaPrecioData.codigo,
-              nombre: listaPrecioData.nombre,
-              zonaPropia: listaPrecioData.tipoZonas === "Zonas propias",
-              zonas: listaPrecioData.zonas || undefined,
-              listaPrecioSeleccionada: listaPrecioData.listaPrecioSeleccionada || undefined,
+        onSave={async (listaPrecioData) => {
+          const apiBaseUrl = getApiBaseUrl()
+          const body = {
+            codigo: listaPrecioData.codigo,
+            nombre: listaPrecioData.nombre,
+            zonaPropia: listaPrecioData.tipoZonas === "Zonas propias",
+            listaPrecioSeleccionada: listaPrecioData.listaPrecioSeleccionada || null,
+            zonas: (listaPrecioData.zonas || []).map((z: any) => ({
+              codigo: z.codigo || "",
+              nombre: z.nombre || "",
+              cps: z.cps || "",
+              valor: z.valor || "",
+            })),
+          }
+          try {
+            if (listaPrecioData.id) {
+              const res = await fetch(`${apiBaseUrl}/lista-precios/${listaPrecioData.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+              })
+              if (!res.ok) throw new Error("Error al actualizar")
+            } else {
+              const res = await fetch(`${apiBaseUrl}/lista-precios`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+              })
+              if (!res.ok) throw new Error("Error al crear")
             }
-            setListaPrecios((prev) => [...prev, newListaPrecio])
+            await loadListaPreciosFromBackend()
+          } catch (e) {
+            console.error("Error al guardar lista de precios:", e)
+            alert("No se pudo guardar la lista de precios. Verificá que el backend esté accesible.")
+            throw e
           }
           setIsNewListaPrecioModalOpen(false)
           setEditingListaPrecio(null)
