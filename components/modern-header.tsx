@@ -60,19 +60,25 @@ export function ModernHeader() {
     setUserProfile(profile)
   }, [])
   
+  // Para perfil Cliente: solo ítems de Envíos, mostrados directos en la barra (sin desplegable)
+  const enviosFlatItems = allMenuItems
+    .find((i) => i.label === "Envíos")
+    ?.submenu?.map((sub) => ({ icon: sub.icon, label: sub.label, path: sub.path, hasSubmenu: false as const })) ?? []
+
   // Filtrar elementos del menú según el perfil del usuario
   const getFilteredMenuItems = () => {
-    if (!userProfile) return allMenuItems
-    
     if (userProfile === "Cliente") {
-      return allMenuItems.filter(
-        (item) => item.label !== "Sistema" && item.label !== "Clientes"
-      )
+      return enviosFlatItems
     }
-    
+
+    // Chofer y Cliente no ven Ruteate; el resto (Administrativo, etc.) sí
+    if (userProfile === "Chofer") {
+      return allMenuItems.filter((item) => item.label !== "Ruteate")
+    }
+
     return allMenuItems
   }
-  
+
   const menuItems = getFilteredMenuItems()
   
   // Determinar el item activo basado en la ruta actual
@@ -162,7 +168,7 @@ export function ModernHeader() {
             <nav className="hidden md:flex items-center gap-1">
               {menuItems.map((item) => {
                 const Icon = item.icon
-                const isActive = activeMainItem === item.label
+                const isActive = item.hasSubmenu ? activeMainItem === item.label : activeItem === item.label
                 const isOpen = openDropdown === item.label
                 
                 return (
@@ -244,7 +250,7 @@ export function ModernHeader() {
           <div className="border-b border-gray-200 px-4 py-4 space-y-1 max-h-[calc(100vh-4rem)] overflow-y-auto">
             {menuItems.map((item) => {
               const Icon = item.icon
-              const isActive = activeMainItem === item.label
+              const isActive = item.hasSubmenu ? activeMainItem === item.label : activeItem === item.label
               const isOpen = openDropdown === item.label
               
               return (
