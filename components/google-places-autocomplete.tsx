@@ -13,47 +13,112 @@ declare global {
   }
 }
 
+function extractLocalidadAndCP(addressComponents: any[]): { localidad: string; codigoPostal: string } {
+  let localidad = ""
+  let codigoPostal = ""
+
+  if (!addressComponents?.length) return { localidad, codigoPostal }
+
+  const ignoreTypes = ["route", "street_number", "street_address", "subpremise", "premise", "postal_code"]
+  const getLong = (c: any) => c.long_name || c.longText || ""
+
+  const provinceComponent = addressComponents.find(
+    (c: any) =>
+      c.types?.includes("administrative_area_level_1") &&
+      !c.types?.some((t: string) => ignoreTypes.includes(t))
+  )
+  let provinceName = provinceComponent ? getLong(provinceComponent).toLowerCase() : ""
+  const isCABA =
+    provinceName.includes("ciudad autónoma") ||
+    provinceName.includes("autonomous city") ||
+    (provinceName.includes("buenos aires") && !provinceName.includes("provincia"))
+
+  if (isCABA) {
+    localidad = "CABA"
+  } else {
+    const localityComponent = addressComponents.find(
+      (c: any) =>
+        c.types?.includes("locality") &&
+        !c.types?.some((t: string) => ignoreTypes.includes(t))
+    )
+    if (localityComponent) {
+      localidad = getLong(localityComponent)
+    } else {
+      const level2 = addressComponents.find(
+        (c: any) =>
+          c.types?.includes("administrative_area_level_2") &&
+          !c.types?.some((t: string) => ignoreTypes.includes(t))
+      )
+      if (level2) localidad = getLong(level2)
+      else if (provinceComponent) localidad = getLong(provinceComponent)
+    }
+  }
+
+  if (!localidad) {
+    const anyLoc = addressComponents.find((c: any) => {
+      const hasLoc =
+        c.types?.some(
+          (t: string) =>
+            t.includes("locality") ||
+            t.includes("administrative_area") ||
+            t.includes("sublocality")
+        ) ?? false
+      const notStreet = !c.types?.some((t: string) => ignoreTypes.includes(t))
+      return hasLoc && notStreet
+    })
+    if (anyLoc) localidad = getLong(anyLoc)
+  }
+
+  const postalComponent = addressComponents.find((c: any) => c.types?.includes("postal_code"))
+  if (postalComponent) {
+    const raw = postalComponent.long_name || postalComponent.short_name || postalComponent.longText || postalComponent.shortText || ""
+    codigoPostal = raw.replace(/\D/g, "")
+  }
+
+  return { localidad, codigoPostal }
+}
+
 let scriptLoading = false
 let scriptLoaded = false
 
 export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutocompleteProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const autocompleteRef = useRef<any>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const autocompleteRef = useRef<any>(null)
   const [isScriptLoaded, setIsScriptLoaded] = useState(false)
-  const [showAutocomplete, setShowAutocomplete] = useState(true)
 
+  // Cargar script de Google Maps con la biblioteca Places (necesaria para Autocomplete clásico)
   useEffect(() => {
-    // Verificar si el script ya está cargado
-    if (window.google && window.google.maps) {
+    if (typeof window === "undefined") return
+
+    if (window.google?.maps?.places) {
       setIsScriptLoaded(true)
       scriptLoaded = true
       return
     }
 
-    // Verificar si ya hay un script cargándose
     if (scriptLoading) {
-      const checkInterval = setInterval(() => {
-        if (window.google && window.google.maps) {
+      const t = setInterval(() => {
+        if (window.google?.maps?.places) {
           setIsScriptLoaded(true)
           scriptLoaded = true
           scriptLoading = false
-          clearInterval(checkInterval)
+          clearInterval(t)
         }
       }, 100)
-      return () => clearInterval(checkInterval)
+      return () => clearInterval(t)
     }
 
-    // Verificar si el script ya existe en el DOM
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]')
-    if (existingScript) {
+    const existing = document.querySelector('script[src*="maps.googleapis.com"]')
+    if (existing) {
       scriptLoading = true
-      existingScript.addEventListener("load", () => {
-        setIsScriptLoaded(true)
-        scriptLoaded = true
-        scriptLoading = false
+      existing.addEventListener("load", () => {
+        if (window.google?.maps?.places) {
+          setIsScriptLoaded(true)
+          scriptLoaded = true
+          scriptLoading = false
+        }
       })
-      if (window.google && window.google.maps) {
+      if (window.google?.maps?.places) {
         setIsScriptLoaded(true)
         scriptLoaded = true
         scriptLoading = false
@@ -61,13 +126,21 @@ export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutoco
       return
     }
 
-    // Cargar el script solo si no existe
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY || ""
+    if (!apiKey || apiKey === "YOUR_API_KEY") {
+      console.warn(
+        "Google Places: NEXT_PUBLIC_GOOGLE_PLACES_API_KEY no está configurada. Podés escribir la dirección a mano; las sugerencias no aparecerán."
+      )
+      setIsScriptLoaded(true) // Permitir usar el input igual
+      return
+    }
+
     scriptLoading = true
     const script = document.createElement("script")
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY || "YOUR_API_KEY"}`
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`
     script.async = true
     script.defer = true
-    script.id = "google-maps-script"
+    script.id = "google-maps-places-script"
     script.onload = () => {
       setIsScriptLoaded(true)
       scriptLoaded = true
@@ -80,257 +153,56 @@ export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutoco
     document.head.appendChild(script)
   }, [])
 
+  // Vincular Autocomplete al input cuando el script y el input estén listos
   useEffect(() => {
-    if (!isScriptLoaded || !containerRef.current || !window.google) return
+    if (!isScriptLoaded || !window.google?.maps?.places || !inputRef.current) return
 
-    const initializeAutocomplete = async () => {
-      try {
-        // Importar la biblioteca de lugares
-        const { PlaceAutocompleteElement } = await window.google.maps.importLibrary("places")
+    const input = inputRef.current
+    // Si ya hay un Autocomplete en este input, no crear otro (evitar duplicados al re-render)
+    if (autocompleteRef.current) return
 
-        // Limpiar el contenedor si ya hay un elemento
-        if (containerRef.current && containerRef.current.firstChild) {
-          containerRef.current.innerHTML = ""
-        }
-
-        // Crear el elemento de autocompletado
-        const placeAutocomplete = new PlaceAutocompleteElement()
-        
-        // Configurar propiedades del elemento (nueva API)
-        placeAutocomplete.includedRegionCodes = ["ar"] // Restringir a Argentina
-        placeAutocomplete.includedPrimaryTypes = ["street_address"] // Solo direcciones
-
-        // Agregar estilos para que se vea como el Input
-        placeAutocomplete.style.width = "100%"
-        placeAutocomplete.style.height = "32px"
-        placeAutocomplete.style.fontSize = "14px"
-        placeAutocomplete.style.padding = "6px 12px"
-        placeAutocomplete.style.border = "1px solid #d1d5db"
-        placeAutocomplete.style.borderRadius = "8px"
-        placeAutocomplete.style.outline = "none"
-
-        // Agregar el elemento al contenedor solo si showAutocomplete es true
-        if (showAutocomplete && containerRef.current) {
-          containerRef.current.appendChild(placeAutocomplete)
-          autocompleteRef.current = placeAutocomplete
-          
-          // Establecer el valor inicial si existe
-          if (value) {
-            placeAutocomplete.value = value
-          }
-        }
-
-        // Escuchar el evento de selección de lugar (nuevo evento: gmp-select)
-        placeAutocomplete.addEventListener("gmp-select", async (event: any) => {
-          console.log("Event received:", event)
-          const placePrediction = event.placePrediction
-          console.log("Place prediction:", placePrediction)
-          
-          if (placePrediction) {
-            try {
-              // Convertir la predicción a un Place completo
-              const place = await placePrediction.toPlace({
-                fields: ["formattedAddress", "addressComponents"],
-              })
-              
-              console.log("Place object:", place)
-              
-              if (place) {
-                // Debug: ver qué tiene el place antes de fetchFields
-                console.log("=== GOOGLE PLACES DEBUG ===")
-                console.log("Place object (before fetchFields):", place)
-                console.log("Place keys:", Object.keys(place))
-                
-                // Obtener los detalles completos del lugar
-                await place.fetchFields({
-                  fields: ["formattedAddress", "addressComponents"],
-                })
-
-                console.log("Place object (after fetchFields):", place)
-                console.log("Place keys (after fetchFields):", Object.keys(place))
-                
-                // Intentar diferentes formas de acceder a los datos
-                const formattedAddress = place.formattedAddress || place.formatted_address || ""
-                const addressComponents = place.addressComponents || place.address_components
-                
-                console.log("Formatted address:", formattedAddress)
-                console.log("All address_components:", addressComponents)
-                
-                if (addressComponents) {
-                  addressComponents.forEach((component: any) => {
-                    const name = component.longText || component.long_name || component.longText
-                    const types = component.types || []
-                    console.log(`- ${name} (${types.join(", ")})`)
-                  })
-                }
-                
-                // Extraer localidad de los componentes de la dirección
-                let localidad = ""
-                if (addressComponents) {
-                  const ignoreTypes = ["route", "street_number", "street_address", "subpremise", "premise", "postal_code"]
-                  
-                  // Buscar primero administrative_area_level_1 para determinar si es CABA
-                  const provinceComponent = addressComponents.find(
-                    (component: any) => 
-                      component.types.includes("administrative_area_level_1") &&
-                      !component.types.some((type: string) => ignoreTypes.includes(type))
-                  )
-                  
-                  let provinceName = ""
-                  let isCABA = false
-                  if (provinceComponent) {
-                    provinceName = (provinceComponent.longText || provinceComponent.long_name).toLowerCase()
-                    console.log("Province found:", provinceComponent.longText || provinceComponent.long_name, "Types:", provinceComponent.types)
-                    
-                    // Verificar si es CABA
-                    isCABA = provinceName.includes("ciudad autónoma") || 
-                             provinceName.includes("autonomous city") ||
-                             (provinceName.includes("buenos aires") && !provinceName.includes("provincia"))
-                  }
-                  
-                  // Si es CABA, usar "CABA" directamente
-                  if (isCABA) {
-                    localidad = "CABA"
-                  } 
-                  // Para TODAS las demás provincias, priorizar locality sobre la provincia
-                  else {
-                    // Buscar locality primero (para todas las provincias excepto CABA)
-                    const localityComponent = addressComponents.find(
-                      (component: any) => 
-                        component.types.includes("locality") &&
-                        !component.types.some((type: string) => ignoreTypes.includes(type))
-                    )
-                    if (localityComponent) {
-                      const localityName = localityComponent.longText || localityComponent.long_name
-                      console.log("Locality found:", localityName, "Types:", localityComponent.types)
-                      localidad = localityName
-                    } else {
-                      // Si no hay locality, usar administrative_area_level_2
-                      const level2Component = addressComponents.find(
-                        (component: any) => 
-                          component.types.includes("administrative_area_level_2") &&
-                          !component.types.some((type: string) => ignoreTypes.includes(type))
-                      )
-                      if (level2Component) {
-                        const level2Name = level2Component.longText || level2Component.long_name
-                        console.log("Level 2 found:", level2Name, "Types:", level2Component.types)
-                        localidad = level2Name
-                      } else if (provinceComponent) {
-                        // Como último recurso, usar la provincia
-                        localidad = provinceComponent.longText || provinceComponent.long_name
-                      }
-                    }
-                  }
-              
-              if (!localidad) {
-                const level2Component = addressComponents.find(
-                  (component: any) => 
-                    component.types.includes("administrative_area_level_2") &&
-                    !component.types.some((type: string) => ignoreTypes.includes(type))
-                )
-                if (level2Component) {
-                  const level2Name = level2Component.longText || level2Component.long_name
-                  console.log("Level 2 found:", level2Name, "Types:", level2Component.types)
-                  localidad = level2Name
-                }
-              }
-              
-              if (!localidad) {
-                const anyLocalityComponent = addressComponents.find(
-                  (component: any) => {
-                    const hasLocalityType = component.types.some((type: string) => 
-                      type.includes("locality") || 
-                      type.includes("administrative_area") ||
-                      type.includes("sublocality")
-                    )
-                    const isNotStreet = !component.types.some((type: string) => ignoreTypes.includes(type))
-                    return hasLocalityType && isNotStreet
-                  }
-                )
-                if (anyLocalityComponent) {
-                  const anyLocalityName = anyLocalityComponent.longText || anyLocalityComponent.long_name
-                  console.log("Any locality component found:", anyLocalityName, "Types:", anyLocalityComponent.types)
-                  localidad = anyLocalityName
-                }
-              }
-                }
-                
-                console.log("✅ Localidad extraída final:", localidad || "NO ENCONTRADA")
-                
-                // Extraer código postal y limpiar (solo números)
-                let codigoPostal = ""
-                if (addressComponents) {
-                  const postalCodeComponent = addressComponents.find(
-                    (component: any) => component.types.includes("postal_code")
-                  )
-                  if (postalCodeComponent) {
-                    const rawPostalCode = postalCodeComponent.longText || postalCodeComponent.long_name || postalCodeComponent.shortText || postalCodeComponent.short_name || ""
-                    // Extraer solo los números del código postal
-                    codigoPostal = rawPostalCode.replace(/\D/g, "")
-                    console.log("✅ Código postal extraído (raw):", rawPostalCode, "-> (limpio):", codigoPostal)
-                  }
-                }
-                
-                console.log("=== END DEBUG ===")
-                
-                // Ocultar el web component y mostrar el input controlado con el valor
-                setShowAutocomplete(false)
-                
-                onChange(formattedAddress, localidad, codigoPostal)
-              }
-          } catch (error) {
-            console.error("Error al procesar lugar:", error)
-          }
-        }
+    try {
+      const autocomplete = new window.google.maps.places.Autocomplete(input, {
+        componentRestrictions: { country: "ar" },
+        types: ["address"],
+        fields: ["formatted_address", "address_components"],
       })
-    } catch (error) {
-      console.error("Error al inicializar PlaceAutocompleteElement:", error)
-    }
-  }
 
-    initializeAutocomplete()
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace()
+        if (!place || !place.formatted_address) return
+
+        const formattedAddress = place.formatted_address
+        const addressComponents = place.address_components || []
+        const { localidad, codigoPostal } = extractLocalidadAndCP(addressComponents)
+        onChange(formattedAddress, localidad, codigoPostal)
+      })
+
+      autocompleteRef.current = autocomplete
+    } catch (err) {
+      console.warn("Google Places Autocomplete no pudo inicializarse (podés escribir la dirección a mano):", err)
+    }
 
     return () => {
-      if (containerRef.current && containerRef.current.firstChild) {
-        containerRef.current.innerHTML = ""
+      if (autocompleteRef.current && window.google?.maps?.event) {
+        try {
+          window.google.maps.event.clearInstanceListeners(autocompleteRef.current)
+        } catch (_) {}
       }
+      autocompleteRef.current = null
     }
-  }, [isScriptLoaded, onChange, showAutocomplete])
+  }, [isScriptLoaded, onChange])
 
-  // Si hay un valor y no estamos mostrando el autocomplete, mostrar el input controlado
-  // También mostrar el input si el usuario hace clic para editar
-  const handleInputFocus = () => {
-    setShowAutocomplete(true)
-    // Limpiar el contenedor y reinicializar el autocomplete
-    if (containerRef.current) {
-      containerRef.current.innerHTML = ""
-    }
-    autocompleteRef.current = null
-  }
-
+  // El input siempre visible: lo que escribís se guarda aunque no elijas una sugerencia
   return (
-    <div className="w-full">
-      {(!isScriptLoaded || !showAutocomplete || value) && (
-        <input
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={(e) => {
-            onChange(e.target.value)
-            // Si el usuario empieza a escribir, mostrar el autocomplete
-            if (e.target.value && !showAutocomplete) {
-              setShowAutocomplete(true)
-            }
-          }}
-          onFocus={handleInputFocus}
-          placeholder="Buscar dirección..."
-          className="w-full h-8 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B46FF] focus:border-transparent"
-        />
-      )}
-      {isScriptLoaded && showAutocomplete && !value && (
-        <div ref={containerRef} className="w-full"></div>
-      )}
-    </div>
+    <input
+      ref={inputRef}
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder="Escribí o buscá dirección (ej. Av. Corrientes 1234, CABA)"
+      className="w-full h-8 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B46FF] focus:border-transparent"
+      autoComplete="off"
+    />
   )
 }
-
