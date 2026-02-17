@@ -164,7 +164,8 @@ export function ModernHeader() {
               </button>
             </div>
 
-            {/* Desktop Navigation */}
+            {/* Desktop Navigation (oculta para Chofer: solo logo + usuario) */}
+            {userProfile !== "Chofer" && (
             <nav className="hidden md:flex items-center gap-1">
               {menuItems.map((item) => {
                 const Icon = item.icon
@@ -221,14 +222,16 @@ export function ModernHeader() {
                 )
               })}
             </nav>
+            )}
 
             {/* User Profile & Mobile Menu Button */}
             <div className="flex items-center gap-4">
-              <div className="hidden md:block">
+              <div className={userProfile === "Chofer" ? "block" : "hidden md:block"}>
                 <UserProfile />
               </div>
               
-              {/* Mobile Menu Button */}
+              {/* Mobile Menu Button (oculto para Chofer) */}
+              {userProfile !== "Chofer" && (
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -239,13 +242,14 @@ export function ModernHeader() {
                   <Menu className="h-6 w-6 text-gray-700" />
                 )}
               </button>
+              )}
             </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
+      {/* Mobile Menu (no se abre para Chofer) */}
+      {mobileMenuOpen && userProfile !== "Chofer" && (
         <div className="md:hidden fixed inset-0 z-40 bg-white pt-16">
           <div className="border-b border-gray-200 px-4 py-4 space-y-1 max-h-[calc(100vh-4rem)] overflow-y-auto">
             {menuItems.map((item) => {
