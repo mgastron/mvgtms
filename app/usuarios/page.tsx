@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, useRef } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ModernHeader } from "@/components/modern-header"
 import { Pencil, Trash2, UserPlus, Filter } from "lucide-react"
@@ -31,109 +31,6 @@ interface User {
   habilitado: boolean
   bloqueado: boolean
 }
-
-const mockUsers: User[] = [
-  {
-    id: 1,
-    nombre: "iseul",
-    apellido: "market",
-    usuario: "iseulmarket",
-    perfil: "Cliente",
-    contraseña: "pass123",
-    habilitado: true,
-    bloqueado: false,
-  },
-  {
-    id: 2,
-    nombre: "andres",
-    apellido: "torres",
-    usuario: "andrestorres",
-    perfil: "Chofer",
-    contraseña: "pass456",
-    habilitado: true,
-    bloqueado: false,
-  },
-  {
-    id: 3,
-    nombre: "mauro",
-    apellido: "coria",
-    usuario: "maurocoria",
-    perfil: "Chofer",
-    contraseña: "pass789",
-    habilitado: true,
-    bloqueado: false,
-  },
-  {
-    id: 4,
-    nombre: "fernando",
-    apellido: "bautier",
-    usuario: "fernandobautier",
-    perfil: "Chofer",
-    contraseña: "pass101",
-    habilitado: true,
-    bloqueado: false,
-  },
-  {
-    id: 5,
-    nombre: "ignacio",
-    apellido: "folgar",
-    usuario: "nachofolgar",
-    perfil: "Chofer",
-    contraseña: "pass202",
-    habilitado: true,
-    bloqueado: false,
-  },
-  {
-    id: 6,
-    nombre: "jonathan",
-    apellido: "vargas",
-    usuario: "jonathanvargas",
-    perfil: "Chofer",
-    contraseña: "pass303",
-    habilitado: true,
-    bloqueado: false,
-  },
-  {
-    id: 7,
-    nombre: "osta",
-    apellido: "el que reparte",
-    usuario: "osta",
-    perfil: "Chofer",
-    contraseña: "pass404",
-    habilitado: true,
-    bloqueado: false,
-  },
-  {
-    id: 8,
-    nombre: "smud",
-    apellido: "smud",
-    usuario: "smudchofer",
-    perfil: "Chofer",
-    contraseña: "pass505",
-    habilitado: true,
-    bloqueado: false,
-  },
-  {
-    id: 9,
-    nombre: "Micaela",
-    apellido: "Silva",
-    usuario: "Micasilva",
-    perfil: "Chofer",
-    contraseña: "pass606",
-    habilitado: true,
-    bloqueado: false,
-  },
-  {
-    id: 10,
-    nombre: "Marco",
-    apellido: "Torres",
-    usuario: "Torres",
-    perfil: "Chofer",
-    contraseña: "pass707",
-    habilitado: true,
-    bloqueado: false,
-  },
-]
 
 export default function UsuariosPage() {
   const router = useRouter()
@@ -174,85 +71,37 @@ export default function UsuariosPage() {
     usuario: "",
     perfil: "Todos",
   })
-  const isInitialLoad = useRef(true)
-
-  // Cargar usuarios del backend solo al montar el componente
+  // Cargar usuarios solo desde el backend
   useEffect(() => {
     const loadUsers = async () => {
       try {
         const apiBaseUrl = getApiBaseUrl()
-        console.log("Cargando usuarios desde:", apiBaseUrl)
         const response = await fetch(`${apiBaseUrl}/usuarios?size=1000`)
-        
         if (response.ok) {
           const data = await response.json()
-          console.log("Usuarios recibidos del backend:", data.content?.length || 0)
-          
-          if (data.content && data.content.length > 0) {
-            // Convertir los datos del backend al formato de la interfaz User
-            const backendUsers: User[] = data.content.map((u: any) => ({
-              id: u.id,
-              nombre: u.nombre || "",
-              apellido: u.apellido || "",
-              usuario: u.usuario || "",
-              perfil: u.perfil || "",
-              contraseña: u.contraseña || u.password || "",
-              codigoCliente: u.codigoCliente || undefined,
-              habilitado: u.habilitado !== undefined ? u.habilitado : true,
-              bloqueado: u.bloqueado !== undefined ? u.bloqueado : false,
-            }))
-            setUsers(backendUsers)
-            // Guardar en localStorage
-            localStorage.setItem("tms_usuarios", JSON.stringify(backendUsers))
-            isInitialLoad.current = false
-            return
-          } else {
-            console.warn("El backend respondió pero no hay usuarios en data.content")
-          }
+          const content = data.content || []
+          const backendUsers: User[] = content.map((u: any) => ({
+            id: u.id,
+            nombre: u.nombre || "",
+            apellido: u.apellido || "",
+            usuario: u.usuario || "",
+            perfil: u.perfil || "",
+            contraseña: u.contraseña || u.password || "",
+            codigoCliente: u.codigoCliente || undefined,
+            habilitado: u.habilitado !== undefined ? u.habilitado : true,
+            bloqueado: u.bloqueado !== undefined ? u.bloqueado : false,
+          }))
+          setUsers(backendUsers)
         } else {
-          const errorText = await response.text()
-          console.error("Error del backend al cargar usuarios:", response.status, response.statusText, errorText)
+          setUsers([])
         }
       } catch (error: any) {
-        console.error("Error al cargar usuarios del backend:", error)
-        console.error("Detalles del error:", error.message)
-        
-        // Si es un error de conexión, mostrar mensaje más claro
-        if (error.message?.includes("Failed to fetch") || error.message?.includes("NetworkError")) {
-          console.error("⚠️ No se pudo conectar al backend. Verifica que:")
-          console.error("1. El backend esté corriendo")
-          console.error("2. NEXT_PUBLIC_BACKEND_TUNNEL_URL esté configurado en .env.local")
-          console.error("3. El túnel de Cloudflare esté activo")
-        }
+        console.warn("No se pudo cargar usuarios del backend:", error)
+        setUsers([])
       }
-      
-      // Si el backend no tiene datos o no está disponible, intentar cargar de localStorage
-      const savedUsers = localStorage.getItem("tms_usuarios")
-      if (savedUsers) {
-        try {
-          const parsedUsers = JSON.parse(savedUsers)
-          setUsers(parsedUsers)
-        } catch (e) {
-          console.warn("Error al parsear usuarios de localStorage:", e)
-          // Si hay error, usar datos mock
-          setUsers(mockUsers)
-        }
-      } else {
-        // Si no hay datos guardados, usar datos mock
-        setUsers(mockUsers)
-      }
-      isInitialLoad.current = false
     }
-
     loadUsers()
   }, [])
-
-  // Guardar usuarios en localStorage cada vez que cambien (excepto durante la carga inicial)
-  useEffect(() => {
-    if (!isInitialLoad.current && users.length > 0) {
-      localStorage.setItem("tms_usuarios", JSON.stringify(users))
-    }
-  }, [users])
 
   // Filtrar usuarios
   const filteredUsers = useMemo(() => {

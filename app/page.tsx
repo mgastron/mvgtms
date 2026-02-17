@@ -56,33 +56,6 @@ export default function LoginPage() {
       console.warn("No se pudo verificar usuarios del backend:", error)
     }
 
-    // Validación 3: Buscar en localStorage
-    const savedUsers = localStorage.getItem("tms_usuarios")
-    if (savedUsers) {
-      try {
-        const users = JSON.parse(savedUsers)
-        const user = users.find(
-          (u: any) => u.usuario === username && u.contraseña === password
-        )
-        if (user) {
-          const userProfile = user.perfil || "Administrativo"
-          sessionStorage.setItem("isAuthenticated", "true")
-          sessionStorage.setItem("username", username)
-          sessionStorage.setItem("userProfile", userProfile)
-          
-          // Redirigir según el perfil
-          if (userProfile === "Chofer") {
-            router.push("/chofer")
-          } else {
-            router.push("/clientes")
-          }
-          return
-        }
-      } catch (e) {
-        console.warn("Error al parsear usuarios de localStorage:", e)
-      }
-    }
-
     // Si no se encontró ningún usuario válido
     setError("Usuario o contraseña incorrectos")
   }

@@ -50,7 +50,7 @@ export default function SubirIndividualPage() {
 
     setUserProfile(profile)
 
-    // Si el usuario es Cliente, obtener su código de cliente y nombre
+    // Si el usuario es Cliente, obtener su código de cliente y nombre desde el backend
     if (profile === "Cliente") {
       const loadUserInfo = async () => {
         const username = sessionStorage.getItem("username")
@@ -58,63 +58,23 @@ export default function SubirIndividualPage() {
 
         let codigoClienteUsuario: string | null = null
 
-        // Buscar en localStorage
-        const savedUsers = localStorage.getItem("tms_usuarios")
-        if (savedUsers) {
-          try {
-            const users = JSON.parse(savedUsers)
-            const user = users.find((u: any) => u.usuario === username)
+        try {
+          const apiBaseUrl = getApiBaseUrl()
+          const response = await fetch(`${apiBaseUrl}/usuarios?size=1000`)
+          if (response.ok) {
+            const data = await response.json()
+            const content = data.content || []
+            const user = content.find((u: any) => u.usuario === username)
             if (user && user.codigoCliente) {
               codigoClienteUsuario = user.codigoCliente
               setUserCodigoCliente(user.codigoCliente)
             }
-          } catch (e) {
-            console.warn("Error al parsear usuarios:", e)
           }
+        } catch (error) {
+          console.warn("No se pudo cargar información del backend:", error)
         }
 
-        // También intentar del backend
-        if (!codigoClienteUsuario) {
-          try {
-            const apiBaseUrl = getApiBaseUrl()
-            const response = await fetch(`${apiBaseUrl}/usuarios?size=1000`)
-            if (response.ok) {
-              const data = await response.json()
-              if (data.content && data.content.length > 0) {
-                const user = data.content.find((u: any) => u.usuario === username)
-                if (user && user.codigoCliente) {
-                  codigoClienteUsuario = user.codigoCliente
-                  setUserCodigoCliente(user.codigoCliente)
-                }
-              }
-            }
-          } catch (error) {
-            console.warn("No se pudo cargar información del backend:", error)
-          }
-        }
-
-        // Si tenemos el código del cliente, buscar su nombre
         if (codigoClienteUsuario) {
-          // Buscar cliente en localStorage
-          const savedClients = localStorage.getItem("tms_clientes")
-          if (savedClients) {
-            try {
-              const clients = JSON.parse(savedClients)
-              const client = clients.find((c: any) => c.codigo === codigoClienteUsuario)
-              if (client && client.nombreFantasia) {
-                setFormData((prev) => ({ 
-                  ...prev, 
-                  cliente: client.nombreFantasia,
-                  clienteNombre: client.nombreFantasia
-                }))
-                return
-              }
-            } catch (e) {
-              console.warn("Error al parsear clientes:", e)
-            }
-          }
-
-          // Buscar cliente en el backend
           try {
             const apiBaseUrl = getApiBaseUrl()
             const response = await fetch(`${apiBaseUrl}/clientes?codigo=${encodeURIComponent(codigoClienteUsuario)}&size=1`)
@@ -123,8 +83,8 @@ export default function SubirIndividualPage() {
               if (data.content && data.content.length > 0) {
                 const client = data.content[0]
                 if (client.nombreFantasia) {
-                  setFormData((prev) => ({ 
-                    ...prev, 
+                  setFormData((prev) => ({
+                    ...prev,
                     cliente: client.nombreFantasia,
                     clienteNombre: client.nombreFantasia
                   }))
@@ -135,10 +95,8 @@ export default function SubirIndividualPage() {
           } catch (error) {
             console.warn("No se pudo cargar cliente del backend:", error)
           }
-
-          // Si no encontramos el nombre, usar el código como fallback
-          setFormData((prev) => ({ 
-            ...prev, 
+          setFormData((prev) => ({
+            ...prev,
             cliente: codigoClienteUsuario,
             clienteNombre: codigoClienteUsuario
           }))
@@ -168,9 +126,6 @@ export default function SubirIndividualPage() {
         } catch (error) {
           console.warn("No se pudo cargar clientes del backend:", error)
         }
-        
-        // Fallback: intentar cargar desde ClientsTable (si hay datos en localStorage)
-        // Por ahora, si no hay backend, no cargamos clientes
       }
       loadClientes()
     }

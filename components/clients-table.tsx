@@ -39,72 +39,6 @@ interface Client {
   vtexIdLogistica?: string
 }
 
-const mockClients: Client[] = [
-  {
-    codigo: "zetaenvi",
-    nombreFantasia: "ZETA ENVIOS",
-    razonSocial: "",
-    numDoc: "",
-    habilitado: true,
-  },
-  {
-    codigo: "VORO",
-    nombreFantasia: "VORO",
-    razonSocial: "",
-    numDoc: "",
-    habilitado: true,
-  },
-  {
-    codigo: "vml2",
-    nombreFantasia: "VML FERRECLICK",
-    razonSocial: "VML2",
-    numDoc: "",
-    habilitado: true,
-  },
-  {
-    codigo: "vlt",
-    nombreFantasia: "voltra",
-    razonSocial: "",
-    numDoc: "",
-    habilitado: true,
-  },
-  {
-    codigo: "vamo",
-    nombreFantasia: "vamo arriba",
-    razonSocial: "",
-    numDoc: "",
-    habilitado: true,
-  },
-  {
-    codigo: "Udg",
-    nombreFantasia: "UDG",
-    razonSocial: "UDG",
-    numDoc: "",
-    habilitado: true,
-  },
-  {
-    codigo: "tzedek",
-    nombreFantasia: "llegue tzedek",
-    razonSocial: "",
-    numDoc: "",
-    habilitado: true,
-  },
-  {
-    codigo: "test1",
-    nombreFantasia: "Test Cliente 1",
-    razonSocial: "Test S.A.",
-    numDoc: "12345678",
-    habilitado: false,
-  },
-  {
-    codigo: "test2",
-    nombreFantasia: "Test Cliente 2",
-    razonSocial: "Test2 S.R.L.",
-    numDoc: "87654321",
-    habilitado: true,
-  },
-]
-
 interface ClientsTableProps {
   filters: {
     codigo: string
@@ -131,7 +65,7 @@ export function ClientsTable({
 }: ClientsTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [clients, setClients] = useState(mockClients)
+  const [clients, setClients] = useState<Client[]>([])
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -169,7 +103,7 @@ export function ClientsTable({
         setClients(backendClients)
       }
     } catch (error) {
-      console.warn("No se pudo cargar clientes del backend, usando datos mock:", error)
+      console.warn("No se pudo cargar clientes del backend:", error)
     }
   }
 

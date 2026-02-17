@@ -56,25 +56,6 @@ export function UserProfile() {
           console.warn("No se pudo cargar información del usuario del backend:", error)
         }
 
-        // Si no se encontró en el backend, buscar en localStorage
-        const savedUsers = localStorage.getItem("tms_usuarios")
-        if (savedUsers) {
-          try {
-            const users = JSON.parse(savedUsers)
-            const user = users.find((u: any) => u.usuario === storedUsername)
-            if (user) {
-              userData = {
-                username: user.usuario || storedUsername,
-                nombre: user.nombre,
-                apellido: user.apellido,
-                perfil: user.perfil || storedProfile || undefined,
-              }
-            }
-          } catch (e) {
-            console.warn("Error al parsear usuarios de localStorage:", e)
-          }
-        }
-
         // Si es admin, usar valores por defecto
         if (storedUsername === "admin") {
           userData = {

@@ -47,39 +47,22 @@ export default function SubirEnvioPage() {
 
     setUserProfile(profile)
 
-    // Si el usuario es Cliente, obtener su código de cliente
+    // Si el usuario es Cliente, obtener su código de cliente desde el backend
     if (profile === "Cliente") {
       const loadUserInfo = async () => {
         const username = sessionStorage.getItem("username")
         if (!username) return
 
-        // Buscar en localStorage
-        const savedUsers = localStorage.getItem("tms_usuarios")
-        if (savedUsers) {
-          try {
-            const users = JSON.parse(savedUsers)
-            const user = users.find((u: any) => u.usuario === username)
-            if (user && user.codigoCliente) {
-              setUserCodigoCliente(user.codigoCliente)
-              setFormData((prev) => ({ ...prev, cliente: user.codigoCliente }))
-            }
-          } catch (e) {
-            console.warn("Error al parsear usuarios:", e)
-          }
-        }
-
-        // También intentar del backend
         try {
           const apiBaseUrl = getApiBaseUrl()
           const response = await fetch(`${apiBaseUrl}/usuarios?size=1000`)
           if (response.ok) {
             const data = await response.json()
-            if (data.content && data.content.length > 0) {
-              const user = data.content.find((u: any) => u.usuario === username)
-              if (user && user.codigoCliente) {
-                setUserCodigoCliente(user.codigoCliente)
-                setFormData((prev) => ({ ...prev, cliente: user.codigoCliente }))
-              }
+            const content = data.content || []
+            const user = content.find((u: any) => u.usuario === username)
+            if (user && user.codigoCliente) {
+              setUserCodigoCliente(user.codigoCliente)
+              setFormData((prev) => ({ ...prev, cliente: user.codigoCliente }))
             }
           }
         } catch (error) {
@@ -107,67 +90,31 @@ export default function SubirEnvioPage() {
           }
         } catch (error) {
           console.warn("Error al cargar clientes del backend:", error)
-          // Fallback a localStorage
-          const savedClientes = localStorage.getItem("tms_clientes")
-          if (savedClientes) {
-            try {
-              const clientesData = JSON.parse(savedClientes)
-              setClientes(clientesData.map((c: any) => ({
-                id: c.id,
-                codigo: c.codigo,
-                nombreFantasia: c.nombreFantasia,
-              })))
-            } catch (e) {
-              console.warn("Error al parsear clientes:", e)
-            }
-          }
         }
       }
       loadClientes()
     } else {
-      // Si es Cliente, cargar solo su cliente
+      // Si es Cliente, cargar solo su cliente desde el backend
       const loadCliente = async () => {
         const username = sessionStorage.getItem("username")
         if (!username) return
 
-        // Primero obtener el código de cliente del usuario
         let codigoCliente: string | null = null
 
-        // Buscar en localStorage
-        const savedUsers = localStorage.getItem("tms_usuarios")
-        if (savedUsers) {
-          try {
-            const users = JSON.parse(savedUsers)
-            const user = users.find((u: any) => u.usuario === username)
-            if (user && user.codigoCliente) {
-              codigoCliente = user.codigoCliente
-            }
-          } catch (e) {
-            console.warn("Error al parsear usuarios:", e)
-          }
-        }
-
-        // También intentar del backend
-        if (!codigoCliente) {
-          try {
-            const apiBaseUrl = getApiBaseUrl()
+        try {
+          const apiBaseUrl = getApiBaseUrl()
           const response = await fetch(`${apiBaseUrl}/usuarios?size=1000`)
-            if (response.ok) {
-              const data = await response.json()
-              if (data.content && data.content.length > 0) {
-                const user = data.content.find((u: any) => u.usuario === username)
-                if (user && user.codigoCliente) {
-                  codigoCliente = user.codigoCliente
-                }
-              }
-            }
-          } catch (error) {
-            console.warn("Error al cargar usuario del backend:", error)
+          if (response.ok) {
+            const data = await response.json()
+            const content = data.content || []
+            const user = content.find((u: any) => u.usuario === username)
+            if (user && user.codigoCliente) codigoCliente = user.codigoCliente
           }
+        } catch (error) {
+          console.warn("Error al cargar usuario del backend:", error)
         }
 
         if (codigoCliente) {
-          // Buscar el cliente por código
           try {
             const apiBaseUrl = getApiBaseUrl()
             const response = await fetch(`${apiBaseUrl}/clientes?codigo=${codigoCliente}`)
@@ -185,24 +132,6 @@ export default function SubirEnvioPage() {
             }
           } catch (error) {
             console.warn("Error al cargar cliente del backend:", error)
-            // Fallback a localStorage
-            const savedClientes = localStorage.getItem("tms_clientes")
-            if (savedClientes) {
-              try {
-                const clientesData = JSON.parse(savedClientes)
-                const cliente = clientesData.find((c: any) => c.codigo === codigoCliente)
-                if (cliente) {
-                  setClientes([{
-                    id: cliente.id,
-                    codigo: cliente.codigo,
-                    nombreFantasia: cliente.nombreFantasia,
-                  }])
-                  setFormData((prev) => ({ ...prev, cliente: cliente.codigo }))
-                }
-              } catch (e) {
-                console.warn("Error al parsear clientes:", e)
-              }
-            }
           }
         }
       }

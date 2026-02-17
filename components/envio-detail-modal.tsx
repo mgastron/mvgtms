@@ -346,22 +346,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete }: EnvioDeta
               const user = data.content.find((u: any) => u.usuario === username)
               if (user) {
                 setUserFullName(`${user.nombre} ${user.apellido}`.trim())
-                return
               }
-            }
-          }
-          
-          // Fallback a localStorage
-          const savedUsers = localStorage.getItem("tms_usuarios")
-          if (savedUsers) {
-            try {
-              const users = JSON.parse(savedUsers)
-              const user = users.find((u: any) => u.usuario === username)
-              if (user) {
-                setUserFullName(`${user.nombre} ${user.apellido}`.trim())
-              }
-            } catch (e) {
-              console.warn("Error al parsear usuarios de localStorage:", e)
             }
           }
         } catch (error) {

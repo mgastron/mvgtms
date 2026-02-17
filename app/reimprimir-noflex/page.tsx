@@ -66,38 +66,20 @@ export default function ReimprimirNoflexPage() {
 
     setUserProfile(profile)
 
-    // Si el usuario es Cliente, obtener su código de cliente
+    // Si el usuario es Cliente, obtener su código de cliente desde el backend
     if (profile === "Cliente") {
       const loadUserInfo = async () => {
         const username = sessionStorage.getItem("username")
         if (!username) return
 
-        // Buscar en localStorage
-        const savedUsers = localStorage.getItem("tms_usuarios")
-        if (savedUsers) {
-          try {
-            const users = JSON.parse(savedUsers)
-            const user = users.find((u: any) => u.usuario === username)
-            if (user && user.codigoCliente) {
-              setUserCodigoCliente(user.codigoCliente)
-            }
-          } catch (e) {
-            console.warn("Error al parsear usuarios:", e)
-          }
-        }
-
-        // También intentar del backend
         try {
           const apiBaseUrl = getApiBaseUrl()
           const response = await fetch(`${apiBaseUrl}/usuarios?size=1000`)
           if (response.ok) {
             const data = await response.json()
-            if (data.content && data.content.length > 0) {
-              const user = data.content.find((u: any) => u.usuario === username)
-              if (user && user.codigoCliente) {
-                setUserCodigoCliente(user.codigoCliente)
-              }
-            }
+            const content = data.content || []
+            const user = content.find((u: any) => u.usuario === username)
+            if (user && user.codigoCliente) setUserCodigoCliente(user.codigoCliente)
           }
         } catch (error) {
           console.warn("No se pudo cargar información del backend:", error)
