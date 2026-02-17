@@ -64,14 +64,10 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
-          {/* Logo */}
+          {/* Logo MVG */}
           <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="w-16 h-16 flex items-center justify-center">
-                <div className="absolute -top-1 left-0 w-12 h-0.5 bg-blue-500"></div>
-                <div className="text-5xl font-bold text-gray-800">Z</div>
-                <div className="absolute bottom-0 right-0 w-8 h-0.5 bg-gray-600"></div>
-              </div>
+            <div className="flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-600 via-cyan-500 to-teal-500 shadow-xl shadow-cyan-500/30">
+              <span className="text-3xl font-black tracking-tighter text-white drop-shadow-sm">MVG</span>
             </div>
           </div>
 

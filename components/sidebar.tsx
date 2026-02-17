@@ -102,9 +102,9 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4" suppressHydrationWarning>
         <div className="flex h-8 w-8 items-center justify-center rounded bg-sidebar-accent">
-          <span className="font-bold text-sidebar-accent-foreground">Z</span>
+          <span className="text-sm font-black tracking-tight text-sidebar-accent-foreground">MVG</span>
         </div>
-        <span className="text-lg font-semibold">Zeta Llegue</span>
+        <span className="text-lg font-semibold">MVG</span>
       </div>
 
       {/* Menu Items */}

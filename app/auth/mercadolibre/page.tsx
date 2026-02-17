@@ -56,10 +56,10 @@ function MercadoLibreAuthContent() {
         <div className="bg-gradient-to-r from-[#6B46FF] to-[#5a3ae6] px-8 py-8">
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-4xl font-bold bg-gradient-to-r from-[#6B46FF] to-[#5a3ae6] bg-clip-text text-transparent">Z</span>
+              <span className="text-2xl font-black tracking-tight bg-gradient-to-r from-[#6B46FF] to-[#5a3ae6] bg-clip-text text-transparent">MVG</span>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">Zeta Llegue</h1>
+              <h1 className="text-3xl font-bold text-white">MVG</h1>
               <p className="text-white/90 text-sm mt-1">Sistema de Gestión de Envíos</p>
             </div>
           </div>
@@ -76,7 +76,7 @@ function MercadoLibreAuthContent() {
                   Autorización de vinculación con MercadoLibre
                 </h2>
                 <p className="text-gray-600 text-base leading-relaxed">
-                  Está por autorizar la vinculación de su cuenta de MercadoLibre con <strong className="text-[#6B46FF]">Zeta Llegue</strong>.
+                  Está por autorizar la vinculación de su cuenta de MercadoLibre con <strong className="text-[#6B46FF]">MVG</strong>.
                   Solo accederemos a los datos necesarios para una correcta gestión según el acuerdo estipulado.
                 </p>
               </div>
@@ -175,7 +175,7 @@ function MercadoLibreAuthContent() {
                     Por supuesto que podrá generar la desvinculación o modificar la misma cuando guste.
                   </p>
                   <p>
-                    Para su tranquilidad <strong className="text-gray-900">Zeta Llegue</strong> ha contratado los servicios de <strong className="text-gray-900">MVG TMS</strong>, empresa de sistemas que ya se encuentra certificada dentro de MercadoLibre.
+                    Para su tranquilidad <strong className="text-gray-900">MVG</strong> ha contratado los servicios de <strong className="text-gray-900">MVG TMS</strong>, empresa de sistemas que ya se encuentra certificada dentro de MercadoLibre.
                   </p>
                   <p>
                     <strong className="text-gray-900">MVG TMS</strong> tiene basta experiencia en el manejo de datos sensibles y una orientación muy fuerte hacia la seguridad. Pero cualquier duda o comentario estamos a entera disposición.

@@ -147,18 +147,18 @@ export function ModernHeader() {
       <header className="sticky top-0 z-50 w-full border-b border-gray-200/50 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/90 shadow-sm shadow-gray-200/50" suppressHydrationWarning>
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
-            {/* Logo */}
+            {/* Logo MVG */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => router.push("/envios")}
-                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                className="flex items-center gap-3 hover:opacity-90 transition-opacity"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 via-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/40">
-                  <span className="text-xl font-bold text-white">Z</span>
+                  <span className="text-lg font-black tracking-tight text-white">MVG</span>
                 </div>
                 <div className="hidden sm:block">
-                  <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-cyan-500 to-teal-500 bg-clip-text text-transparent">
-                    Zeta Llegue
+                  <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-cyan-500 to-teal-500 bg-clip-text text-transparent tracking-tight">
+                    MVG
                   </span>
                 </div>
               </button>
