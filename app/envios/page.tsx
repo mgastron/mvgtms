@@ -1325,6 +1325,7 @@ export default function EnviosPage() {
           }}
           envio={selectedEnvio}
           onDelete={handleDeleteEnvio}
+          onAssignSuccess={() => loadEnvios(currentPage, itemsPerPage)}
         />
       </main>
     </div>

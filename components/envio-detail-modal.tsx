@@ -51,6 +51,7 @@ interface EnvioDetailModalProps {
     origen?: string
   } | null
   onDelete?: (envioId: number) => void
+  onAssignSuccess?: () => void
 }
 
 const estadosEnvio = [
@@ -103,7 +104,7 @@ const PENDIENTES_DEPOSITO: Chofer = {
   usuario: 'PENDIENTES_DEPOSITO',
 }
 
-export function EnvioDetailModal({ isOpen, onClose, envio, onDelete }: EnvioDetailModalProps) {
+export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuccess }: EnvioDetailModalProps) {
   // Normalizar valores null a cadenas vacías para evitar errores de React
   const normalizeValue = (value: string | null | undefined): string => {
     return value ?? ""
@@ -955,13 +956,22 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete }: EnvioDeta
       })
 
       if (!response.ok) {
+        let errorMessage = "Error al asignar"
         const errorText = await response.text()
-        console.error("❌ Error del backend al asignar envío:", response.status, response.statusText, errorText)
-        console.error("❌ URL intentada:", `${apiBaseUrl}/envios/${envio.id}/asignar`)
-        throw new Error(errorText || "Error al asignar")
+        if (errorText) {
+          try {
+            const errorBody = JSON.parse(errorText)
+            if (typeof errorBody?.message === "string") errorMessage = errorBody.message
+          } catch (_) {
+            errorMessage = errorText
+          }
+        }
+        console.error("❌ Error del backend al asignar envío:", response.status, response.statusText, errorMessage)
+        throw new Error(errorMessage)
       }
 
       console.log("✅ Envío asignado correctamente")
+      onAssignSuccess?.()
 
       // Recargar historial para actualizar asignaciones
       const historialResponse = await fetch(`${apiBaseUrl}/envios/${envio.id}/historial`)
@@ -1678,10 +1688,18 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete }: EnvioDeta
         </div>
       )}
 
-      {/* Modal de selección de chofer */}
+      {/* Modal de selección de chofer (stopPropagation para no cerrar el modal principal al hacer clic) */}
       {isAsignarModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 animate-in fade-in-0 backdrop-blur-sm">
-          <div className="bg-white rounded-xl w-[90vw] max-w-md p-6 shadow-2xl animate-in zoom-in-95">
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 animate-in fade-in-0 backdrop-blur-sm"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="bg-white rounded-xl w-[90vw] max-w-md p-6 shadow-2xl animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Asignar a:</h2>
             <p className="text-sm text-gray-600 mb-4">Selecciona un chofer (obligatorio)</p>
             

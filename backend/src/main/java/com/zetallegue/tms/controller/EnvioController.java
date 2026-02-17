@@ -440,7 +440,7 @@ public class EnvioController {
     }
 
     @PostMapping("/{id}/asignar")
-    public ResponseEntity<EnvioDTO> asignarEnvio(
+    public ResponseEntity<?> asignarEnvio(
             @PathVariable Long id,
             @RequestBody AsignarEnvioRequest request) {
         try {
@@ -453,7 +453,7 @@ public class EnvioController {
             );
             return ResponseEntity.ok(envio);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage() != null ? e.getMessage() : "Error al asignar"));
         }
     }
 
