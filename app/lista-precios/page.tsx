@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { warnDev, errorDev } from "@/lib/logger"
 
 interface ListaPrecio {
   id: number
@@ -138,7 +139,7 @@ export default function ListaPreciosPage() {
         return
       }
     } catch (error) {
-      console.warn("No se pudo cargar lista de precios del backend:", error)
+      warnDev("No se pudo cargar lista de precios del backend:", error)
     }
     setListaPrecios(mockListaPrecios)
     isInitialLoad.current = false
@@ -513,7 +514,7 @@ export default function ListaPreciosPage() {
             }
             await loadListaPreciosFromBackend()
           } catch (e) {
-            console.error("Error al guardar lista de precios:", e)
+            errorDev("Error al guardar lista de precios:", e)
             alert("No se pudo guardar la lista de precios. Verificá que el backend esté accesible.")
             throw e
           }

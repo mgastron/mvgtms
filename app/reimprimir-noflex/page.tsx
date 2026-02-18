@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import jsPDF from "jspdf"
 import QRCode from "qrcode"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { warnDev, errorDev } from "@/lib/logger"
 
 interface EnvioNoflex {
   id: number
@@ -82,7 +83,7 @@ export default function ReimprimirNoflexPage() {
             if (user && user.codigoCliente) setUserCodigoCliente(user.codigoCliente)
           }
         } catch (error) {
-          console.warn("No se pudo cargar información del backend:", error)
+          warnDev("No se pudo cargar información del backend:", error)
         }
       }
       loadUserInfo()
@@ -139,7 +140,7 @@ export default function ReimprimirNoflexPage() {
           setFilteredEnvios(enviosFormateados)
         } else {
           // Si el backend no tiene datos, intentar localStorage
-          console.warn("Backend no tiene datos, usando localStorage")
+          warnDev("Backend no tiene datos, usando localStorage")
           const enviosGuardados = JSON.parse(localStorage.getItem("enviosNoflex") || "[]")
           const enviosSinFlex = enviosGuardados.filter((envio: EnvioNoflex) => envio.origen !== "Flex")
           setEnvios(enviosSinFlex)
@@ -149,7 +150,7 @@ export default function ReimprimirNoflexPage() {
         throw new Error("Error al cargar envíos desde el backend")
       }
     } catch (error) {
-      console.warn("Error al cargar desde backend, usando localStorage:", error)
+      warnDev("Error al cargar desde backend, usando localStorage:", error)
       // Fallback a localStorage
       const enviosGuardados = JSON.parse(localStorage.getItem("enviosNoflex") || "[]")
       const enviosSinFlex = enviosGuardados.filter((envio: EnvioNoflex) => envio.origen !== "Flex")
@@ -538,7 +539,7 @@ export default function ReimprimirNoflexPage() {
       // Limpiar selección
       setSelectedEnvios(new Set())
     } catch (error) {
-      console.error("Error al reimprimir A4:", error)
+      errorDev("Error al reimprimir A4:", error)
       alert("Error al reimprimir el PDF A4. Por favor, intente nuevamente.")
     }
   }
@@ -806,7 +807,7 @@ export default function ReimprimirNoflexPage() {
       // Limpiar selección
       setSelectedEnvios(new Set())
     } catch (error) {
-      console.error("Error al reimprimir:", error)
+      errorDev("Error al reimprimir:", error)
       alert("Error al reimprimir los PDFs. Por favor, intente nuevamente.")
     }
   }

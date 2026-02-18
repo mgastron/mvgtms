@@ -3,6 +3,7 @@
 import { Suspense, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { errorDev } from "@/lib/logger"
 
 function ShopifyCallbackContent() {
   const searchParams = useSearchParams()
@@ -15,7 +16,7 @@ function ShopifyCallbackContent() {
     const hmac = searchParams.get("hmac")
 
     if (!code || !state || !shop || !hmac) {
-      console.error("Faltan parámetros en el callback de Shopify")
+      errorDev("Faltan parámetros en el callback de Shopify")
       alert("Error: Faltan parámetros en el callback de Shopify")
       router.push("/clientes")
       return
@@ -41,7 +42,7 @@ function ShopifyCallbackContent() {
           router.push("/clientes")
         }
       } catch (error: any) {
-        console.error("Error al procesar callback:", error)
+        errorDev("Error al procesar callback:", error)
         alert(`Error de conexión: ${error.message || "No se pudo conectar al servidor"}`)
         router.push("/clientes")
       }

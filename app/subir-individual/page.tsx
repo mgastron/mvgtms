@@ -10,6 +10,7 @@ import { GooglePlacesAutocomplete } from "@/components/google-places-autocomplet
 import jsPDF from "jspdf"
 import QRCode from "qrcode"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { warnDev, errorDev } from "@/lib/logger"
 
 interface Cliente {
   id: number
@@ -71,7 +72,7 @@ export default function SubirIndividualPage() {
             }
           }
         } catch (error) {
-          console.warn("No se pudo cargar información del backend:", error)
+          warnDev("No se pudo cargar información del backend:", error)
         }
 
         if (codigoClienteUsuario) {
@@ -93,7 +94,7 @@ export default function SubirIndividualPage() {
               }
             }
           } catch (error) {
-            console.warn("No se pudo cargar cliente del backend:", error)
+            warnDev("No se pudo cargar cliente del backend:", error)
           }
           setFormData((prev) => ({
             ...prev,
@@ -124,7 +125,7 @@ export default function SubirIndividualPage() {
             }
           }
         } catch (error) {
-          console.warn("No se pudo cargar clientes del backend:", error)
+          warnDev("No se pudo cargar clientes del backend:", error)
         }
       }
       loadClientes()
@@ -372,7 +373,7 @@ export default function SubirIndividualPage() {
       // Limpiar formulario después de generar el PDF
       handleClear()
     } catch (error) {
-      console.error("Error al generar PDF:", error)
+      errorDev("Error al generar PDF:", error)
       alert("Error al generar el PDF. Por favor, intente nuevamente.")
     }
   }
@@ -453,7 +454,7 @@ export default function SubirIndividualPage() {
         throw new Error(`Error ${response.status}: ${errorText}`)
       }
     } catch (error: any) {
-      console.warn("Error al guardar en backend, usando localStorage con tracking semilla:", error)
+      warnDev("Error al guardar en backend, usando localStorage con tracking semilla:", error)
       // Si falla el backend, usar el tracking semilla como fallback
       trackingUnico = trackingSemilla
       qrDataValue = trackingSemilla

@@ -11,6 +11,7 @@ import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
 import QRCode from "qrcode"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { warnDev, errorDev } from "@/lib/logger"
 
 interface Cliente {
   id: number
@@ -66,7 +67,7 @@ export default function SubirEnvioPage() {
             }
           }
         } catch (error) {
-          console.warn("Error al cargar usuario del backend:", error)
+          warnDev("Error al cargar usuario del backend:", error)
         }
       }
       loadUserInfo()
@@ -89,7 +90,7 @@ export default function SubirEnvioPage() {
             }
           }
         } catch (error) {
-          console.warn("Error al cargar clientes del backend:", error)
+          warnDev("Error al cargar clientes del backend:", error)
         }
       }
       loadClientes()
@@ -111,7 +112,7 @@ export default function SubirEnvioPage() {
             if (user && user.codigoCliente) codigoCliente = user.codigoCliente
           }
         } catch (error) {
-          console.warn("Error al cargar usuario del backend:", error)
+          warnDev("Error al cargar usuario del backend:", error)
         }
 
         if (codigoCliente) {
@@ -131,7 +132,7 @@ export default function SubirEnvioPage() {
               }
             }
           } catch (error) {
-            console.warn("Error al cargar cliente del backend:", error)
+            warnDev("Error al cargar cliente del backend:", error)
           }
         }
       }
@@ -608,7 +609,7 @@ export default function SubirEnvioPage() {
           throw new Error(`Error ${response.status}: ${errorText}`)
         }
       } catch (error: any) {
-        console.warn("Error al guardar en backend, usando localStorage:", error)
+        warnDev("Error al guardar en backend, usando localStorage:", error)
       }
 
       // También guardar en localStorage como respaldo
@@ -664,7 +665,7 @@ export default function SubirEnvioPage() {
         fileInput.value = ""
       }
     } catch (error) {
-      console.error("Error al procesar archivo:", error)
+      errorDev("Error al procesar archivo:", error)
       alert("Error al procesar el archivo. Por favor, verifique que sea un archivo Excel válido.")
     }
   }

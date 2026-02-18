@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RefreshCw, Filter, Eye, CheckCircle2, XCircle, AlertCircle } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { logDev, errorDev } from "@/lib/logger"
 import { EnvioDetailModal } from "@/components/envio-detail-modal"
 import {
   AlertDialog,
@@ -183,11 +184,11 @@ export default function EstadoOrdenesPage() {
         // Procesar automáticamente solo después de verificar (en segundo plano)
         procesarPedidosAutomaticamente(pedidosMapeados, enviosExistentes)
       }).catch((err) => {
-        console.error("Error en verificación en segundo plano:", err)
+        errorDev("Error en verificación en segundo plano:", err)
       })
       
     } catch (err: any) {
-      console.error("Error al cargar pedidos:", err)
+      errorDev("Error al cargar pedidos:", err)
       setError(err.message || "Error al cargar pedidos")
       setIsLoading(false)
     }
@@ -317,7 +318,7 @@ export default function EstadoOrdenesPage() {
         }
       }
     } catch (err) {
-      console.error("Error al verificar envíos existentes:", err)
+      errorDev("Error al verificar envíos existentes:", err)
     }
     
     return enviosExistentes
@@ -416,11 +417,11 @@ export default function EstadoOrdenesPage() {
     })
     
     if (pedidosParaProcesar.length === 0) {
-      console.log("No hay pedidos nuevos para procesar automáticamente")
+      logDev("No hay pedidos nuevos para procesar automáticamente")
       return
     }
     
-    console.log(`Procesando automáticamente ${pedidosParaProcesar.length} pedido(s) que coinciden con el método de envío`)
+    logDev(`Procesando automáticamente ${pedidosParaProcesar.length} pedido(s) que coinciden con el método de envío`)
     
     for (const item of pedidosParaProcesar) {
       // Construir pedidoKey de la misma manera que en el filtro
@@ -463,17 +464,17 @@ export default function EstadoOrdenesPage() {
         
         if (!response.ok) {
           const errorText = await response.text()
-          console.error(`Error al procesar pedido ${pedidoKey}:`, errorText)
+          errorDev(`Error al procesar pedido ${pedidoKey}:`, errorText)
           continue
         }
         
         const data = await response.json()
-        console.log(`Envío creado automáticamente para pedido ${pedidoKey}:`, data)
+        logDev(`Envío creado automáticamente para pedido ${pedidoKey}:`, data)
         // Marcar como procesado para evitar procesarlo de nuevo
         setPedidosProcesados(prev => new Set(prev).add(pedidoKey))
         setPedidosConEnvioExistente(prev => new Set(prev).add(pedidoKey))
       } catch (err: any) {
-        console.error(`Error al procesar pedido ${pedidoKey}:`, err)
+        errorDev(`Error al procesar pedido ${pedidoKey}:`, err)
       }
     }
     
@@ -795,7 +796,7 @@ export default function EstadoOrdenesPage() {
         throw new Error("Error al buscar el envío")
       }
     } catch (err: any) {
-      console.error("Error al buscar envío:", err)
+      errorDev("Error al buscar envío:", err)
       alert("Error al buscar el envío: " + (err.message || err))
     }
   }
@@ -833,7 +834,7 @@ export default function EstadoOrdenesPage() {
           // Verificar si ya fue procesado (tiene envío en BD)
           if (pedidosConEnvioExistente.has(pedidoKey)) {
             resultados.yaProcesados++
-            console.log(`Pedido ${pedidoId} ya fue procesado anteriormente, no se reprocesa`)
+            logDev(`Pedido ${pedidoId} ya fue procesado anteriormente, no se reprocesa`)
             continue
           }
 
@@ -850,11 +851,11 @@ export default function EstadoOrdenesPage() {
             metodoEnvioCliente = item.tiendanubeMetodoEnvio || ""
           }
           
-          console.log(`Reprocesando pedido ${pedidoId} (${item.origen}): método pedido="${metodoEnvioPedido}", método cliente="${metodoEnvioCliente}"`)
+          logDev(`Reprocesando pedido ${pedidoId} (${item.origen}): método pedido="${metodoEnvioPedido}", método cliente="${metodoEnvioCliente}"`)
           
           if (!metodoEnvioCliente || metodoEnvioCliente.trim() === "") {
             resultados.noCoinciden++
-            console.log(`Pedido ${pedidoId} no tiene método de envío configurado`)
+            logDev(`Pedido ${pedidoId} no tiene método de envío configurado`)
             continue
           }
           
@@ -863,12 +864,12 @@ export default function EstadoOrdenesPage() {
           if (!ahoraCoincide) {
             // Si aún no coincide, no procesar
             resultados.noCoinciden++
-            console.log(`Pedido ${pedidoId} aún no coincide con el método de envío configurado`)
+            logDev(`Pedido ${pedidoId} aún no coincide con el método de envío configurado`)
             continue
           }
 
           // Si ahora coincide y no fue procesado antes, procesarlo
-          console.log(`Reprocesando pedido ${pedidoId} - ahora coincide con el método de envío`)
+          logDev(`Reprocesando pedido ${pedidoId} - ahora coincide con el método de envío`)
           const apiBaseUrl = getApiBaseUrl()
           
           // Determinar el endpoint según el origen
@@ -894,20 +895,20 @@ export default function EstadoOrdenesPage() {
 
           if (!response.ok) {
             const errorText = await response.text()
-            console.error(`Error al procesar pedido ${pedidoId}:`, errorText)
+            errorDev(`Error al procesar pedido ${pedidoId}:`, errorText)
             resultados.errores++
             continue
           }
 
           const data = await response.json()
-          console.log(`Envío creado exitosamente para pedido ${pedidoId}:`, data)
+          logDev(`Envío creado exitosamente para pedido ${pedidoId}:`, data)
           resultados.procesados++
 
           // Marcar como procesado
           setPedidosProcesados(prev => new Set(prev).add(pedidoKey))
           setPedidosConEnvioExistente(prev => new Set(prev).add(pedidoKey))
         } catch (err: any) {
-          console.error(`Error al procesar pedido ${pedidoId}:`, err)
+          errorDev(`Error al procesar pedido ${pedidoId}:`, err)
           resultados.errores++
         }
       }
@@ -922,7 +923,7 @@ export default function EstadoOrdenesPage() {
       // Recargar pedidos para actualizar la vista (el backend ya persistió con saveAndFlush)
       await loadPedidos()
     } catch (err: any) {
-      console.error("Error al reprocesar pedidos:", err)
+      errorDev("Error al reprocesar pedidos:", err)
       alert("Error al reprocesar pedidos: " + (err.message || err))
     } finally {
       setProcesando(false)
@@ -1709,7 +1710,7 @@ export default function EstadoOrdenesPage() {
         envio={selectedEnvio}
         onDelete={async (envioId: number) => {
           // Manejar eliminación si es necesario
-          console.log("Eliminar envío:", envioId)
+          logDev("Eliminar envío:", envioId)
           setIsDetailModalOpen(false)
           setSelectedEnvio(null)
           await loadPedidos() // Recargar pedidos

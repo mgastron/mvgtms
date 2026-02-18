@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { ModernHeader } from "@/components/modern-header"
 import { Package, Truck, Clock } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { errorDev } from "@/lib/logger"
 
 interface ChoferCierre {
   id: number
@@ -96,7 +97,7 @@ export default function CierrePage() {
         setChoferes([])
       }
     } catch (error) {
-      console.error("Error cargando choferes:", error)
+      errorDev("Error cargando choferes:", error)
       setChoferes([])
     } finally {
       setLoading(false)

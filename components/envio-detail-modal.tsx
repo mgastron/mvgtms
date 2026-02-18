@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { logDev, warnDev, errorDev } from "@/lib/logger"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -164,7 +165,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         })
         setQrImageUrl(dataUrl)
       } catch (error) {
-        console.error("Error generando QR:", error)
+        errorDev("Error generando QR:", error)
       }
     }
 
@@ -222,7 +223,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
           setHistorial([])
         }
       } catch (error) {
-        console.error("Error cargando historial:", error)
+        errorDev("Error cargando historial:", error)
         setHistorial([])
       }
     }
@@ -260,7 +261,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         setObservaciones([])
       }
     } catch (error) {
-      console.error("Error cargando observaciones:", error)
+      errorDev("Error cargando observaciones:", error)
       setObservaciones([])
     }
   }
@@ -292,7 +293,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         setImagenes([])
       }
     } catch (error) {
-      console.error("Error cargando imágenes:", error)
+      errorDev("Error cargando imágenes:", error)
       setImagenes([])
     }
   }
@@ -321,7 +322,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         }
       }
     } catch (error) {
-      console.error("Error cargando datos de entrega:", error)
+      errorDev("Error cargando datos de entrega:", error)
       setDatosEntrega(null)
     }
   }
@@ -351,7 +352,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             }
           }
         } catch (error) {
-          console.warn("Error cargando nombre completo:", error)
+          warnDev("Error cargando nombre completo:", error)
         }
       }
       loadUserFullName()
@@ -362,8 +363,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       const loadChoferes = async () => {
         try {
           const apiBaseUrl = getApiBaseUrl()
-          console.log("🔍 Cargando choferes desde:", apiBaseUrl)
-          console.log("🔍 URL completa:", `${apiBaseUrl}/usuarios/choferes`)
+          logDev("Cargando choferes")
           const response = await fetch(`${apiBaseUrl}/usuarios/choferes`, {
             method: "GET",
             headers: {
@@ -372,24 +372,16 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
           })
           if (response.ok) {
             const data = await response.json()
-            console.log("✅ Choferes cargados:", data)
-            // El backend devuelve directamente una lista, no un objeto con content
             const choferesList = Array.isArray(data) ? data : (data.content || [])
             setChoferes(choferesList)
-            console.log(`✅ ${choferesList.length} choferes cargados correctamente`)
+            logDev(choferesList.length, "choferes cargados")
           } else {
             const errorText = await response.text()
-            console.error("❌ Error del backend al cargar choferes:", response.status, response.statusText, errorText)
-            console.error("❌ URL intentada:", `${apiBaseUrl}/usuarios/choferes`)
+            errorDev("Error del backend al cargar choferes:", response.status, errorText)
             setChoferes([])
           }
         } catch (error: any) {
-          console.error("❌ Error cargando choferes:", error)
-          console.error("❌ Tipo de error:", error?.name, error?.message)
-          if (error?.message === "Failed to fetch" || error?.name === "TypeError") {
-            console.error("⚠️ Este error generalmente significa que el backend no es accesible desde esta red.")
-            console.error("⚠️ Verifica que NEXT_PUBLIC_BACKEND_TUNNEL_URL esté configurado en .env.local")
-          }
+          errorDev("Error cargando choferes:", error?.message)
           setChoferes([])
         }
       }
@@ -470,7 +462,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       script.id = "google-maps-script-detail"
       script.onload = () => initializeMap()
       script.onerror = () => {
-        console.error("Error al cargar Google Maps API")
+        errorDev("Error al cargar Google Maps API")
       }
       document.head.appendChild(script)
     } else {
@@ -710,7 +702,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       // Descargar PDF
       pdf.save(`etiqueta-${envio.tracking}-10x15.pdf`)
     } catch (error) {
-      console.error("Error generando PDF:", error)
+      errorDev("Error generando PDF:", error)
       alert("Error al generar el PDF. Por favor, intenta nuevamente.")
     }
   }
@@ -876,7 +868,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
           }
         }
       } catch (error) {
-        console.warn("Error obteniendo ID del chofer:", error)
+        warnDev("Error obteniendo ID del chofer:", error)
       }
 
       const choferNombre = userFullName || "Chofer"
@@ -911,7 +903,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         setHistorial(historialFormateado)
       }
     } catch (error) {
-      console.error("Error asignando envío:", error)
+      errorDev("Error asignando envío:", error)
       alert("Error al asignar el envío")
     }
   }
@@ -935,15 +927,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         : `${choferSeleccionado.nombre} ${choferSeleccionado.apellido}`.trim()
 
       const apiBaseUrl = getApiBaseUrl()
-      console.log("🔍 Asignando envío desde:", apiBaseUrl)
-      console.log("🔍 URL completa:", `${apiBaseUrl}/envios/${envio.id}/asignar`)
-      console.log("🔍 Datos:", {
-        choferId: choferSeleccionado.id,
-        choferNombre,
-        usuarioAsignador: userFullName || "Usuario",
-        origen: "WEB",
-      })
-      
+      logDev("Asignando envío a chofer")
       const response = await fetch(`${apiBaseUrl}/envios/${envio.id}/asignar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -966,11 +950,11 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             errorMessage = errorText
           }
         }
-        console.error("❌ Error del backend al asignar envío:", response.status, response.statusText, errorMessage)
+        errorDev("Error del backend al asignar:", response.status, errorMessage)
         throw new Error(errorMessage)
       }
 
-      console.log("✅ Envío asignado correctamente")
+      logDev("Envío asignado correctamente")
       onAssignSuccess?.()
 
       // Recargar historial para actualizar asignaciones
@@ -995,11 +979,8 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       setIsAsignarModalOpen(false)
       setChoferSeleccionado(null)
     } catch (error: any) {
-      console.error("❌ Error asignando envío:", error)
-      console.error("❌ Tipo de error:", error?.name, error?.message)
+      errorDev("Error asignando envío:", error?.message)
       if (error?.message === "Failed to fetch" || error?.name === "TypeError") {
-        console.error("⚠️ Este error generalmente significa que el backend no es accesible desde esta red.")
-        console.error("⚠️ Verifica que NEXT_PUBLIC_BACKEND_TUNNEL_URL esté configurado en .env.local")
         alert("Error: No se pudo conectar con el servidor. Verifica tu conexión y que el backend esté accesible.")
       } else {
         alert(error.message || "Error al asignar el envío")

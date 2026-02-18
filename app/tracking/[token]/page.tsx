@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { logDev, warnDev, errorDev } from "@/lib/logger"
 
 interface Envio {
   id: number
@@ -123,12 +124,12 @@ export default function TrackingPage() {
             setHistorial(historialFiltrado)
           }
         } catch (e) {
-          console.error("Error cargando historial:", e)
+          errorDev("Error cargando historial:", e)
         }
 
         setLoading(false)
       } catch (err) {
-        console.error("Error cargando envío:", err)
+        errorDev("Error cargando envío:", err)
         setError("Error al cargar el envío")
         setLoading(false)
       }
@@ -139,7 +140,7 @@ export default function TrackingPage() {
 
   // Inicializar mapa de Google Maps (copiado EXACTAMENTE del modal que funciona)
   useEffect(() => {
-    console.log("[TRACKING MAP] useEffect ejecutado", { 
+    logDev("[TRACKING MAP] useEffect ejecutado", { 
       tieneEnvio: !!envio, 
       tieneMapRef: !!mapRef.current,
       envioData: envio ? {
@@ -150,17 +151,17 @@ export default function TrackingPage() {
     })
 
     if (!envio) {
-      console.log("[TRACKING MAP] No hay envío, saliendo")
+      logDev("[TRACKING MAP] No hay envío, saliendo")
       return
     }
 
     // Esperar a que el mapRef esté disponible (el div se monta después del render)
     if (!mapRef.current) {
-      console.log("[TRACKING MAP] mapRef no disponible aún, esperando...")
+      logDev("[TRACKING MAP] mapRef no disponible aún, esperando...")
       // Usar un pequeño intervalo para verificar cuando el ref esté disponible
       checkRefIntervalRef.current = setInterval(() => {
         if (mapRef.current) {
-          console.log("[TRACKING MAP] mapRef ahora disponible, continuando...")
+          logDev("[TRACKING MAP] mapRef ahora disponible, continuando...")
           if (checkRefIntervalRef.current) clearInterval(checkRefIntervalRef.current)
           initializeMapLogic()
         }
@@ -171,7 +172,7 @@ export default function TrackingPage() {
 
     function initializeMapLogic() {
       if (!envio || !mapRef.current) {
-        console.log("[TRACKING MAP] Condición no cumplida en initializeMapLogic", {
+        logDev("[TRACKING MAP] Condición no cumplida en initializeMapLogic", {
           tieneEnvio: !!envio,
           tieneMapRef: !!mapRef.current
         })
@@ -180,54 +181,54 @@ export default function TrackingPage() {
 
       // Cargar script de Google Maps si no está cargado
       if (!window.google) {
-        console.log("[TRACKING MAP] Google Maps API no está cargada")
+        logDev("[TRACKING MAP] Google Maps API no está cargada")
         const existingScript = document.querySelector('script[src*="maps.googleapis.com"]')
         if (existingScript) {
-          console.log("[TRACKING MAP] Script existente encontrado, esperando carga...")
+          logDev("[TRACKING MAP] Script existente encontrado, esperando carga...")
           // Si el script ya existe, esperar a que cargue
           checkScriptIntervalRef.current = setInterval(() => {
             if (window.google && window.google.maps) {
-              console.log("[TRACKING MAP] Script cargado, inicializando mapa")
+              logDev("[TRACKING MAP] Script cargado, inicializando mapa")
               if (checkScriptIntervalRef.current) clearInterval(checkScriptIntervalRef.current)
               initializeMap()
             }
           }, 100)
         } else {
-          console.log("[TRACKING MAP] Cargando script de Google Maps...")
+          logDev("[TRACKING MAP] Cargando script de Google Maps...")
           const script = document.createElement("script")
           script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY || "YOUR_API_KEY"}&libraries=places,geometry`
           script.async = true
           script.defer = true
           script.id = "google-maps-script-tracking"
           script.onload = () => {
-            console.log("[TRACKING MAP] Script cargado exitosamente, inicializando mapa")
+            logDev("[TRACKING MAP] Script cargado exitosamente, inicializando mapa")
             initializeMap()
           }
           script.onerror = () => {
-            console.error("[TRACKING MAP] Error al cargar Google Maps API")
+            errorDev("[TRACKING MAP] Error al cargar Google Maps API")
           }
           document.head.appendChild(script)
         }
       } else {
-        console.log("[TRACKING MAP] Google Maps API ya está cargada, inicializando mapa directamente")
+        logDev("[TRACKING MAP] Google Maps API ya está cargada, inicializando mapa directamente")
         initializeMap()
       }
 
       function initializeMap() {
-        console.log("[TRACKING MAP] initializeMap llamado", {
+        logDev("[TRACKING MAP] initializeMap llamado", {
           tieneMapRef: !!mapRef.current,
           tieneEnvio: !!envio
         })
 
         if (!mapRef.current || !envio) {
-          console.warn("[TRACKING MAP] initializeMap: Condición no cumplida", {
+          warnDev("[TRACKING MAP] initializeMap: Condición no cumplida", {
             tieneMapRef: !!mapRef.current,
             tieneEnvio: !!envio
           })
           return
         }
 
-        console.log("[TRACKING MAP] Datos del envío:", {
+        logDev("[TRACKING MAP] Datos del envío:", {
           direccion: envio.direccion,
           localidad: envio.localidad,
           codigoPostal: envio.codigoPostal,
@@ -250,11 +251,11 @@ export default function TrackingPage() {
           .filter(Boolean)
 
         const address = addressParts.join(", ")
-        console.log("[TRACKING MAP] Dirección construida para geocodificación:", address)
-        console.log("[TRACKING MAP] Partes de la dirección:", addressParts)
+        logDev("[TRACKING MAP] Dirección construida para geocodificación:", address)
+        logDev("[TRACKING MAP] Partes de la dirección:", addressParts)
 
         geocoder.geocode({ address }, (results, status) => {
-          console.log("[TRACKING MAP] Resultado de geocodificación:", {
+          logDev("[TRACKING MAP] Resultado de geocodificación:", {
             status,
             resultsCount: results?.length || 0,
             firstResult: results?.[0] ? {
@@ -268,7 +269,7 @@ export default function TrackingPage() {
 
           if (status === "OK" && results && results[0]) {
             const location = results[0].geometry.location
-            console.log("[TRACKING MAP] Ubicación encontrada:", {
+            logDev("[TRACKING MAP] Ubicación encontrada:", {
               lat: location.lat(),
               lng: location.lng()
             })
@@ -284,7 +285,7 @@ export default function TrackingPage() {
             })
 
             mapInstanceRef.current = map
-            console.log("[TRACKING MAP] Mapa creado exitosamente")
+            logDev("[TRACKING MAP] Mapa creado exitosamente")
 
             // Crear marcador
             const marker = new google.maps.Marker({
@@ -294,9 +295,9 @@ export default function TrackingPage() {
             })
 
             markerRef.current = marker
-            console.log("[TRACKING MAP] Marcador creado exitosamente")
+            logDev("[TRACKING MAP] Marcador creado exitosamente")
           } else {
-            console.warn("[TRACKING MAP] No se pudo geocodificar la dirección", {
+            warnDev("[TRACKING MAP] No se pudo geocodificar la dirección", {
               status,
               errorMessage: status === "ZERO_RESULTS" ? "No se encontraron resultados" :
                             status === "OVER_QUERY_LIMIT" ? "Límite de consultas excedido" :
@@ -315,14 +316,14 @@ export default function TrackingPage() {
             })
 
             mapInstanceRef.current = map
-            console.log("[TRACKING MAP] Mapa por defecto creado")
+            logDev("[TRACKING MAP] Mapa por defecto creado")
           }
         })
       }
     }
 
     return () => {
-      console.log("[TRACKING MAP] Cleanup ejecutado")
+      logDev("[TRACKING MAP] Cleanup ejecutado")
       // Limpiar intervalos
       if (checkRefIntervalRef.current) clearInterval(checkRefIntervalRef.current)
       if (checkScriptIntervalRef.current) clearInterval(checkScriptIntervalRef.current)

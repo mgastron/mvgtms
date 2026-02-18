@@ -11,6 +11,7 @@ import { QRThumbnail } from "@/components/qr-thumbnail"
 import { EnvioDetailModal } from "@/components/envio-detail-modal"
 import * as XLSX from "xlsx"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { logDev, warnDev, errorDev } from "@/lib/logger"
 
 interface Envio {
   id: number
@@ -104,7 +105,7 @@ export default function EnviosPage() {
         const parsed = JSON.parse(cached)
         setEnviosCache(parsed)
       } catch (e) {
-        console.warn("Error al cargar caché de localStorage:", e)
+        warnDev("Error al cargar caché de localStorage:", e)
       }
     }
     
@@ -130,7 +131,7 @@ export default function EnviosPage() {
         }
       } catch (error) {
         // Error silencioso, ya tenemos datos de localStorage si estaban disponibles
-        console.debug("No se pudo actualizar caché del backend:", error)
+        logDev("No se pudo actualizar caché del backend:", error)
       }
     }
     // Cargar en segundo plano sin bloquear
@@ -214,7 +215,7 @@ export default function EnviosPage() {
           setTotalElements(data.totalElements)
         } else {
           // Si el backend no tiene datos, intentar localStorage
-          console.warn("Backend no tiene datos, usando localStorage")
+          warnDev("Backend no tiene datos, usando localStorage")
           const enviosGuardados = JSON.parse(localStorage.getItem("enviosNoflex") || "[]")
           
           // Aplicar filtros localmente si hay datos en localStorage
@@ -248,7 +249,7 @@ export default function EnviosPage() {
         throw new Error("Error al cargar envíos")
       }
     } catch (error) {
-      console.warn("Error al cargar desde backend, usando localStorage:", error)
+      warnDev("Error al cargar desde backend, usando localStorage:", error)
       // Fallback a localStorage
       const enviosGuardados = JSON.parse(localStorage.getItem("enviosNoflex") || "[]")
       
@@ -317,7 +318,7 @@ export default function EnviosPage() {
             if (user && user.codigoCliente) setUserCodigoCliente(user.codigoCliente)
           }
         } catch (error) {
-          console.warn("No se pudo cargar información del backend:", error)
+          warnDev("No se pudo cargar información del backend:", error)
         }
       }
       loadUserInfo()
@@ -397,7 +398,7 @@ export default function EnviosPage() {
           }
         }
       } catch (error) {
-        console.warn("No se pudo cargar nombre del usuario:", error)
+        warnDev("No se pudo cargar nombre del usuario:", error)
       }
 
       const apiBaseUrl = getApiBaseUrl()
@@ -426,7 +427,7 @@ export default function EnviosPage() {
         localStorage.setItem("enviosNoflex", JSON.stringify(enviosActualizados))
       }
     } catch (error) {
-      console.warn("Error al actualizar estado, usando localStorage:", error)
+      warnDev("Error al actualizar estado, usando localStorage:", error)
       // Fallback a localStorage
       const enviosActualizados = envios.map((envio) => {
         if (envio.id === envioId) {
@@ -457,7 +458,7 @@ export default function EnviosPage() {
         throw new Error("Error al eliminar")
       }
     } catch (error) {
-      console.warn("Error al eliminar, usando localStorage:", error)
+      warnDev("Error al eliminar, usando localStorage:", error)
       // Fallback a localStorage
       const enviosActualizados = envios.map((envio) => 
         envio.id === envioId ? { ...envio, eliminado: true } : envio
@@ -703,7 +704,7 @@ export default function EnviosPage() {
               }
             }
           } catch (err) {
-            console.warn(`Error al obtener historial para envío ${envio.id}:`, err)
+            warnDev(`Error al obtener historial para envío ${envio.id}:`, err)
           }
         })
         // Procesar lote en paralelo
@@ -765,7 +766,7 @@ export default function EnviosPage() {
       XLSX.writeFile(wb, `envios_${fecha}.xlsx`)
       
     } catch (error) {
-      console.error("Error al descargar Excel:", error)
+      errorDev("Error al descargar Excel:", error)
       alert("Error al descargar el archivo Excel. Por favor, intente nuevamente.")
     } finally {
       setIsLoading(false)

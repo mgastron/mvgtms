@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { logDev, warnDev, errorDev } from "@/lib/logger"
 
 interface NewUserModalProps {
   isOpen: boolean
@@ -52,7 +53,7 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
         setLoadingClients(true)
         try {
           const apiBaseUrl = getApiBaseUrl()
-          console.log("Cargando clientes desde:", apiBaseUrl)
+          logDev("Cargando clientes desde:", apiBaseUrl)
           const response = await fetch(`${apiBaseUrl}/clientes?size=1000`, {
             method: "GET",
             headers: {
@@ -62,7 +63,7 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
           
           if (response.ok) {
             const data = await response.json()
-            console.log("Respuesta del backend de clientes:", data)
+            logDev("Respuesta del backend de clientes:", data)
             
             if (data.content && Array.isArray(data.content) && data.content.length > 0) {
               const clientesList = data.content.map((c: any) => ({
@@ -70,20 +71,20 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
                 nombreFantasia: c.nombreFantasia || "",
               })).filter((c: any) => c.codigo) // Filtrar clientes sin código
               
-              console.log("Clientes cargados del backend:", clientesList.length, "clientes")
+              logDev("Clientes cargados del backend:", clientesList.length, "clientes")
               setClients(clientesList)
             } else {
-              console.warn("El backend respondió pero no hay clientes en data.content o está vacío")
+              warnDev("El backend respondió pero no hay clientes en data.content o está vacío")
               setClients([])
             }
           } else {
             const errorText = await response.text()
-            console.error("Error del backend:", response.status, response.statusText, errorText)
+            errorDev("Error del backend:", response.status, response.statusText, errorText)
             setClients([])
             alert(`Error al cargar clientes: ${response.status} ${response.statusText}`)
           }
         } catch (error) {
-          console.error("Error al cargar clientes del backend:", error)
+          errorDev("Error al cargar clientes del backend:", error)
           setClients([])
           alert("No se pudo cargar la lista de clientes. Asegúrate de que el backend esté accesible.")
         } finally {

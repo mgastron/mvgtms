@@ -6,6 +6,7 @@ import { User, Lock } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { warnDev } from "@/lib/logger"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -53,7 +54,7 @@ export default function LoginPage() {
         }
       }
     } catch (error) {
-      console.warn("No se pudo verificar usuarios del backend:", error)
+      warnDev("No se pudo verificar usuarios del backend:", error)
     }
 
     // Si no se encontró ningún usuario válido

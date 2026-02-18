@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { errorDev } from "@/lib/logger"
 
 function TiendaNubeCallbackContent() {
   const searchParams = useSearchParams()
@@ -48,7 +49,7 @@ function TiendaNubeCallbackContent() {
           setMessage(errorData.message || "Error al vincular la cuenta")
         }
       } catch (error: any) {
-        console.error("Error:", error)
+        errorDev("Error:", error)
         setStatus("error")
         setMessage("Error de conexión: " + error.message)
       }

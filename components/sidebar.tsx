@@ -2,6 +2,7 @@
 
 import { Truck, FileText, Package, Wrench, Users, DollarSign, Route, ChevronDown, ChevronRight, List, FileCheck, Upload, PackageSearch, Printer, FileUp, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { logDev } from "@/lib/logger"
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 
@@ -189,7 +190,7 @@ export function Sidebar() {
                             router.push("/subir-flex-manual")
                           } else {
                             // Aquí se pueden agregar las rutas cuando se creen las páginas
-                            console.log(`Navegar a: ${subItem.label}`)
+                            logDev(`Navegar a: ${subItem.label}`)
                           }
                         }}
                         className={cn(

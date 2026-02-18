@@ -9,6 +9,7 @@ import { NewClientModal } from "@/components/new-client-modal"
 import { UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { warnDev } from "@/lib/logger"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -84,8 +85,6 @@ export default function ClientsPage() {
         if (response.ok) {
           backendAvailable = true
           const updatedClient = await response.json()
-          console.log("Cliente actualizado en el backend:", updatedClient)
-          console.log("Token API del cliente actualizado:", updatedClient.integraciones)
           // Actualizar el cliente en la tabla
           setNewClient(updatedClient)
           return
@@ -105,7 +104,7 @@ export default function ClientsPage() {
         if (fetchError.message && !fetchError.message.includes("Failed to fetch")) {
           throw fetchError
         }
-        console.warn("Backend no disponible para actualizar cliente:", fetchError)
+        warnDev("Backend no disponible para actualizar cliente:", fetchError)
         // Si el backend no está disponible, actualizar localmente
         setNewClient({
           id: clientData.id,
@@ -146,7 +145,7 @@ export default function ClientsPage() {
         }
       } catch (checkError) {
         // Backend no disponible, se verificará en la lista local
-        console.warn("Backend no disponible para verificar código")
+        warnDev("Backend no disponible para verificar código")
       }
 
       // Si el código ya existe en el backend, lanzar error
@@ -168,8 +167,6 @@ export default function ClientsPage() {
 
           if (response.ok) {
             const createdClient = await response.json()
-            console.log("Cliente creado en el backend:", createdClient)
-            console.log("Token API del cliente creado:", createdClient.integraciones)
             setNewClient(createdClient)
             return
           } else {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
 import QRCode from "qrcode"
+import { errorDev } from "@/lib/logger"
 
 interface QRThumbnailProps {
   qrData: string | undefined
@@ -32,7 +33,7 @@ export function QRThumbnail({ qrData, tracking, size = 40 }: QRThumbnailProps) {
         })
         setQrImageUrl(dataUrl)
       } catch (error) {
-        console.error("Error generando QR:", error)
+        errorDev("Error generando QR:", error)
         setQrImageUrl("")
       }
     }
@@ -55,7 +56,7 @@ export function QRThumbnail({ qrData, tracking, size = 40 }: QRThumbnailProps) {
         })
         setLargeQrUrl(dataUrl)
       } catch (error) {
-        console.error("Error generando QR grande:", error)
+        errorDev("Error generando QR grande:", error)
         setLargeQrUrl("")
       }
     }

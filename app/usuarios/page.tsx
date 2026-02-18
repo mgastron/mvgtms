@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { NewUserModal } from "@/components/new-user-modal"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { warnDev, errorDev } from "@/lib/logger"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -99,7 +100,7 @@ export default function UsuariosPage() {
           setUsers([])
         }
       } catch (error: any) {
-        console.warn("No se pudo cargar usuarios del backend:", error)
+        warnDev("No se pudo cargar usuarios del backend:", error)
         setUsers([])
       }
     }
@@ -168,7 +169,7 @@ export default function UsuariosPage() {
           alert(`Error al eliminar usuario: ${error.message || 'Error desconocido'}`)
         }
       } catch (error: any) {
-        console.error('Error al eliminar usuario:', error)
+        errorDev('Error al eliminar usuario:', error)
         alert(`Error al eliminar usuario: ${error.message || 'Error de conexión. Verifica que el backend esté corriendo.'}`)
       }
     }
@@ -531,7 +532,7 @@ export default function UsuariosPage() {
             setIsNewUserModalOpen(false)
             setEditingUser(null)
           } catch (error: any) {
-            console.error('Error al guardar usuario:', error)
+            errorDev('Error al guardar usuario:', error)
             alert(`Error al guardar usuario: ${error.message || 'Error de conexión. Verifica que el backend esté corriendo.'}`)
           }
         }}

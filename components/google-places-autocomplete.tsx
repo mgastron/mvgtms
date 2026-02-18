@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { warnDev, errorDev } from "@/lib/logger"
 
 interface GooglePlacesAutocompleteProps {
   value: string
@@ -130,7 +131,7 @@ export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutoco
 
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY || ""
     if (!apiKey || apiKey === "YOUR_API_KEY") {
-      console.warn(
+      warnDev(
         "Google Places: configurá NEXT_PUBLIC_GOOGLE_PLACES_API_KEY para ver sugerencias de dirección (con localidad y CP)."
       )
       setIsScriptLoaded(true)
@@ -150,7 +151,7 @@ export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutoco
     }
     script.onerror = () => {
       scriptLoading = false
-      console.error("Error al cargar Google Maps API")
+      errorDev("Error al cargar Google Maps API")
     }
     document.head.appendChild(script)
   }, [])
@@ -198,14 +199,14 @@ export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutoco
             setShowWidget(false)
             onChange(formattedAddress, localidad, codigoPostal)
           } catch (err) {
-            console.error("Error al obtener datos del lugar:", err)
+            errorDev("Error al obtener datos del lugar:", err)
           }
         })
 
         containerRef.current.appendChild(placeAutocomplete)
         autocompleteRef.current = placeAutocomplete
       } catch (err) {
-        console.error("Error al inicializar PlaceAutocompleteElement:", err)
+        errorDev("Error al inicializar PlaceAutocompleteElement:", err)
       }
     }
 

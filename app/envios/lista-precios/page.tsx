@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DollarSign } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { warnDev } from "@/lib/logger"
 
 interface Cliente {
   id: number
@@ -93,12 +94,12 @@ export default function ListaPreciosEnvioPage() {
                   }
                 }
               } catch (error) {
-                console.warn("Error al cargar cliente del backend:", error)
+                warnDev("Error al cargar cliente del backend:", error)
               }
             }
           }
         } catch (error) {
-          console.warn("Error al cargar usuario del backend:", error)
+          warnDev("Error al cargar usuario del backend:", error)
         }
       }
 
@@ -122,7 +123,7 @@ export default function ListaPreciosEnvioPage() {
             }
           }
         } catch (error) {
-          console.warn("Error al cargar clientes del backend:", error)
+          warnDev("Error al cargar clientes del backend:", error)
         }
       }
 
@@ -183,7 +184,7 @@ export default function ListaPreciosEnvioPage() {
               }
             }
           } catch (error) {
-            console.warn("Error al cargar lista de precios referenciada del backend:", error)
+            warnDev("Error al cargar lista de precios referenciada del backend:", error)
           }
         }
       }
@@ -205,7 +206,7 @@ export default function ListaPreciosEnvioPage() {
         return
       }
     } catch (error) {
-      console.warn("Error al cargar lista de precios del backend:", error)
+      warnDev("Error al cargar lista de precios del backend:", error)
     }
   }
 
@@ -230,7 +231,7 @@ export default function ListaPreciosEnvioPage() {
               }
             }
           } catch (error) {
-            console.warn("Error al cargar cliente del backend:", error)
+            warnDev("Error al cargar cliente del backend:", error)
           }
         } else {
           // Si no es usuario Cliente, buscar en la lista de clientes cargados

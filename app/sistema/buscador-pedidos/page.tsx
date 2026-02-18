@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Package, AlertCircle } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { errorDev } from "@/lib/logger"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,7 +58,7 @@ export default function BuscadorPedidosPage() {
         setShowNotFound(true)
       }
     } catch (error) {
-      console.error("Error al buscar envío:", error)
+      errorDev("Error al buscar envío:", error)
       setShowNotFound(true)
     } finally {
       setLoading(false)

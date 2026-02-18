@@ -5,6 +5,7 @@ import { X, Check, Copy, CheckCircle2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { logDev, warnDev, errorDev } from "@/lib/logger"
 import Image from "next/image"
 
 interface NewClientModalProps {
@@ -95,7 +96,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
         setListasPreciosError("No se pudieron cargar las listas. Verificá que el backend (api.mvgtms.com.ar) esté accesible.")
       }
     } catch (error: any) {
-      console.error("Error al cargar listas de precios:", error)
+      errorDev("Error al cargar listas de precios:", error)
       setListasPrecios([])
       setListasPreciosError("No se pudieron cargar las listas. Verificá que el backend (api.mvgtms.com.ar) esté accesible.")
     } finally {
@@ -123,9 +124,6 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
             const response = await fetch(`${apiBaseUrl}/clientes/${editingClient.id}`)
             if (response.ok) {
               const clientData = await response.json()
-              console.log("Datos del cliente cargados desde el backend:", clientData)
-              console.log("Token API (integraciones):", clientData.integraciones)
-              console.log("Tipo de integraciones:", typeof clientData.integraciones)
               // Guardar los datos completos del cliente para usar en las condiciones
               setClienteCompleto(clientData)
               // Asegurarse de que el token API se cargue correctamente, incluso si es null o undefined
@@ -152,12 +150,10 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
               return
             }
           } catch (error) {
-            console.warn("No se pudo cargar datos completos del cliente desde el backend:", error)
+            warnDev("No se pudo cargar datos completos del cliente desde el backend:", error)
           }
         }
         // Si no se puede cargar del backend o no hay ID, usar los datos proporcionados
-        console.log("Usando datos del cliente desde la tabla:", editingClient)
-        console.log("Token API del cliente:", editingClient.tokenApi)
         // Guardar también estos datos para las condiciones
         setClienteCompleto(editingClient)
         setFormData({
@@ -239,9 +235,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
         vtexToken: formData.vtexToken || null,
         vtexIdLogistica: formData.vtexIdLogistica || null,
       }
-      console.log("Guardando cliente con datos:", clientDataToSave)
-      console.log("Token API a guardar:", formData.tokenApi)
-      console.log("Integraciones a guardar:", clientDataToSave.integraciones)
+      logDev("Guardando cliente (datos no logueados en producción)")
       await onSave(clientDataToSave)
       // Resetear formulario solo si no se está editando
       if (!editingClient) {
@@ -265,7 +259,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
       }
       onOpenChange(false)
     } catch (error: any) {
-      console.error("Error al guardar cliente:", error)
+      errorDev("Error al guardar cliente:", error)
       const errorMessage = error?.message || "Error al guardar el cliente. Por favor, intenta nuevamente."
       alert(errorMessage)
     } finally {
@@ -477,7 +471,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
                             alert("Error al generar el link de vinculación")
                           }
                         } catch (error) {
-                          console.error("Error:", error)
+                          errorDev("Error:", error)
                           alert("Error al generar el link de vinculación")
                         }
                       }}
@@ -510,7 +504,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
                                 alert(`Error al sincronizar: ${data.error || 'Error desconocido'}`)
                               }
                             } catch (error: any) {
-                              console.error("Error:", error)
+                              errorDev("Error:", error)
                               alert(`Error al sincronizar: ${error.message || 'Error de conexión'}`)
                             } finally {
                               setSincronizando(false)
@@ -580,7 +574,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
                               await onSave(clientDataToSave)
                               alert("Cuenta Flex desvinculada correctamente")
                             } catch (error) {
-                              console.error("Error al desvincular:", error)
+                              errorDev("Error al desvincular:", error)
                               alert("Error al desvincular la cuenta Flex")
                             }
                           }}
@@ -639,11 +633,11 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
                                 setShowLinkModal(true)
                               } else {
                                 const errorText = await response.text()
-                                console.error("Error response:", errorText)
+                                errorDev("Error response:", errorText)
                                 alert("Error al generar el link de vinculación")
                               }
                             } catch (error) {
-                              console.error("Error:", error)
+                              errorDev("Error:", error)
                               alert("Error al generar el link de vinculación")
                             }
                           }}
@@ -729,11 +723,11 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
                               setShowLinkModal(true)
                             } else {
                               const errorText = await response.text()
-                              console.error("Error response:", errorText)
+                              errorDev("Error response:", errorText)
                               alert("Error al generar el link de vinculación")
                             }
                           } catch (error) {
-                            console.error("Error:", error)
+                            errorDev("Error:", error)
                             alert("Error al generar el link de vinculación")
                           }
                         }}

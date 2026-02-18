@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { CheckCircle2, Package, Shield, Lock, Phone, Mail } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { errorDev } from "@/lib/logger"
 
 function MercadoLibreAuthContent() {
   const searchParams = useSearchParams()
@@ -39,7 +40,7 @@ function MercadoLibreAuthContent() {
         setLoading(false)
       }
     } catch (error) {
-      console.error("Error:", error)
+      errorDev("Error:", error)
       alert("Error al generar la URL de autorización")
       setLoading(false)
     }

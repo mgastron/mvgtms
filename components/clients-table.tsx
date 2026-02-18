@@ -4,6 +4,7 @@ import { Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { warnDev, errorDev } from "@/lib/logger"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -108,7 +109,7 @@ export function ClientsTable({
         setClients([])
       }
     } catch (error) {
-      console.warn("No se pudo cargar clientes del backend:", error)
+      warnDev("No se pudo cargar clientes del backend:", error)
       setClients([])
     }
   }
@@ -257,13 +258,13 @@ export function ClientsTable({
             backendAvailable = true
           } else if (response.status === 404) {
             // Cliente no encontrado en el backend, continuar con eliminación local
-            console.warn("Cliente no encontrado en el backend")
+            warnDev("Cliente no encontrado en el backend")
           } else {
             throw new Error(`Error del servidor: ${response.status}`)
           }
         } catch (fetchError) {
           // Si el backend no está disponible, continuar con eliminación local
-          console.warn("Backend no disponible, eliminando solo del estado local:", fetchError)
+          warnDev("Backend no disponible, eliminando solo del estado local:", fetchError)
         }
       } else {
         // Si no hay ID, intentar buscar el cliente por código
@@ -298,7 +299,7 @@ export function ClientsTable({
           }
         } catch (fetchError) {
           // Si el backend no está disponible, continuar con eliminación local
-          console.warn("Backend no disponible, eliminando solo del estado local:", fetchError)
+          warnDev("Backend no disponible, eliminando solo del estado local:", fetchError)
         }
       }
 
@@ -338,7 +339,7 @@ export function ClientsTable({
         loadClientsFromBackend()
       }
     } catch (error) {
-      console.error("Error inesperado al eliminar cliente:", error)
+      errorDev("Error inesperado al eliminar cliente:", error)
       alert("Error al eliminar el cliente. Por favor, intenta nuevamente.")
     } finally {
       setIsDeleting(false)

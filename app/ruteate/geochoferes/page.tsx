@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Globe, Search, X } from "lucide-react"
 import { ModernHeader } from "@/components/modern-header"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { warnDev, errorDev } from "@/lib/logger"
 
 interface ChoferConUbicacion {
   id: number
@@ -56,10 +57,10 @@ export default function GeochoferesPage() {
         setChoferes(data)
         setChoferesFiltrados(data)
       } else {
-        console.error("Error al cargar choferes:", response.statusText)
+        errorDev("Error al cargar choferes:", response.statusText)
       }
     } catch (error) {
-      console.error("Error de conexión al cargar choferes:", error)
+      errorDev("Error de conexión al cargar choferes:", error)
     } finally {
       setIsLoading(false)
     }
@@ -89,7 +90,7 @@ export default function GeochoferesPage() {
       script.id = "google-maps-script-geochoferes"
       script.onload = () => initializeMap()
       script.onerror = () => {
-        console.error("Error al cargar Google Maps API")
+        errorDev("Error al cargar Google Maps API")
       }
       document.head.appendChild(script)
     } else {
@@ -167,7 +168,7 @@ export default function GeochoferesPage() {
 
           depositoMarkerRef.current = depositoMarker
         } else {
-          console.warn("No se pudo geocodificar la dirección del depósito:", depositoAddress)
+          warnDev("No se pudo geocodificar la dirección del depósito:", depositoAddress)
         }
       })
       

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { User, LogOut, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { warnDev } from "@/lib/logger"
 
 interface UserInfo {
   username: string
@@ -53,7 +54,7 @@ export function UserProfile() {
             }
           }
         } catch (error) {
-          console.warn("No se pudo cargar información del usuario del backend:", error)
+          warnDev("No se pudo cargar información del usuario del backend:", error)
         }
 
         // Si es admin, usar valores por defecto
