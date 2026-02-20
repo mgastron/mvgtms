@@ -20,13 +20,13 @@ const enviosSubmenu = [
   { icon: Printer, label: "Reimprimir NoFlex" },
   { icon: FileUp, label: "Subir individual" },
   { icon: FileUp, label: "Subir Flex Manual" },
+  { icon: Search, label: "Buscador de Pedidos" },
 ]
 
 const sistemaSubmenu = [
   { icon: Users, label: "Usuarios" },
   { icon: DollarSign, label: "Lista Precios" },
   { icon: FileCheck, label: "Estado Órdenes" },
-  { icon: Search, label: "Buscador de Pedidos" },
 ]
 
 const ruteateSubmenu = [
@@ -87,10 +87,10 @@ export function Sidebar() {
   
   // Abrir automáticamente los submenús si estamos en una página del submenú
   useEffect(() => {
-    if (pathname?.includes("/usuarios") || pathname?.includes("/lista-precios") || pathname?.includes("/sistema/buscador-pedidos")) {
+    if (pathname?.includes("/usuarios") || pathname?.includes("/lista-precios") || pathname?.includes("/sistema/estado-ordenes")) {
       setSistemaOpen(true)
     }
-    if (pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual") || pathname?.includes("/envios")) {
+    if (pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual") || pathname?.includes("/envios") || pathname?.includes("/sistema/buscador-pedidos")) {
       setEnviosOpen(true)
     }
     if (pathname?.includes("/ruteate")) {
@@ -188,8 +188,9 @@ export function Sidebar() {
                             router.push("/envios/lista-precios")
                           } else if (subItem.label === "Subir Flex Manual") {
                             router.push("/subir-flex-manual")
+                          } else if (subItem.label === "Buscador de Pedidos") {
+                            router.push("/sistema/buscador-pedidos")
                           } else {
-                            // Aquí se pueden agregar las rutas cuando se creen las páginas
                             logDev(`Navegar a: ${subItem.label}`)
                           }
                         }}
@@ -224,8 +225,6 @@ export function Sidebar() {
                             router.push("/lista-precios")
                           } else if (subItem.label === "Estado Órdenes") {
                             router.push("/sistema/estado-ordenes")
-                          } else if (subItem.label === "Buscador de Pedidos") {
-                            router.push("/sistema/buscador-pedidos")
                           }
                         }}
                         className={cn(

@@ -8,6 +8,7 @@ function isPathAllowedForCliente(pathname: string | null): boolean {
   if (pathname === "/") return true
   if (pathname.startsWith("/envios")) return true
   if (pathname === "/subir-envio" || pathname === "/subir-individual" || pathname === "/reimprimir-noflex" || pathname === "/subir-flex-manual") return true
+  if (pathname.startsWith("/sistema/buscador-pedidos")) return true
   return false
 }
 

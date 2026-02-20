@@ -18,6 +18,7 @@ const allMenuItems = [
       { icon: Printer, label: "Reimprimir NoFlex", path: "/reimprimir-noflex" },
       { icon: FileUp, label: "Subir individual", path: "/subir-individual" },
       { icon: FileUp, label: "Subir Flex Manual", path: "/subir-flex-manual" },
+      { icon: Search, label: "Buscador de Pedidos", path: "/sistema/buscador-pedidos" },
     ]
   },
   { 
@@ -28,7 +29,6 @@ const allMenuItems = [
       { icon: Users, label: "Usuarios", path: "/usuarios" },
       { icon: DollarSign, label: "Lista Precios", path: "/lista-precios" },
       { icon: FileCheck, label: "Estado Órdenes", path: "/sistema/estado-ordenes" },
-      { icon: Search, label: "Buscador de Pedidos", path: "/sistema/buscador-pedidos" },
     ]
   },
   { 
@@ -103,10 +103,10 @@ export function ModernHeader() {
   
   // Determinar qué menú principal está activo
   const getActiveMainItem = () => {
-    // Verificar rutas de Envíos primero (antes de Sistema) para evitar conflictos
-    if (pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir") || pathname?.includes("/envios")) return "Envíos"
-    // Verificar rutas de Sistema (excluyendo /envios/lista-precios que ya fue capturado arriba)
-    if (pathname?.includes("/usuarios") || (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) || pathname?.includes("/sistema")) return "Sistema"
+    // Verificar rutas de Envíos primero (incluye buscador de pedidos)
+    if (pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir") || pathname?.includes("/envios") || pathname?.includes("/sistema/buscador-pedidos")) return "Envíos"
+    // Verificar rutas de Sistema (excluyendo buscador-pedidos que está en Envíos)
+    if (pathname?.includes("/usuarios") || (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) || pathname?.includes("/sistema/estado-ordenes")) return "Sistema"
     if (pathname?.includes("/clientes")) return "Clientes"
     if (pathname?.includes("/ruteate")) return "Ruteate"
     return null
