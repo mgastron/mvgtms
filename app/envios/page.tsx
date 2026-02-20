@@ -67,6 +67,7 @@ export default function EnviosPage() {
   const router = useRouter()
   const [userProfile, setUserProfile] = useState<string | null>(null)
   const [userCodigoCliente, setUserCodigoCliente] = useState<string | null>(null)
+  const [choferId, setChoferId] = useState<number | null>(null)
   const [envios, setEnvios] = useState<Envio[]>([])
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
@@ -167,6 +168,11 @@ export default function EnviosPage() {
         params.append("codigoCliente", userCodigoCliente)
       }
 
+      // Si el usuario es Chofer, agregar filtro para ver solo sus envíos asignados
+      if (userProfile === "Chofer" && choferId != null) {
+        params.append("choferId", String(choferId))
+      }
+
       const apiBaseUrl = getApiBaseUrl()
       
       // OPTIMIZACIÓN: Si es la primera página y tenemos caché, mostrar datos del caché inmediatamente
@@ -180,6 +186,10 @@ export default function EnviosPage() {
             const clienteCodigo = envio.cliente?.split(" - ")[0]?.trim() || envio.cliente
             return clienteCodigo?.toLowerCase() === userCodigoCliente.toLowerCase()
           })
+        }
+        // Filtrar por chofer asignado si es necesario (cache)
+        if (userProfile === "Chofer" && choferId != null) {
+          enviosFiltrados = enviosFiltrados.filter((envio: any) => envio.choferAsignadoId === choferId)
         }
         
         // Filtrar por eliminados
@@ -229,6 +239,9 @@ export default function EnviosPage() {
               return clienteCodigo?.toLowerCase() === userCodigoCliente.toLowerCase()
             })
           }
+          if (userProfile === "Chofer" && choferId != null) {
+            enviosFiltrados = enviosFiltrados.filter((envio: any) => envio.choferAsignadoId === choferId)
+          }
           
           // Filtrar por eliminados
           if (filters.estado !== "Eliminados") {
@@ -264,6 +277,9 @@ export default function EnviosPage() {
           return clienteCodigo?.toLowerCase() === userCodigoCliente.toLowerCase()
         })
       }
+      if (userProfile === "Chofer" && choferId != null) {
+        enviosFiltrados = enviosFiltrados.filter((envio: any) => envio.choferAsignadoId === choferId)
+      }
       
       // Filtrar por eliminados
       if (filters.estado !== "Eliminados") {
@@ -295,12 +311,6 @@ export default function EnviosPage() {
       return
     }
 
-    // Redirigir solo Chofer
-    if (profile === "Chofer") {
-      router.push("/chofer")
-      return
-    }
-
     setUserProfile(profile)
 
     // Si el usuario es Cliente, obtener su código de cliente desde el backend
@@ -324,14 +334,35 @@ export default function EnviosPage() {
       }
       loadUserInfo()
     }
+
+    // Si el usuario es Chofer, obtener su ID (para filtrar solo sus envíos asignados)
+    if (profile === "Chofer") {
+      const loadChoferId = async () => {
+        const username = sessionStorage.getItem("username")
+        if (!username) return
+        try {
+          const apiBaseUrl = getApiBaseUrl()
+          const response = await fetch(`${apiBaseUrl}/usuarios?size=1000`)
+          if (response.ok) {
+            const data = await response.json()
+            const content = data.content || []
+            const user = content.find((u: any) => u.usuario === username)
+            if (user && user.id != null) setChoferId(Number(user.id))
+          }
+        } catch (error) {
+          warnDev("No se pudo cargar ID del chofer:", error)
+        }
+      }
+      loadChoferId()
+    }
   }, [router])
 
-  // Cargar envíos cuando cambian los filtros o la página
+  // Cargar envíos cuando cambian los filtros o la página (Chofer: esperar a tener choferId)
   useEffect(() => {
-    if (userProfile) {
-      loadEnvios(currentPage, itemsPerPage)
-    }
-  }, [currentPage, itemsPerPage, filters, userProfile, userCodigoCliente])
+    if (!userProfile) return
+    if (userProfile === "Chofer" && choferId == null) return
+    loadEnvios(currentPage, itemsPerPage)
+  }, [currentPage, itemsPerPage, filters, userProfile, userCodigoCliente, choferId])
 
   // Los envíos ya vienen filtrados del backend, no necesitamos filtrar localmente
   const filteredEnvios = envios
@@ -372,9 +403,9 @@ export default function EnviosPage() {
       alert("No se puede cambiar manualmente el estado de un envío Flex. El estado se sincroniza automáticamente desde MercadoLibre.")
       return
     }
-    // Solo permitir cambio de estado a usuarios Administrativo
-    if (userProfile !== "Administrativo") {
-      alert("Solo los usuarios Administrativo pueden cambiar el estado de los envíos")
+    // Permitir cambio de estado a Administrativo o Chofer (el chofer solo ve sus envíos asignados)
+    if (userProfile !== "Administrativo" && userProfile !== "Chofer") {
+      alert("No tenés permiso para cambiar el estado de los envíos")
       return
     }
 
@@ -1160,8 +1191,9 @@ export default function EnviosPage() {
                       paginatedEnvios.map((envio) => (
                         <tr
                           key={envio.id}
-                          className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-transparent transition-all duration-200 cursor-pointer"
+                          className={`border-b border-gray-100 transition-all duration-200 ${userProfile !== "Chofer" ? "hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-transparent cursor-pointer" : ""}`}
                           onClick={() => {
+                            if (userProfile === "Chofer") return
                             setSelectedEnvio(envio)
                             setIsDetailModalOpen(true)
                           }}
@@ -1198,7 +1230,7 @@ export default function EnviosPage() {
                               <span className="text-xs text-gray-700 px-2 py-1 bg-gray-100 rounded border border-gray-300 inline-block max-w-[180px] truncate">
                                 {envio.estado || "A retirar"}
                               </span>
-                            ) : userProfile === "Administrativo" && envio.origen !== "Flex" ? (
+                            ) : (userProfile === "Administrativo" || userProfile === "Chofer") && envio.origen !== "Flex" ? (
                               <Select
                                 value={envio.estado || "A retirar"}
                                 onValueChange={(value) => handleEstadoChange(envio.id, value)}
@@ -1320,17 +1352,19 @@ export default function EnviosPage() {
           </div>
         </div>
 
-        {/* Envio Detail Modal */}
-        <EnvioDetailModal
-          isOpen={isDetailModalOpen}
-          onClose={() => {
-            setIsDetailModalOpen(false)
-            setSelectedEnvio(null)
-          }}
-          envio={selectedEnvio}
-          onDelete={handleDeleteEnvio}
-          onAssignSuccess={() => loadEnvios(currentPage, itemsPerPage)}
-        />
+        {/* Envio Detail Modal (no se muestra al Chofer: solo ve la tabla y puede cambiar estados) */}
+        {userProfile !== "Chofer" && (
+          <EnvioDetailModal
+            isOpen={isDetailModalOpen}
+            onClose={() => {
+              setIsDetailModalOpen(false)
+              setSelectedEnvio(null)
+            }}
+            envio={selectedEnvio}
+            onDelete={handleDeleteEnvio}
+            onAssignSuccess={() => loadEnvios(currentPage, itemsPerPage)}
+          />
+        )}
       </main>
     </div>
   )

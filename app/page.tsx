@@ -43,9 +43,9 @@ export default function LoginPage() {
             sessionStorage.setItem("username", username)
             sessionStorage.setItem("userProfile", userProfile)
             
-            // Redirigir según el perfil
+            // Redirigir según el perfil (Chofer va a ver solo sus envíos asignados)
             if (userProfile === "Chofer") {
-              router.push("/chofer")
+              router.push("/envios")
             } else {
               router.push("/clientes")
             }

@@ -1007,6 +1007,11 @@ public class EnvioService {
                 ));
             }
 
+            // Filtro por chofer asignado (para usuarios "Chofer": solo sus envíos)
+            if (filter.getChoferId() != null) {
+                predicates.add(cb.equal(root.get("choferAsignadoId"), filter.getChoferId()));
+            }
+
             // Filtro por tipo de fecha
             if (filter.getFechaDesde() != null || filter.getFechaHasta() != null) {
                 String tipoFecha = filter.getTipoFecha() != null ? filter.getTipoFecha() : "fechaLlegue";

@@ -28,5 +28,6 @@ public class EnvioFilterDTO {
     private String destinoDireccion;
     private String cobranzas;
     private String codigoCliente; // Para filtrar por cliente cuando el usuario es "Cliente"
+    private Long choferId; // Para filtrar por chofer asignado cuando el usuario es "Chofer"
 }
 

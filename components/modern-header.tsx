@@ -224,6 +224,22 @@ export function ModernHeader() {
             </nav>
             )}
 
+            {/* Chofer: solo enlace a Mis envíos + perfil */}
+            {userProfile === "Chofer" && (
+              <button
+                onClick={() => router.push("/envios")}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                  pathname?.includes("/envios") && !pathname?.includes("/lista-precios")
+                    ? "bg-gradient-to-r from-indigo-50 to-cyan-50 text-indigo-700 border border-indigo-100"
+                    : "text-gray-700 hover:bg-gray-100"
+                )}
+              >
+                <Truck className="h-4 w-4" />
+                <span>Mis envíos</span>
+              </button>
+            )}
+
             {/* User Profile & Mobile Menu Button */}
             <div className="flex items-center gap-4">
               <div className={userProfile === "Chofer" ? "block" : "hidden md:block"}>
