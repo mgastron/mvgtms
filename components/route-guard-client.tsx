@@ -22,9 +22,11 @@ export function RouteGuardClient({ children }: { children: React.ReactNode }) {
     const isAuthenticated = sessionStorage.getItem("isAuthenticated")
     const userProfile = sessionStorage.getItem("userProfile")
 
-    // Rutas públicas: vinculación y tracking de envíos (no requieren login)
+    // Rutas públicas: vinculación, tracking de envíos y buscador de pedidos (no requieren login)
     const isPublicPath =
-      (pathname?.startsWith("/auth/") ?? false) || (pathname?.startsWith("/tracking/") ?? false)
+      (pathname?.startsWith("/auth/") ?? false) ||
+      (pathname?.startsWith("/tracking/") ?? false) ||
+      (pathname?.startsWith("/sistema/buscador-pedidos") ?? false)
 
     if (!isAuthenticated && pathname !== "/" && !isPublicPath) {
       router.replace("/")
