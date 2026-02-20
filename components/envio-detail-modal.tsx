@@ -1129,8 +1129,8 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                     </div>
                   </div>
 
-                  {/* Fila 4: Peso total, metodo de envio, costo de envío y recibido por */}
-                  <div className="grid grid-cols-4 gap-4">
+                  {/* Fila 4: Peso total, metodo de envio, costo de envío (oculto para Coordinador) y recibido por */}
+                  <div className={userProfile === "Coordinador" ? "grid grid-cols-3 gap-4" : "grid grid-cols-4 gap-4"}>
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Peso total</label>
                       <Input 
@@ -1147,16 +1147,18 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                         readOnly 
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-normal text-gray-600">Costo de envío</label>
-                      <Input 
-                        value={envio.costoEnvio 
-                          ? `$ ${parseFloat(envio.costoEnvio).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-                          : "$ 0.00"} 
-                        className="h-9 text-sm border-gray-300 bg-white shadow-sm" 
-                        readOnly 
-                      />
-                    </div>
+                    {userProfile !== "Coordinador" && (
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-normal text-gray-600">Costo de envío</label>
+                        <Input 
+                          value={envio.costoEnvio 
+                            ? `$ ${parseFloat(envio.costoEnvio).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+                            : "$ 0.00"} 
+                          className="h-9 text-sm border-gray-300 bg-white shadow-sm" 
+                          readOnly 
+                        />
+                      </div>
+                    )}
                     <div className="space-y-1.5">
                       <label className="block text-xs font-normal text-gray-600">Recibido por</label>
                       <Input value="Placeholder" className="h-9 text-sm border-gray-300 bg-white shadow-sm text-gray-400 italic" readOnly />

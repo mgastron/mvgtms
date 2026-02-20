@@ -48,6 +48,16 @@ export function Sidebar() {
     setUserProfile(profile)
   }, [])
   
+  // Coordinador no ve: Envíos > Lista de Precios; Sistema > Lista Precios, Estado Órdenes
+  const enviosSubmenuFiltered =
+    userProfile === "Coordinador"
+      ? enviosSubmenu.filter((s) => s.label !== "Lista de Precios")
+      : enviosSubmenu
+  const sistemaSubmenuFiltered =
+    userProfile === "Coordinador"
+      ? sistemaSubmenu.filter((s) => s.label !== "Lista Precios" && s.label !== "Estado Órdenes")
+      : sistemaSubmenu
+
   // Filtrar elementos del menú según el perfil del usuario
   const getFilteredMenuItems = () => {
     if (!userProfile) return allMenuItems
@@ -170,7 +180,7 @@ export function Sidebar() {
               {/* Submenu de Envíos */}
               {isEnvios && enviosOpen && (
                 <div className="bg-sidebar/80">
-                  {enviosSubmenu.map((subItem) => {
+                  {enviosSubmenuFiltered.map((subItem) => {
                     const SubIcon = subItem.icon
                     return (
                       <button
@@ -213,7 +223,7 @@ export function Sidebar() {
               {/* Submenu de Sistema */}
               {isSistema && sistemaOpen && (
                 <div className="bg-sidebar/80">
-                  {sistemaSubmenu.map((subItem) => {
+                  {sistemaSubmenuFiltered.map((subItem) => {
                     const SubIcon = subItem.icon
                     return (
                       <button

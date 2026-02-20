@@ -65,6 +65,12 @@ export default function ListaPreciosEnvioPage() {
       return
     }
 
+    // Coordinador no puede acceder a Envios/Lista de Precios
+    if (profile === "Coordinador") {
+      router.push("/envios")
+      return
+    }
+
     setUserProfile(profile)
 
     // Si el usuario es Cliente, obtener su código de cliente y nombre desde el backend

@@ -65,6 +65,9 @@ export function ModernHeader() {
     .find((i) => i.label === "Envíos")
     ?.submenu?.map((sub) => ({ icon: sub.icon, label: sub.label, path: sub.path, hasSubmenu: false as const })) ?? []
 
+  // Opciones que el Coordinador no debe ver
+  const coordinadorOcultarSubmenuLabels = ["Lista de Precios", "Lista Precios", "Estado Órdenes"]
+
   // Filtrar elementos del menú según el perfil del usuario
   const getFilteredMenuItems = () => {
     if (userProfile === "Cliente") {
@@ -74,6 +77,17 @@ export function ModernHeader() {
     // Chofer y Cliente no ven Ruteate; el resto (Administrativo, etc.) sí
     if (userProfile === "Chofer") {
       return allMenuItems.filter((item) => item.label !== "Ruteate")
+    }
+
+    // Coordinador: mismo menú que admin pero sin Lista Precios, Estado Órdenes ni Envios/Lista de Precios
+    if (userProfile === "Coordinador") {
+      return allMenuItems.map((item) => {
+        if (!item.hasSubmenu || !item.submenu) return item
+        return {
+          ...item,
+          submenu: item.submenu.filter((sub) => !coordinadorOcultarSubmenuLabels.includes(sub.label)),
+        }
+      })
     }
 
     return allMenuItems

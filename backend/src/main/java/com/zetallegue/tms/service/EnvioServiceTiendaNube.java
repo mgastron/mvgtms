@@ -267,9 +267,8 @@ public class EnvioServiceTiendaNube {
             }
         }
         
-        // Generar QR Data para el envío (necesario para reimprimir)
-        // Usar el tracking como QR data
-        envioDTO.setQrData(tracking);
+        // Generar QR Data para el envío (usar ID_MVG para escaneo)
+        envioDTO.setQrData(idMvg);
         
         // Establecer fechaUltimoMovimiento
         envioDTO.setFechaUltimoMovimiento(ahora);

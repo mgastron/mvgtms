@@ -372,8 +372,8 @@ public class EnvioServiceShopify {
             }
         }
         
-        // Generar QR Data
-        envioDTO.setQrData(tracking);
+        // Generar QR Data (usar ID_MVG para escaneo)
+        envioDTO.setQrData(idMvg);
         
         // Establecer fechaUltimoMovimiento
         envioDTO.setFechaUltimoMovimiento(ahora);

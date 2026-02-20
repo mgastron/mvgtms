@@ -443,6 +443,8 @@ public class EnvioController {
     public ResponseEntity<?> asignarEnvio(
             @PathVariable Long id,
             @RequestBody AsignarEnvioRequest request) {
+        log.info("POST /asignar envioId={} choferId={} choferNombre={} usuarioAsignador={}",
+                id, request.getChoferId(), request.getChoferNombre(), request.getUsuarioAsignador());
         try {
             EnvioDTO envio = envioService.asignarEnvio(
                     id,
@@ -451,10 +453,28 @@ public class EnvioController {
                     request.getUsuarioAsignador(),
                     request.getOrigen() != null ? request.getOrigen() : "WEB"
             );
+            log.info("Asignación OK envioId={} choferNombre={}", id, request.getChoferNombre());
             return ResponseEntity.ok(envio);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage() != null ? e.getMessage() : "Error al asignar"));
+        } catch (Exception e) {
+            Throwable cause = e.getCause();
+            String msg = e.getMessage();
+            if (msg == null || msg.isEmpty()) {
+                msg = cause != null && cause.getMessage() != null ? cause.getMessage() : "Error al asignar";
+            }
+            // Marcar respuesta para confirmar que es el backend nuevo (si ves "[backend v2]" en el alert, el deploy está vivo)
+            if ("Error al asignar".equals(msg)) {
+                msg = "Error al asignar [backend v2]";
+            }
+            log.error("Error al asignar envío id={} choferId={} choferNombre={} | exception={} message={}",
+                    id, request.getChoferId(), request.getChoferNombre(), e.getClass().getSimpleName(), msg, e);
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", msg));
         }
+    }
+
+    /** Para verificar que el backend desplegado es el nuevo: abrí en el navegador https://api.mvgtms.com.ar/api/envios/deploy-version */
+    @GetMapping("/deploy-version")
+    public ResponseEntity<Map<String, String>> deployVersion() {
+        return ResponseEntity.ok(java.util.Map.of("version", "asignar-v2", "texto", "Si ves esto, el backend con logs y fix de asignar está desplegado."));
     }
 
     @PostMapping("/verificar-existentes")

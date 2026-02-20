@@ -105,6 +105,12 @@ export default function ListaPreciosPage() {
       router.push("/clientes")
       return
     }
+
+    // Coordinador no puede acceder a Lista Precios (Sistema)
+    if (userProfile === "Coordinador") {
+      router.push("/envios")
+      return
+    }
   }, [router])
   
   const [currentPage, setCurrentPage] = useState(1)
