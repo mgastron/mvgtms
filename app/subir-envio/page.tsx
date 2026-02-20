@@ -218,16 +218,16 @@ export default function SubirEnvioPage() {
       let currentY = startY + 3
       const innerPadding = 4
 
-      // Localidad con fondo violeta
+      // Localidad con borde negro
       const localidadText = (envio.localidad || "Sin localidad").toUpperCase()
       pdf.setFontSize(13)
       pdf.setFont("helvetica", "bold")
       const localidadTextWidth = pdf.getTextWidth(localidadText)
       const localidadBoxHeight = 16
-      pdf.setFillColor(124, 58, 237)
-      pdf.setDrawColor(124, 58, 237)
-      pdf.roundedRect(startX + innerPadding, currentY - 12, localidadTextWidth + 8, localidadBoxHeight, 2, 2, "F")
-      pdf.setTextColor(255, 255, 255)
+      pdf.setDrawColor(0, 0, 0)
+      pdf.setLineWidth(1)
+      pdf.roundedRect(startX + innerPadding, currentY - 12, localidadTextWidth + 8, localidadBoxHeight, 2, 2, "S")
+      pdf.setTextColor(0, 0, 0)
       pdf.text(localidadText, startX + innerPadding + 4, currentY - 2)
       
       pdf.setFontSize(7.5)
@@ -252,7 +252,7 @@ export default function SubirEnvioPage() {
       // Información a la derecha del QR
       pdf.setFontSize(7)
       pdf.setFont("helvetica", "normal")
-      pdf.setTextColor(40, 40, 40)
+      pdf.setTextColor(0, 0, 0)
       let infoY = qrY + 3
       pdf.text(fechaFormateada, qrRight, infoY)
       infoY += 8
@@ -295,23 +295,30 @@ export default function SubirEnvioPage() {
         destY += obsLines.length * 7.5 + 2
       }
 
-      if (envio.cambioRetiro) {
-        pdf.setFontSize(6)
-        pdf.setTextColor(100, 100, 100)
-        pdf.text("Campos extra", startX + innerPadding, destY)
-        destY += 6
+      if (envio.totalACobrar && String(envio.totalACobrar).trim() !== "") {
         pdf.setFontSize(7)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(0, 0, 0)
-        const cambioRetiroLines = pdf.splitTextToSize(`Cambio / Retiro: ${envio.cambioRetiro}`, labelWidth - innerPadding * 2)
-        pdf.text(cambioRetiroLines, startX + innerPadding, destY)
-        destY += cambioRetiroLines.length * 7.5 + 2
+        pdf.text(`Cobrar en Efectivo: $ ${String(envio.totalACobrar).trim()}`, startX + innerPadding, destY)
+        destY += 8
+      }
+      if (envio.cambioRetiro && String(envio.cambioRetiro).trim() !== "") {
+        const valor = String(envio.cambioRetiro).trim().toUpperCase()
+        pdf.setFontSize(8)
+        pdf.setFont("helvetica", "bold")
+        pdf.setTextColor(0, 0, 0)
+        pdf.setDrawColor(0, 0, 0)
+        pdf.setLineWidth(0.5)
+        const badgeW = Math.max(pdf.getTextWidth(valor) + 6, 28)
+        pdf.roundedRect(startX + innerPadding, destY - 6, badgeW, 12, 1.5, 1.5, "S")
+        pdf.text(valor, startX + innerPadding + badgeW / 2 - pdf.getTextWidth(valor) / 2, destY + 1)
+        destY += 14
       }
 
-      const logoText = "ZETA LLEGUE"
+      const logoText = "MVG"
       pdf.setFontSize(8.5)
       pdf.setFont("helvetica", "bold")
-      pdf.setTextColor(124, 58, 237)
+      pdf.setTextColor(0, 0, 0)
       const logoWidth = pdf.getTextWidth(logoText)
       const logoX = startX + labelWidth - logoWidth - innerPadding
       const logoY = startY + labelHeight - innerPadding - 2
@@ -335,27 +342,29 @@ export default function SubirEnvioPage() {
       const marginTop = 10
       let currentY = marginTop
 
-      pdf.setFontSize(12)
+      pdf.setFontSize(14)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(0, 0, 0)
-      const titleWidth = pdf.getTextWidth("Zeta Llegue")
+      const titleWidth = pdf.getTextWidth("MVG")
       const titleX = (width - titleWidth) / 2
-      pdf.text("Zeta Llegue", titleX, currentY)
+      pdf.text("MVG", titleX, currentY)
       currentY += 18
 
-      pdf.setDrawColor(124, 58, 237)
+      pdf.setDrawColor(0, 0, 0)
       pdf.setLineWidth(1.5)
       pdf.line(marginLeft, currentY - 8, width - marginLeft, currentY - 8)
 
       const qrSize = formato === "10x15" ? 80 : 70
-      pdf.addImage(qrCodeDataUrl, "PNG", marginLeft, currentY, qrSize, qrSize)
+      pdf.setDrawColor(0, 0, 0)
+      pdf.setLineWidth(1.5)
+      pdf.roundedRect(marginLeft, currentY, qrSize, qrSize, 2, 2, "S")
+      pdf.addImage(qrCodeDataUrl, "PNG", marginLeft + 2, currentY + 2, qrSize - 4, qrSize - 4)
       const qrRight = marginLeft + qrSize + 6
       const qrBottom = currentY + qrSize
 
       const localidadText = (envio.localidad || "Sin localidad").toUpperCase()
       pdf.setFontSize(formato === "10x15" ? 15 : 13)
       pdf.setFont("helvetica", "bold")
-
       const localidadLines = pdf.splitTextToSize(localidadText, 150)
       const localidadTextWidth = Math.max(...localidadLines.map((line: string) => pdf.getTextWidth(line)))
       const lineHeight = formato === "10x15" ? 13 : 11
@@ -366,13 +375,10 @@ export default function SubirEnvioPage() {
       const boxX = qrRight
       const boxY = currentY + 6
       const borderRadius = 3
-
-      pdf.setFillColor(124, 58, 237)
-      pdf.setDrawColor(124, 58, 237)
-      pdf.setLineWidth(0)
-      pdf.roundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius, borderRadius, "F")
-
-      pdf.setTextColor(255, 255, 255)
+      pdf.setDrawColor(0, 0, 0)
+      pdf.setLineWidth(1.5)
+      pdf.roundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius, borderRadius, "S")
+      pdf.setTextColor(0, 0, 0)
       const totalTextHeight = localidadLines.length * lineHeight
       const startY = boxY + (boxHeight - totalTextHeight) / 2 + lineHeight - 2
 
@@ -386,7 +392,7 @@ export default function SubirEnvioPage() {
       let infoY = currentY + boxHeight + 12
       pdf.setFontSize(formato === "10x15" ? 7 : 6)
       pdf.setFont("helvetica", "normal")
-      pdf.setTextColor(40, 40, 40)
+      pdf.setTextColor(0, 0, 0)
       pdf.text(fechaFormateada, qrRight, infoY)
       infoY += formato === "10x15" ? 9 : 8
       pdf.text(`Rte.: ${envio.cliente}`, qrRight, infoY)
@@ -397,48 +403,57 @@ export default function SubirEnvioPage() {
 
       currentY = qrBottom + 10
 
-      pdf.setFontSize(formato === "10x15" ? 6.5 : 5.5)
-      pdf.setFont("helvetica", "normal")
-      pdf.setTextColor(90, 90, 90)
-      pdf.text("Destinatario", marginLeft, currentY)
-      currentY += formato === "10x15" ? 8 : 7
-
-      pdf.setFontSize(formato === "10x15" ? 8.5 : 7.5)
+      pdf.setFontSize(formato === "10x15" ? 7 : 6)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(0, 0, 0)
-      pdf.text(`Nombre: ${envio.nombreDestinatario}`, marginLeft, currentY)
+      pdf.text("DESTINATARIO", marginLeft, currentY)
+      const destW = pdf.getTextWidth("DESTINATARIO")
+      pdf.setLineWidth(0.5)
+      pdf.line(marginLeft, currentY + 2, marginLeft + destW, currentY + 2)
+      currentY += formato === "10x15" ? 10 : 8
+
+      pdf.setFontSize(formato === "10x15" ? 8.5 : 7.5)
+      pdf.text(envio.nombreDestinatario, marginLeft, currentY)
       currentY += formato === "10x15" ? 9 : 8
 
       pdf.setFont("helvetica", "normal")
       pdf.text(`Tel: ${envio.telefono}`, marginLeft, currentY)
       currentY += formato === "10x15" ? 9 : 8
 
-      const direccionLines = pdf.splitTextToSize(`Dir: ${envio.direccion}`, width - marginLeft * 2 - 20)
+      const direccionLines = pdf.splitTextToSize(envio.direccion, width - marginLeft * 2 - 20)
       pdf.text(direccionLines, marginLeft, currentY)
       currentY += direccionLines.length * (formato === "10x15" ? 9 : 8) + 5
 
       if (envio.observaciones) {
         pdf.setFontSize(formato === "10x15" ? 7.5 : 6.5)
-        pdf.setFont("helvetica", "normal")
-        pdf.setTextColor(40, 40, 40)
-        pdf.text(`Observación: ${envio.observaciones}`, marginLeft, currentY)
-        currentY += formato === "10x15" ? 9 : 8
+        pdf.setFont("helvetica", "italic")
+        pdf.setTextColor(0, 0, 0)
+        const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, width - marginLeft * 2 - 20)
+        pdf.text(obsLines, marginLeft, currentY)
+        currentY += obsLines.length * (formato === "10x15" ? 9 : 8) + 3
       }
 
-      if (envio.cambioRetiro) {
-        pdf.setFontSize(formato === "10x15" ? 6.5 : 5.5)
-        pdf.setTextColor(90, 90, 90)
-        pdf.text("Campos extra", marginLeft, currentY)
-        currentY += formato === "10x15" ? 8 : 7
-
-        pdf.setFontSize(formato === "10x15" ? 8.5 : 7.5)
+      if (envio.totalACobrar && String(envio.totalACobrar).trim() !== "") {
+        pdf.setFontSize(formato === "10x15" ? 8 : 7)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(0, 0, 0)
-        const cambioRetiroLines = pdf.splitTextToSize(`Cambio / Retiro: ${envio.cambioRetiro}`, width - marginLeft * 2 - 20)
-        pdf.text(cambioRetiroLines, marginLeft, currentY)
+        pdf.text(`Cobrar en Efectivo: $ ${String(envio.totalACobrar).trim()}`, marginLeft, currentY)
+        currentY += formato === "10x15" ? 11 : 10
+      }
+      if (envio.cambioRetiro && String(envio.cambioRetiro).trim() !== "") {
+        const valor = String(envio.cambioRetiro).trim().toUpperCase()
+        pdf.setFontSize(formato === "10x15" ? 9 : 8)
+        pdf.setFont("helvetica", "bold")
+        pdf.setTextColor(0, 0, 0)
+        pdf.setDrawColor(0, 0, 0)
+        pdf.setLineWidth(0.8)
+        const badgeW = Math.max(pdf.getTextWidth(valor) + 10, 36)
+        pdf.roundedRect(marginLeft, currentY - 8, badgeW, 14, 2, 2, "S")
+        pdf.text(valor, marginLeft + badgeW / 2 - pdf.getTextWidth(valor) / 2, currentY + 1)
+        currentY += 18
       }
 
-      pdf.setDrawColor(124, 58, 237)
+      pdf.setDrawColor(0, 0, 0)
       pdf.setLineWidth(2)
       pdf.line(marginLeft, currentY + 5, width - marginLeft, currentY + 5)
     }

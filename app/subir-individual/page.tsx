@@ -187,9 +187,9 @@ export default function SubirIndividualPage() {
       pdf.setFontSize(14)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(0, 0, 0)
-      const titleWidth = pdf.getTextWidth("Zeta Llegue")
+      const titleWidth = pdf.getTextWidth("MVG")
       const titleX = (pageWidth - titleWidth) / 2
-      pdf.text("Zeta Llegue", titleX, currentY)
+      pdf.text("MVG", titleX, currentY)
       
       // Línea superior (debajo del texto, no lo corta)
       pdf.setDrawColor(0, 0, 0)
@@ -334,33 +334,36 @@ export default function SubirIndividualPage() {
       if (formData.observaciones) {
         pdf.setFontSize(7.5)
         pdf.setFont("helvetica", "italic")
-        pdf.setTextColor(60, 60, 60)
+        pdf.setTextColor(0, 0, 0)
         const obsLines = pdf.splitTextToSize(`Obs: ${formData.observaciones}`, pageWidth - marginLeft * 2 - 20)
         pdf.text(obsLines, marginLeft, currentY)
         currentY += obsLines.length * 9 + 3
       }
 
-      // Campos extra
-      if (formData.cambioRetiro) {
-        pdf.setFontSize(7)
+      // Cobrar en Efectivo (si tiene total a cobrar)
+      if (formData.totalACobrar && formData.totalACobrar.trim() !== "") {
+        pdf.setFontSize(8)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(0, 0, 0)
-        const adicionalY = currentY
-        pdf.text("INFORMACIÓN ADICIONAL", marginLeft, currentY)
-        // Subrayado
-        const adicionalWidth = pdf.getTextWidth("INFORMACIÓN ADICIONAL")
-        pdf.setLineWidth(0.5)
-        pdf.line(marginLeft, currentY + 2, marginLeft + adicionalWidth, currentY + 2)
-        currentY += 9
-
-        pdf.setFontSize(8.5)
-        pdf.setFont("helvetica", "normal")
-        pdf.setTextColor(0, 0, 0)
-        const cambioRetiroLines = pdf.splitTextToSize(`Cambio/Retiro: ${formData.cambioRetiro}`, pageWidth - marginLeft * 2 - 20)
-        pdf.text(cambioRetiroLines, marginLeft, currentY)
-        currentY += cambioRetiroLines.length * 10 + 5
+        const cobrarText = `Cobrar en Efectivo: $ ${formData.totalACobrar.trim()}`
+        pdf.text(cobrarText, marginLeft, currentY)
+        currentY += 11
       }
-      
+
+      // Cambio o Retiro (solo si completó el campo)
+      if (formData.cambioRetiro && formData.cambioRetiro.trim() !== "") {
+        const valor = formData.cambioRetiro.trim().toUpperCase()
+        pdf.setFontSize(9)
+        pdf.setFont("helvetica", "bold")
+        pdf.setTextColor(0, 0, 0)
+        pdf.setDrawColor(0, 0, 0)
+        pdf.setLineWidth(0.8)
+        const badgeW = Math.max(pdf.getTextWidth(valor) + 10, 36)
+        pdf.roundedRect(marginLeft, currentY - 8, badgeW, 14, 2, 2, "S")
+        pdf.text(valor, marginLeft + badgeW / 2 - pdf.getTextWidth(valor) / 2, currentY + 1)
+        currentY += 18
+      }
+
       // Footer con línea negra
       pdf.setDrawColor(0, 0, 0)
       pdf.setLineWidth(2)

@@ -390,19 +390,16 @@ export default function ReimprimirNoflexPage() {
         const innerPadding = 4
         let currentY = startY + innerPadding
 
-        // Localidad con fondo violeta (arriba a la izquierda)
+        // Localidad con borde negro
         const localidadText = (envio.localidad || "Sin localidad").toUpperCase()
         pdf.setFontSize(13)
         pdf.setFont("helvetica", "bold")
-        
-        // Fondo violeta para localidad
         const localidadTextWidth = pdf.getTextWidth(localidadText)
         const localidadBoxHeight = 16
-        pdf.setFillColor(124, 58, 237) // Violeta
-        pdf.setDrawColor(124, 58, 237)
-        pdf.roundedRect(startX + innerPadding, currentY - 12, localidadTextWidth + 8, localidadBoxHeight, 2, 2, "F")
-        
-        pdf.setTextColor(255, 255, 255) // Texto blanco
+        pdf.setDrawColor(0, 0, 0)
+        pdf.setLineWidth(1)
+        pdf.roundedRect(startX + innerPadding, currentY - 12, localidadTextWidth + 8, localidadBoxHeight, 2, 2, "S")
+        pdf.setTextColor(0, 0, 0)
         pdf.text(localidadText, startX + innerPadding + 4, currentY - 2)
         
         // Nombre destinatario a la derecha (arriba a la derecha)
@@ -429,7 +426,7 @@ export default function ReimprimirNoflexPage() {
         // Información a la derecha del QR
         pdf.setFontSize(7)
         pdf.setFont("helvetica", "normal")
-        pdf.setTextColor(40, 40, 40)
+        pdf.setTextColor(0, 0, 0)
         let infoY = qrY + 3
         pdf.text(fechaFormateada, qrRight, infoY)
         infoY += 8
@@ -482,25 +479,30 @@ export default function ReimprimirNoflexPage() {
           destY += obsLines.length * 7.5 + 2
         }
 
-        // Campos extra
-        if (envio.cambioRetiro) {
-          pdf.setFontSize(6)
-          pdf.setTextColor(100, 100, 100)
-          pdf.text("Campos extra", startX + innerPadding, destY)
-          destY += 6
+        if (envio.totalACobrar && String(envio.totalACobrar).trim() !== "") {
           pdf.setFontSize(7)
           pdf.setFont("helvetica", "bold")
           pdf.setTextColor(0, 0, 0)
-          const cambioRetiroLines = pdf.splitTextToSize(`Cambio / Retiro: ${envio.cambioRetiro}`, labelWidth - innerPadding * 2)
-          pdf.text(cambioRetiroLines, startX + innerPadding, destY)
-          destY += cambioRetiroLines.length * 7.5 + 2
+          pdf.text(`Cobrar en Efectivo: $ ${String(envio.totalACobrar).trim()}`, startX + innerPadding, destY)
+          destY += 8
+        }
+        if (envio.cambioRetiro && String(envio.cambioRetiro).trim() !== "") {
+          const valor = String(envio.cambioRetiro).trim().toUpperCase()
+          pdf.setFontSize(8)
+          pdf.setFont("helvetica", "bold")
+          pdf.setTextColor(0, 0, 0)
+          pdf.setDrawColor(0, 0, 0)
+          pdf.setLineWidth(0.5)
+          const badgeW = Math.max(pdf.getTextWidth(valor) + 6, 28)
+          pdf.roundedRect(startX + innerPadding, destY - 6, badgeW, 12, 1.5, 1.5, "S")
+          pdf.text(valor, startX + innerPadding + badgeW / 2 - pdf.getTextWidth(valor) / 2, destY + 1)
+          destY += 14
         }
 
-        // Logo ZETA LLEGUE (abajo a la derecha) con color
-        const logoText = "ZETA LLEGUE"
+        const logoText = "MVG"
         pdf.setFontSize(9)
         pdf.setFont("helvetica", "bold")
-        pdf.setTextColor(124, 58, 237) // Violeta para el logo
+        pdf.setTextColor(0, 0, 0)
         const logoWidth = pdf.getTextWidth(logoText)
         const logoX = startX + labelWidth - logoWidth - innerPadding
         const logoY = startY + labelHeight - innerPadding - 2
@@ -600,9 +602,9 @@ export default function ReimprimirNoflexPage() {
         pdf.setFontSize(14)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(0, 0, 0)
-        const titleWidth = pdf.getTextWidth("Zeta Llegue")
+        const titleWidth = pdf.getTextWidth("MVG")
         const titleX = (width - titleWidth) / 2
-        pdf.text("Zeta Llegue", titleX, currentY)
+        pdf.text("MVG", titleX, currentY)
         
         // Línea superior (debajo del texto, no lo corta)
         pdf.setDrawColor(0, 0, 0)
@@ -747,31 +749,33 @@ export default function ReimprimirNoflexPage() {
         if (envio.observaciones) {
           pdf.setFontSize(formato === "10x15" ? 7.5 : 6.5)
           pdf.setFont("helvetica", "italic")
-          pdf.setTextColor(60, 60, 60)
+          pdf.setTextColor(0, 0, 0)
           const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, width - marginLeft * 2 - 20)
           pdf.text(obsLines, marginLeft, currentY)
           currentY += obsLines.length * (formato === "10x15" ? 9 : 8) + 3
         }
 
-        // Campos extra
-        if (envio.cambioRetiro) {
-          pdf.setFontSize(formato === "10x15" ? 7 : 6)
+        // Cobrar en Efectivo
+        if (envio.totalACobrar && String(envio.totalACobrar).trim() !== "") {
+          pdf.setFontSize(formato === "10x15" ? 8 : 7)
           pdf.setFont("helvetica", "bold")
           pdf.setTextColor(0, 0, 0)
-          const adicionalY = currentY
-          pdf.text("INFORMACIÓN ADICIONAL", marginLeft, currentY)
-          // Subrayado
-          const adicionalWidth = pdf.getTextWidth("INFORMACIÓN ADICIONAL")
-          pdf.setLineWidth(0.5)
-          pdf.line(marginLeft, currentY + 2, marginLeft + adicionalWidth, currentY + 2)
-          currentY += formato === "10x15" ? 9 : 8
+          pdf.text(`Cobrar en Efectivo: $ ${String(envio.totalACobrar).trim()}`, marginLeft, currentY)
+          currentY += formato === "10x15" ? 11 : 10
+        }
 
-          pdf.setFontSize(formato === "10x15" ? 8.5 : 7.5)
-          pdf.setFont("helvetica", "normal")
+        // Cambio o Retiro (badge)
+        if (envio.cambioRetiro && String(envio.cambioRetiro).trim() !== "") {
+          const valor = String(envio.cambioRetiro).trim().toUpperCase()
+          pdf.setFontSize(formato === "10x15" ? 9 : 8)
+          pdf.setFont("helvetica", "bold")
           pdf.setTextColor(0, 0, 0)
-          const cambioRetiroLines = pdf.splitTextToSize(`Cambio/Retiro: ${envio.cambioRetiro}`, width - marginLeft * 2 - 20)
-          pdf.text(cambioRetiroLines, marginLeft, currentY)
-          currentY += cambioRetiroLines.length * (formato === "10x15" ? 10 : 9) + 5
+          pdf.setDrawColor(0, 0, 0)
+          pdf.setLineWidth(0.8)
+          const badgeW = Math.max(pdf.getTextWidth(valor) + 10, 36)
+          pdf.roundedRect(marginLeft, currentY - 8, badgeW, 14, 2, 2, "S")
+          pdf.text(valor, marginLeft + badgeW / 2 - pdf.getTextWidth(valor) / 2, currentY + 1)
+          currentY += formato === "10x15" ? 18 : 16
         }
 
         // Footer con línea negra
