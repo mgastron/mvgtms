@@ -670,12 +670,19 @@ export default function SubirIndividualPage() {
                   <label className="block text-xs font-medium text-gray-700">
                     Cambio / Retiro
                   </label>
-                  <Input
-                    value={formData.cambioRetiro}
-                    onChange={(e) => handleInputChange("cambioRetiro", e.target.value)}
-                    placeholder="Cambio o retiro"
-                    className="h-8 text-sm"
-                  />
+                  <Select
+                    value={formData.cambioRetiro === "" ? "__none__" : formData.cambioRetiro}
+                    onValueChange={(v) => handleInputChange("cambioRetiro", v === "__none__" ? "" : v)}
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Seleccionar</SelectItem>
+                      <SelectItem value="Cambio">Cambio</SelectItem>
+                      <SelectItem value="Retiro">Retiro</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
