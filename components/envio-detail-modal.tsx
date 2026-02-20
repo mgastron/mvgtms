@@ -26,6 +26,7 @@ interface EnvioDetailModalProps {
   envio: {
     id: number
     tracking: string
+    idMvg?: string
     cliente: string
     direccion: string
     nombreDestinatario: string
@@ -1039,8 +1040,8 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             <div className="col-span-2 space-y-3">
               {activeTab === "general" && (
                 <div className="space-y-3">
-                  {/* Fila 1: IDML, Tracking, Cliente */}
-                  <div className="grid grid-cols-3 gap-4">
+                  {/* Fila 1: IDML, Tracking, ID_MVG, Cliente */}
+                  <div className="grid grid-cols-4 gap-4">
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">IDML</label>
                       <Input 
@@ -1051,7 +1052,11 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                     </div>
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Tracking</label>
-                      <Input value={`#${envio.tracking}`} className="h-9 text-sm border-gray-300 bg-white font-mono font-semibold shadow-sm" readOnly />
+                      <Input value={normalizeValue(envio.tracking)} className="h-9 text-sm border-gray-300 bg-white font-mono shadow-sm" readOnly />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">ID_MVG</label>
+                      <Input value={normalizeValue(envio.idMvg ?? envio.tracking)} className="h-9 text-sm border-gray-300 bg-white font-mono font-semibold shadow-sm" readOnly />
                     </div>
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Cliente</label>

@@ -58,8 +58,9 @@ public class EnvioService {
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     
+    /** Busca por tracking o por ID_MVG (el código que usa el buscador de pedidos). */
     public java.util.Optional<Envio> findByTracking(String tracking) {
-        List<Envio> envios = envioRepository.findByTrackingAndEliminadoFalse(tracking);
+        List<Envio> envios = envioRepository.findByTrackingOrIdMvgAndEliminadoFalse(tracking);
         return envios.isEmpty() ? java.util.Optional.empty() : java.util.Optional.of(envios.get(0));
     }
 
@@ -125,16 +126,16 @@ public class EnvioService {
 
     @Transactional
     public EnvioDTO crearEnvio(EnvioDTO envioDTO) {
-        // Si el origen es "Directo" y viene un tracking como semilla, generar uno único
+        // Si el origen es "Directo" y viene un tracking como semilla: tracking = original, idMvg = código único generado
         if ("Directo".equals(envioDTO.getOrigen()) && envioDTO.getTracking() != null && !envioDTO.getTracking().trim().isEmpty()) {
             String semilla = envioDTO.getTracking();
-            String trackingUnico = generarTrackingUnico(semilla);
-            envioDTO.setTracking(trackingUnico);
-            // Establecer el qrData con el tracking único si no está establecido o está usando la semilla
+            String idMvg = generarTrackingUnico(semilla);
+            envioDTO.setIdMvg(idMvg);
+            // tracking se mantiene como el que viene (semilla); idMvg es el código alfanumérico para búsqueda
             if (envioDTO.getQrData() == null || envioDTO.getQrData().equals(semilla)) {
-                envioDTO.setQrData(trackingUnico);
+                envioDTO.setQrData(idMvg);
             }
-            log.info("Tracking generado único para envío Directo - Semilla: {}, Tracking único: {}", semilla, trackingUnico);
+            log.info("ID_MVG generado para envío Directo - Semilla: {}, ID_MVG: {}", semilla, idMvg);
         }
         
         // Calcular costo de envío si es un envío directo y tiene cliente y código postal
@@ -144,9 +145,10 @@ public class EnvioService {
         
         Envio envio = toEntity(envioDTO);
         
-        // Generar token único para tracking público si no existe (después de crear la entidad)
+        // Generar token único para tracking público si no existe (usar idMvg o tracking para unicidad)
         if (envio.getTrackingToken() == null || envio.getTrackingToken().trim().isEmpty()) {
-            String trackingToken = generarTrackingToken(envio.getTracking(), envio.getId());
+            String base = envio.getIdMvg() != null && !envio.getIdMvg().isEmpty() ? envio.getIdMvg() : envio.getTracking();
+            String trackingToken = generarTrackingToken(base, envio.getId());
             envio.setTrackingToken(trackingToken);
             log.info("Tracking token generado para envío: {}", trackingToken);
         }
@@ -154,19 +156,7 @@ public class EnvioService {
         envio = envioRepository.save(envio);
         EnvioDTO resultado = toDTO(envio);
         
-        // Enviar email de notificación si el envío NO es de Flex y tiene email
-        if (!"Flex".equals(envio.getOrigen()) && envio.getEmail() != null && !envio.getEmail().trim().isEmpty()) {
-            try {
-                emailService.enviarEmailNotificacionEnvio(
-                    envio.getEmail(),
-                    envio.getNombreDestinatario(),
-                    envio.getTracking(),
-                    envio.getTrackingToken()
-                );
-            } catch (Exception e) {
-                log.warn("Error al enviar email de notificación (no se bloquea la creación del envío): {}", e.getMessage());
-            }
-        }
+        // El email "Tu pedido está en camino" se envía cuando el envío pasa a estado Retirado (no al crear)
         
         return resultado;
     }
@@ -204,9 +194,8 @@ public class EnvioService {
             int maxIntentos = 100; // Límite de seguridad
             
             while (contador < maxIntentos) {
-                List<Envio> enviosExistentes = envioRepository.findByTrackingAndEliminadoFalse(trackingFinal);
+                List<Envio> enviosExistentes = envioRepository.findByIdMvgAndEliminadoFalse(trackingFinal);
                 if (enviosExistentes.isEmpty()) {
-                    // Tracking único encontrado
                     return trackingFinal;
                 }
                 
@@ -437,7 +426,31 @@ public class EnvioService {
             imagenEnvioRepository.save(imagen);
         }
         
+        // Enviar email "Tu pedido está en camino" cuando el estado pasa a Retirado (web/app)
+        if ("Retirado".equals(estado) && !"Retirado".equals(estadoAnterior)) {
+            enviarEmailNotificacionSiRetirado(envio);
+        }
+        
         return toDTO(envio);
+    }
+    
+    /**
+     * Envía el email "Tu pedido está en camino" si el envío no es Flex y tiene email.
+     * Se llama cuando el envío pasa a estado Retirado (colectado).
+     */
+    private void enviarEmailNotificacionSiRetirado(Envio envio) {
+        if ("Flex".equals(envio.getOrigen())) return;
+        if (envio.getEmail() == null || envio.getEmail().trim().isEmpty()) return;
+        try {
+            emailService.enviarEmailNotificacionEnvio(
+                envio.getEmail(),
+                envio.getNombreDestinatario(),
+                envio.getTracking(),
+                envio.getTrackingToken()
+            );
+        } catch (Exception e) {
+            log.warn("Error al enviar email de notificación (no se bloquea el cambio de estado): {}", e.getMessage());
+        }
     }
     
     // Método sobrecargado para compatibilidad con llamadas desde web
@@ -563,6 +576,9 @@ public class EnvioService {
         historial.setObservaciones(null); // Sin observación
         historial.setOrigen("APP"); // Colectar siempre es desde la app móvil
         historialEnvioRepository.save(historial);
+        
+        // Enviar email "Tu pedido está en camino" al pasar a Retirado (colecta por escaneo)
+        enviarEmailNotificacionSiRetirado(envio);
         
         return toDTO(envio);
     }
@@ -812,8 +828,11 @@ public class EnvioService {
 
     @Transactional
     public EnvioDTO asignarEnvio(Long envioId, Long choferId, String choferNombre, String usuarioAsignador, String origen) {
+        log.info("asignarEnvio inicio envioId={} choferId={} choferNombre={}", envioId, choferId, choferNombre);
         Envio envio = envioRepository.findById(envioId)
                 .orElseThrow(() -> new RuntimeException("Envío no encontrado con id: " + envioId));
+        log.info("asignarEnvio envio encontrado id={} estado={} choferAnterior={} origen={}",
+                envio.getId(), envio.getEstado(), envio.getChoferAsignadoNombre(), envio.getOrigen());
         
         // Verificar si es asignación a "PENDIENTES DEPÓSITO"
         boolean esPendientesDeposito = "PENDIENTES DEPÓSITO".equals(choferNombre);
@@ -822,22 +841,12 @@ public class EnvioService {
         String choferAnterior = envio.getChoferAsignadoNombre();
         boolean vieneDePendientesDeposito = "PENDIENTES DEPÓSITO".equals(choferAnterior);
         
-        // Si NO es "PENDIENTES DEPÓSITO", validar estados normales
-        if (!esPendientesDeposito) {
-            // Si viene de PENDIENTES DEPÓSITO, permitir la reasignación sin validar el estado
-            // (excepto estados finales)
-            if (!vieneDePendientesDeposito) {
-                // Validar que el envío esté en estado "Retirado" o ya asignado
-                if ("A retirar".equals(envio.getEstado())) {
-                    throw new RuntimeException("El envío debe ser colectado primero");
-                }
-            }
-            
-            // Validar que el envío no esté en estados finales
-            if ("Entregado".equals(envio.getEstado()) || "Cancelado".equals(envio.getEstado())) {
-                throw new RuntimeException("No se pueden asignar envíos que estén en estado 'Entregado' o 'Cancelado'");
-            }
+        // Validar que el envío no esté en estados finales (nunca asignar Entregado/Cancelado)
+        if ("Entregado".equals(envio.getEstado()) || "Cancelado".equals(envio.getEstado())) {
+            throw new RuntimeException("No se pueden asignar envíos que estén en estado 'Entregado' o 'Cancelado'");
         }
+
+        // Permitir asignar a chofer desde "A retirar" (el chofer puede ser quien lo retira) o desde "Retirado"
         
         LocalDateTime ahora = LocalDateTime.now();
         
@@ -868,7 +877,10 @@ public class EnvioService {
         }
         // Si es "PENDIENTES DEPÓSITO" o Flex, mantener el estado actual
         
+        log.info("asignarEnvio guardando envio id={} estado={} choferAsignadoId={} choferAsignadoNombre={}",
+                envio.getId(), envio.getEstado(), envio.getChoferAsignadoId(), envio.getChoferAsignadoNombre());
         envio = envioRepository.save(envio);
+        log.info("asignarEnvio save OK envio id={}", envio.getId());
         
         // Determinar si hubo cambio de estado
         boolean cambioEstado = !estadoAnterior.equals(envio.getEstado());
@@ -906,15 +918,23 @@ public class EnvioService {
             historialEnvioRepository.save(historial);
         } else if (esReasignacion) {
             // Si solo hubo reasignación sin cambio de estado, agregar al historial
-            // pero con una observación que indique solo la reasignación
-            // Esto permitirá que aparezca en la tabla de asignaciones pero no duplicará el estado
             HistorialEnvio historial = new HistorialEnvio();
             historial.setEnvioId(envio.getId());
-            historial.setEstado(envio.getEstado()); // Mismo estado
+            historial.setEstado(envio.getEstado());
             historial.setFecha(ahora);
             historial.setQuien(usuarioAsignador != null ? usuarioAsignador : "Usuario");
             historial.setOrigen(origen != null ? origen : "WEB");
             historial.setObservaciones("Reasignado desde: " + choferAnterior + " a: " + choferNombre);
+            historialEnvioRepository.save(historial);
+        } else if (esPrimeraAsignacion) {
+            // Primera asignación sin cambio de estado (ej. "A retirar" -> chofer): registrar en historial
+            HistorialEnvio historial = new HistorialEnvio();
+            historial.setEnvioId(envio.getId());
+            historial.setEstado(envio.getEstado());
+            historial.setFecha(ahora);
+            historial.setQuien(usuarioAsignador != null ? usuarioAsignador : "Usuario");
+            historial.setOrigen(origen != null ? origen : "WEB");
+            historial.setObservaciones("Asignado a: " + choferNombre);
             historialEnvioRepository.save(historial);
         }
         
@@ -950,22 +970,7 @@ public class EnvioService {
                 .map(this::toDTO)
                 .collect(Collectors.toList());
         
-        // Enviar emails de notificación para envíos que NO son de Flex y tienen email
-        for (Envio envio : enviosGuardados) {
-            if (!"Flex".equals(envio.getOrigen()) && envio.getEmail() != null && !envio.getEmail().trim().isEmpty()) {
-                try {
-                    emailService.enviarEmailNotificacionEnvio(
-                        envio.getEmail(),
-                        envio.getNombreDestinatario(),
-                        envio.getTracking(),
-                        envio.getTrackingToken()
-                    );
-                } catch (Exception e) {
-                    log.warn("Error al enviar email de notificación para tracking {} (no se bloquea la creación): {}", 
-                        envio.getTracking(), e.getMessage());
-                }
-            }
-        }
+        // El email "Tu pedido está en camino" se envía cuando el envío pasa a estado Retirado (no al crear)
         
         return resultados;
     }
@@ -1079,19 +1084,21 @@ public class EnvioService {
                 }
             }
 
-            // Filtro por tracking
+            // Filtro por tracking o ID_MVG (buscador)
             if (filter.getTracking() != null && !filter.getTracking().trim().isEmpty()) {
-                predicates.add(cb.like(
-                        cb.lower(root.get("tracking")),
-                        "%" + filter.getTracking().toLowerCase() + "%"
+                String term = "%" + filter.getTracking().toLowerCase() + "%";
+                predicates.add(cb.or(
+                    cb.like(cb.lower(root.get("tracking")), term),
+                    cb.like(cb.lower(root.get("idMvg")), term)
                 ));
             }
 
-            // Filtro por ID venta (buscar en tracking)
+            // Filtro por ID venta (buscar en tracking o ID_MVG)
             if (filter.getIdVenta() != null && !filter.getIdVenta().trim().isEmpty()) {
-                predicates.add(cb.like(
-                        cb.lower(root.get("tracking")),
-                        "%" + filter.getIdVenta().toLowerCase() + "%"
+                String term = "%" + filter.getIdVenta().toLowerCase() + "%";
+                predicates.add(cb.or(
+                    cb.like(cb.lower(root.get("tracking")), term),
+                    cb.like(cb.lower(root.get("idMvg")), term)
                 ));
             }
 
@@ -1251,6 +1258,7 @@ public class EnvioService {
         dto.setFechaUltimoMovimiento(envio.getFechaUltimoMovimiento());
         dto.setOrigen(envio.getOrigen());
         dto.setTracking(envio.getTracking());
+        dto.setIdMvg(envio.getIdMvg());
         dto.setCliente(envio.getCliente());
         dto.setDireccion(envio.getDireccion());
         dto.setNombreDestinatario(envio.getNombreDestinatario());
@@ -1296,6 +1304,7 @@ public class EnvioService {
         envio.setFechaUltimoMovimiento(dto.getFechaUltimoMovimiento());
         envio.setOrigen(dto.getOrigen() != null ? dto.getOrigen() : "Directo");
         envio.setTracking(dto.getTracking());
+        envio.setIdMvg(dto.getIdMvg());
         envio.setCliente(dto.getCliente());
         envio.setDireccion(dto.getDireccion());
         envio.setNombreDestinatario(dto.getNombreDestinatario());

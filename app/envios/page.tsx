@@ -27,6 +27,7 @@ interface Envio {
   fechaUltimoMovimiento?: string
   origen: string
   tracking: string
+  idMvg?: string
   cliente: string
   direccion: string
   nombreDestinatario: string
@@ -1136,7 +1137,8 @@ export default function EnviosPage() {
                       <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '110px' }}>Nombre fantasia</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '105px' }}>IDML</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '60px' }}>ORIGEN</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '120px' }}>tracking_number</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '120px' }}>Tracking</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '120px' }}>ID_MVG</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '120px' }}>Fecha venta</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '125px' }}>Fecha Zeta Llegue</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '130px' }}>Destino nombre</th>
@@ -1150,7 +1152,7 @@ export default function EnviosPage() {
                   <tbody>
                     {paginatedEnvios.length === 0 ? (
                       <tr>
-                        <td colSpan={13} className="px-3 py-8 text-center text-sm text-gray-500">
+                        <td colSpan={14} className="px-3 py-8 text-center text-sm text-gray-500">
                           No se encontraron envíos
                         </td>
                       </tr>
@@ -1175,6 +1177,7 @@ export default function EnviosPage() {
                             </span>
                           </td>
                           <td className="px-2 py-3 text-sm font-mono text-gray-700 whitespace-normal break-words">{envio.tracking}</td>
+                          <td className="px-2 py-3 text-sm font-mono text-gray-700 whitespace-normal break-words">{envio.idMvg ?? envio.tracking}</td>
                           <td className="px-2 py-3 text-sm text-gray-600 whitespace-normal break-words">{formatFecha(envio.fechaVenta || envio.fecha)}</td>
                           <td className="px-2 py-3 text-sm text-gray-600 whitespace-normal break-words">{formatFecha(envio.fechaLlegue || envio.fecha)}</td>
                           <td className="px-2 py-3 text-sm font-medium text-gray-900 whitespace-normal break-words">{envio.nombreDestinatario}</td>

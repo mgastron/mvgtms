@@ -23,6 +23,8 @@ public class EnvioDTO {
     private LocalDateTime fechaUltimoMovimiento;
     private String origen;
     private String tracking;
+    /** ID_MVG: código alfanumérico único generado por MVG; usado para búsqueda/filtro. */
+    private String idMvg;
     private String cliente;
     private String direccion;
     private String nombreDestinatario;

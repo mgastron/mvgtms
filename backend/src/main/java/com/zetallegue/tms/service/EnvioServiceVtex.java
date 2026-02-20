@@ -34,7 +34,7 @@ public class EnvioServiceVtex {
     private final EnvioRepository envioRepository;
     private final ClienteRepository clienteRepository;
     private final ListaPrecioRepository listaPrecioRepository;
-    private final EmailService emailService;
+    private final EnvioService envioService;
 
     /**
      * Crea un envío desde un pedido de VTEX
@@ -46,14 +46,15 @@ public class EnvioServiceVtex {
         Cliente cliente = clienteRepository.findById(clienteId)
             .orElseThrow(() -> new RuntimeException("Cliente no encontrado con id: " + clienteId));
         
-        // Tracking: usar prefijo "VTEX-" para identificar envíos de VTEX
+        // Tracking = el que viene del envío (VTEX + orderId). ID_MVG = código único para búsqueda.
         String orderId = pedidoJson.has("orderId") ? pedidoJson.get("orderId").asText() : 
                         pedidoJson.has("id") ? pedidoJson.get("id").asText() : 
                         String.valueOf(System.currentTimeMillis());
-        String tracking = "VTEX-" + orderId;
+        String trackingOriginal = "VTEX-" + orderId;
+        String idMvg = envioService.generarTrackingUnico("VTEX-" + orderId);
         
         // Verificar si ya existe un envío con este tracking Y origen "Vtex"
-        List<Envio> enviosExistentes = envioRepository.findByTrackingAndEliminadoFalse(tracking);
+        List<Envio> enviosExistentes = envioRepository.findByTrackingAndEliminadoFalse(trackingOriginal);
         Envio envioExistente = enviosExistentes.stream()
             .filter(e -> "Vtex".equals(e.getOrigen()))
             .findFirst()
@@ -61,7 +62,7 @@ public class EnvioServiceVtex {
         
         if (envioExistente != null) {
             log.info("Envío de VTEX con tracking {} ya existe, retornando existente con ID {}", 
-                tracking, envioExistente.getId());
+                trackingOriginal, envioExistente.getId());
             return toDTO(envioExistente);
         }
         
@@ -89,7 +90,8 @@ public class EnvioServiceVtex {
         // Origen: "Vtex"
         envioDTO.setOrigen("Vtex");
         
-        envioDTO.setTracking(tracking);
+        envioDTO.setTracking(trackingOriginal);
+        envioDTO.setIdMvg(idMvg);
         
         // Cliente: código - nombre
         String clienteStr = cliente.getCodigo() + " - " + (cliente.getNombreFantasia() != null ? cliente.getNombreFantasia() : cliente.getRazonSocial());
@@ -255,19 +257,7 @@ public class EnvioServiceVtex {
         
         EnvioDTO resultado = toDTO(envio);
         
-        // Enviar email de notificación si el envío tiene email (VTEX nunca es Flex)
-        if (envio.getEmail() != null && !envio.getEmail().trim().isEmpty()) {
-            try {
-                emailService.enviarEmailNotificacionEnvio(
-                    envio.getEmail(),
-                    envio.getNombreDestinatario(),
-                    envio.getTracking(),
-                    envio.getTrackingToken()
-                );
-            } catch (Exception e) {
-                log.warn("Error al enviar email de notificación (no se bloquea la creación del envío): {}", e.getMessage());
-            }
-        }
+        // El email "Tu pedido está en camino" se envía cuando el envío pasa a estado Retirado (no al crear)
         
         return resultado;
     }
@@ -444,6 +434,7 @@ public class EnvioServiceVtex {
         
         envio.setOrigen(dto.getOrigen() != null ? dto.getOrigen() : "Vtex");
         envio.setTracking(dto.getTracking());
+        envio.setIdMvg(dto.getIdMvg());
         envio.setCliente(dto.getCliente());
         envio.setDireccion(dto.getDireccion());
         envio.setNombreDestinatario(dto.getNombreDestinatario());
@@ -495,6 +486,7 @@ public class EnvioServiceVtex {
         dto.setFechaUltimoMovimiento(envio.getFechaUltimoMovimiento());
         dto.setOrigen(envio.getOrigen());
         dto.setTracking(envio.getTracking());
+        dto.setIdMvg(envio.getIdMvg());
         dto.setCliente(envio.getCliente());
         dto.setDireccion(envio.getDireccion());
         dto.setNombreDestinatario(envio.getNombreDestinatario());

@@ -34,7 +34,6 @@ public class EnvioServiceShopify {
     private final EnvioRepository envioRepository;
     private final ClienteRepository clienteRepository;
     private final ListaPrecioRepository listaPrecioRepository;
-    private final EmailService emailService;
     private final EnvioService envioService;
 
     // Zonas de CP para determinar zona de entrega (misma lógica que Flex y Tienda Nube)
@@ -123,22 +122,20 @@ public class EnvioServiceShopify {
             }
         }
         
-        // Tracking: usar prefijo "SHOPIFY-" para identificar envíos de Shopify
-        // Generar tracking único usando el número de pedido como semilla
-        String tracking = envioService.generarTrackingUnico("SHOPIFY-" + numeroPedido);
+        // Tracking = el que viene del envío (Shopify: prefijo + número de pedido). ID_MVG = código único para búsqueda.
+        String trackingOriginal = "SHOPIFY-" + numeroPedido;
+        String idMvg = envioService.generarTrackingUnico("SHOPIFY-" + numeroPedido);
         
-        log.info("Tracking generado único para envío Shopify - Semilla: SHOPIFY-{}, Tracking único: {}", numeroPedido, tracking);
+        log.info("Envío Shopify - Tracking: {}, ID_MVG: {}", trackingOriginal, idMvg);
         
-        // Verificación adicional por tracking (por si acaso)
-        List<Envio> enviosPorTracking = envioRepository.findByTrackingAndEliminadoFalse(tracking);
-        Envio envioExistentePorTracking = enviosPorTracking.stream()
+        List<Envio> enviosPorIdMvg = envioRepository.findByIdMvgAndEliminadoFalse(idMvg);
+        Envio envioExistentePorTracking = enviosPorIdMvg.stream()
             .filter(e -> "Shopify".equals(e.getOrigen()))
             .findFirst()
             .orElse(null);
         
         if (envioExistentePorTracking != null) {
-            log.info("Envío de Shopify con tracking {} ya existe, retornando existente con ID {} (NO se enviará email duplicado)", 
-                tracking, envioExistentePorTracking.getId());
+            log.info("Envío de Shopify con ID_MVG {} ya existe, retornando existente con ID {}", idMvg, envioExistentePorTracking.getId());
             return toDTO(envioExistentePorTracking);
         }
         
@@ -183,7 +180,8 @@ public class EnvioServiceShopify {
         // Origen: "Shopify"
         envioDTO.setOrigen("Shopify");
         
-        envioDTO.setTracking(tracking);
+        envioDTO.setTracking(trackingOriginal);
+        envioDTO.setIdMvg(idMvg);
         
         // Cliente
         envioDTO.setCliente(clienteStr);
@@ -419,23 +417,7 @@ public class EnvioServiceShopify {
         // Convertir a DTO dentro de la transacción
         EnvioDTO resultado = toDTO(envio);
         
-        // Enviar email de notificación SOLO si el envío tiene email Y es un envío nuevo
-        if (envio.getEmail() != null && !envio.getEmail().trim().isEmpty()) {
-            try {
-                log.info("Enviando email de notificación para envío nuevo - Tracking: {}, Email: {}", 
-                    envio.getTracking(), envio.getEmail());
-                emailService.enviarEmailNotificacionEnvio(
-                    envio.getEmail(),
-                    envio.getNombreDestinatario(),
-                    envio.getTracking(),
-                    envio.getTrackingToken()
-                );
-            } catch (Exception e) {
-                log.warn("Error al enviar email de notificación (no se bloquea la creación del envío): {}", e.getMessage());
-            }
-        } else {
-            log.debug("No se envía email - envío sin email o email vacío");
-        }
+        // El email "Tu pedido está en camino" se envía cuando el envío pasa a estado Retirado (no al crear)
         
         return resultado;
     }
@@ -643,6 +625,7 @@ public class EnvioServiceShopify {
         envio.setFechaLlegue(dto.getFechaLlegue());
         envio.setOrigen(dto.getOrigen());
         envio.setTracking(dto.getTracking());
+        envio.setIdMvg(dto.getIdMvg());
         envio.setCliente(dto.getCliente());
         envio.setDireccion(dto.getDireccion());
         envio.setLocalidad(dto.getLocalidad());
@@ -672,6 +655,7 @@ public class EnvioServiceShopify {
         dto.setFechaLlegue(envio.getFechaLlegue());
         dto.setOrigen(envio.getOrigen());
         dto.setTracking(envio.getTracking());
+        dto.setIdMvg(envio.getIdMvg());
         dto.setCliente(envio.getCliente());
         dto.setDireccion(envio.getDireccion());
         dto.setLocalidad(envio.getLocalidad());

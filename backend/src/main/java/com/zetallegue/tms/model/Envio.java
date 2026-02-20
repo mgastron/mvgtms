@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "envios", indexes = {
     @Index(name = "idx_tracking", columnList = "tracking"),
+    @Index(name = "idx_id_mvg", columnList = "id_mvg"),
     @Index(name = "idx_cliente", columnList = "cliente"),
     @Index(name = "idx_fecha", columnList = "fecha"),
     @Index(name = "idx_fecha_venta", columnList = "fecha_venta"),
@@ -65,6 +66,10 @@ public class Envio {
 
     @Column(name = "tracking", length = 100)
     private String tracking;
+
+    /** Código alfanumérico único generado por MVG (ID_MVG); usado para búsqueda/filtro. */
+    @Column(name = "id_mvg", length = 100)
+    private String idMvg;
 
     @Column(name = "cliente", length = 200)
     private String cliente;

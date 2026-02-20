@@ -80,7 +80,7 @@ export default function BuscadorPedidosPage() {
               Buscador de Pedidos
             </h1>
             <p className="text-lg text-gray-600">
-              Ingresá el número de tracking para ver el estado de tu envío
+              Ingresá el ID_MVG o el tracking para ver el estado de tu envío
             </p>
           </div>
 
@@ -93,7 +93,7 @@ export default function BuscadorPedidosPage() {
                 </div>
                 <Input
                   type="text"
-                  placeholder="Ingresá el número de tracking..."
+                  placeholder="Ingresá ID_MVG o tracking..."
                   value={tracking}
                   onChange={(e) => setTracking(e.target.value)}
                   className="pl-12 h-14 text-lg border-2 border-gray-200 focus:border-purple-500 rounded-xl"

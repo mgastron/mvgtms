@@ -34,7 +34,6 @@ public class EnvioServiceTiendaNube {
     private final EnvioRepository envioRepository;
     private final ClienteRepository clienteRepository;
     private final ListaPrecioRepository listaPrecioRepository;
-    private final EmailService emailService;
     private final EnvioService envioService;
 
     /**
@@ -91,27 +90,24 @@ public class EnvioServiceTiendaNube {
             }
         }
         
-        // Obtener el número del pedido de Tienda Nube para usarlo como semilla
         String numeroPedido = pedidoJson.has("number") ? pedidoJson.get("number").asText() : 
                              pedidoJson.has("id") ? pedidoJson.get("id").asText() : 
                              String.valueOf(System.currentTimeMillis());
         
-        // Generar tracking único usando el número del pedido como semilla (igual que envíos directos)
-        String tracking = envioService.generarTrackingUnico("TN-" + numeroPedido);
+        // Tracking = el que viene del envío (TN + número). ID_MVG = código único para búsqueda.
+        String trackingOriginal = "TN-" + numeroPedido;
+        String idMvg = envioService.generarTrackingUnico("TN-" + numeroPedido);
         
-        log.info("Tracking generado único para envío Tienda Nube - Semilla: TN-{}, Tracking único: {}", numeroPedido, tracking);
+        log.info("Envío Tienda Nube - Tracking: {}, ID_MVG: {}", trackingOriginal, idMvg);
         
-        // Verificación adicional por tracking (por si acaso)
-        List<Envio> enviosPorTracking = envioRepository.findByTrackingAndEliminadoFalse(tracking);
-        Envio envioExistentePorTracking = enviosPorTracking.stream()
+        List<Envio> enviosPorIdMvg = envioRepository.findByIdMvgAndEliminadoFalse(idMvg);
+        Envio envioExistentePorTracking = enviosPorIdMvg.stream()
             .filter(e -> "Tienda Nube".equals(e.getOrigen()))
             .findFirst()
             .orElse(null);
         
         if (envioExistentePorTracking != null) {
-            log.info("Envío de Tienda Nube con tracking {} ya existe, retornando existente con ID {} (NO se enviará email duplicado)", 
-                tracking, envioExistentePorTracking.getId());
-            // NO enviar email si el envío ya existía
+            log.info("Envío de Tienda Nube con ID_MVG {} ya existe, retornando existente con ID {}", idMvg, envioExistentePorTracking.getId());
             return toDTO(envioExistentePorTracking);
         }
         
@@ -141,7 +137,8 @@ public class EnvioServiceTiendaNube {
         // Origen: "Tienda Nube"
         envioDTO.setOrigen("Tienda Nube");
         
-        envioDTO.setTracking(tracking);
+        envioDTO.setTracking(trackingOriginal);
+        envioDTO.setIdMvg(idMvg);
         
         // Usar el clienteStr que ya se construyó arriba
         envioDTO.setCliente(clienteStr);
@@ -304,24 +301,7 @@ public class EnvioServiceTiendaNube {
         log.info("DTO resultante - ID: {}, Tracking: {}, Origen: {}, FechaLlegue: {}", 
             resultado.getId(), resultado.getTracking(), resultado.getOrigen(), resultado.getFechaLlegue());
         
-        // Enviar email de notificación SOLO si el envío tiene email Y es un envío nuevo (no duplicado)
-        // Si llegamos aquí, significa que es un envío nuevo (no existía previamente)
-        if (envio.getEmail() != null && !envio.getEmail().trim().isEmpty()) {
-            try {
-                log.info("Enviando email de notificación para envío nuevo - Tracking: {}, Email: {}", 
-                    envio.getTracking(), envio.getEmail());
-                emailService.enviarEmailNotificacionEnvio(
-                    envio.getEmail(),
-                    envio.getNombreDestinatario(),
-                    envio.getTracking(),
-                    envio.getTrackingToken()
-                );
-            } catch (Exception e) {
-                log.warn("Error al enviar email de notificación (no se bloquea la creación del envío): {}", e.getMessage());
-            }
-        } else {
-            log.debug("No se envía email - envío sin email o email vacío");
-        }
+        // El email "Tu pedido está en camino" se envía cuando el envío pasa a estado Retirado (no al crear)
         
         return resultado;
     }
@@ -532,6 +512,7 @@ public class EnvioServiceTiendaNube {
         // Datos básicos
         envio.setOrigen(dto.getOrigen() != null ? dto.getOrigen() : "Tienda Nube");
         envio.setTracking(dto.getTracking());
+        envio.setIdMvg(dto.getIdMvg());
         envio.setCliente(dto.getCliente());
         envio.setDireccion(dto.getDireccion());
         envio.setNombreDestinatario(dto.getNombreDestinatario());
@@ -587,6 +568,7 @@ public class EnvioServiceTiendaNube {
         dto.setFechaUltimoMovimiento(envio.getFechaUltimoMovimiento());
         dto.setOrigen(envio.getOrigen());
         dto.setTracking(envio.getTracking());
+        dto.setIdMvg(envio.getIdMvg());
         dto.setCliente(envio.getCliente());
         dto.setDireccion(envio.getDireccion());
         dto.setNombreDestinatario(envio.getNombreDestinatario());

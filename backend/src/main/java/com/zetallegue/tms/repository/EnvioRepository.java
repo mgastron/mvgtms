@@ -41,8 +41,14 @@ public interface EnvioRepository extends JpaRepository<Envio, Long>, JpaSpecific
     Envio findByQrDataParaColectar(@Param("qrData") String qrData);
     
     // Buscar por tracking (para evitar duplicados)
-    // Devuelve lista porque puede haber duplicados, tomamos el primero
     List<Envio> findByTrackingAndEliminadoFalse(String tracking);
+
+    // Buscar por id_mvg (para evitar duplicados y para búsqueda)
+    List<Envio> findByIdMvgAndEliminadoFalse(String idMvg);
+
+    // Buscar por tracking o id_mvg (buscador de pedidos)
+    @Query("SELECT e FROM Envio e WHERE (e.tracking = :param OR e.idMvg = :param) AND e.eliminado = false")
+    List<Envio> findByTrackingOrIdMvgAndEliminadoFalse(@Param("param") String param);
     
     // Buscar envíos asignados a un chofer en estado específico (solo colectados o NULL)
     @Query("SELECT e FROM Envio e WHERE e.choferAsignadoId = :choferId AND e.estado = :estado AND e.eliminado = false AND (e.colectado = true OR e.colectado IS NULL)")
