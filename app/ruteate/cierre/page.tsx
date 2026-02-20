@@ -23,35 +23,49 @@ export default function CierrePage() {
     loadChoferes()
   }, [soloFlex])
 
-  // Calcular tiempo restante hasta las 23:00
+  // Calcular tiempo restante hasta las 23:00 hora Argentina (GMT-3)
   useEffect(() => {
+    const ZONA_ARGENTINA = "America/Argentina/Buenos_Aires"
+    const HORA_CIERRE = 23
+    const MINUTO_CIERRE = 0
+    const SEGUNDO_CIERRE = 0
+
     const calcularTiempoRestante = () => {
       const ahora = new Date()
-      const horaActual = ahora.getHours()
-      const minutoActual = ahora.getMinutes()
-      const segundoActual = ahora.getSeconds()
 
-      // Si es después de las 23:00, mostrar que ya cerró
-      if (horaActual >= 23) {
+      // Obtener fecha/hora actual en Argentina
+      const arParts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: ZONA_ARGENTINA,
+        hour: "numeric",
+        hour12: false,
+      }).formatToParts(ahora)
+      const arDateParts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: ZONA_ARGENTINA,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(ahora)
+
+      const getPart = (parts: Intl.DateTimeFormatPart[], type: string) =>
+        parts.find((p) => p.type === type)?.value ?? "0"
+      const horaAr = parseInt(getPart(arParts, "hour"), 10)
+      const yearAr = parseInt(getPart(arDateParts, "year"), 10)
+      const monthAr = parseInt(getPart(arDateParts, "month"), 10) - 1
+      const dayAr = parseInt(getPart(arDateParts, "day"), 10)
+
+      // Si en Argentina son las 23:00 o más, cierre finalizado
+      if (horaAr >= HORA_CIERRE) {
         setCierreCerrado(true)
         setTiempoRestante("")
         return
       }
 
       setCierreCerrado(false)
-      
-      // Calcular tiempo hasta las 23:00:00
-      const horaCierre = 23
-      const minutoCierre = 0
-      const segundoCierre = 0
 
-      // Calcular diferencia en milisegundos
-      const ahoraMs = ahora.getTime()
-      const cierreHoy = new Date(ahora)
-      cierreHoy.setHours(horaCierre, minutoCierre, segundoCierre, 0)
-      const cierreMs = cierreHoy.getTime()
-
-      const diferenciaMs = cierreMs - ahoraMs
+      // 23:00:00 del día de hoy en Argentina = esa fecha en UTC-3, luego a timestamp
+      // En Argentina 23:00 = UTC 02:00 del día siguiente (23 + 3 = 26 → 02)
+      const cierreAr = new Date(Date.UTC(yearAr, monthAr, dayAr, HORA_CIERRE + 3, MINUTO_CIERRE, SEGUNDO_CIERRE))
+      const diferenciaMs = cierreAr.getTime() - ahora.getTime()
 
       if (diferenciaMs <= 0) {
         setCierreCerrado(true)
@@ -59,24 +73,19 @@ export default function CierrePage() {
         return
       }
 
-      // Convertir a horas, minutos y segundos
       const horasRestantes = Math.floor(diferenciaMs / (1000 * 60 * 60))
       const minutosRestantes = Math.floor((diferenciaMs % (1000 * 60 * 60)) / (1000 * 60))
       const segundosRestantes = Math.floor((diferenciaMs % (1000 * 60)) / 1000)
 
-      const horas = horasRestantes.toString().padStart(2, '0')
-      const minutos = minutosRestantes.toString().padStart(2, '0')
-      const segundos = segundosRestantes.toString().padStart(2, '0')
-
-      setTiempoRestante(`${horas}:${minutos}:${segundos}`)
+      setTiempoRestante(
+        [horasRestantes, minutosRestantes, segundosRestantes]
+          .map((n) => n.toString().padStart(2, "0"))
+          .join(":")
+      )
     }
 
-    // Calcular inmediatamente
     calcularTiempoRestante()
-
-    // Actualizar cada segundo
     const interval = setInterval(calcularTiempoRestante, 1000)
-
     return () => clearInterval(interval)
   }, [])
 
