@@ -89,11 +89,17 @@ export default function ReimprimirNoflexPage() {
       loadUserInfo()
     }
 
-    // Cargar envíos desde el backend primero
-    loadEnvios()
+    // No cargar aquí; lo hace el effect que depende de userProfile + filtros
   }, [router, userProfile, userCodigoCliente])
 
-  // Función para cargar envíos desde el backend
+  // Cargar envíos al tener perfil (y código cliente si es Cliente) y cuando cambien filtros del API
+  useEffect(() => {
+    if (!userProfile) return
+    if (userProfile === "Cliente" && !userCodigoCliente) return
+    loadEnvios()
+  }, [userProfile, userCodigoCliente, filters.tipoFecha, filters.fechaDesde, filters.fechaHasta, filters.origen, filters.zonasEntrega])
+
+  // Función para cargar envíos desde el backend (usa filtros actuales para el API)
   const loadEnvios = async () => {
     setIsLoading(true)
     try {
@@ -101,11 +107,17 @@ export default function ReimprimirNoflexPage() {
       const params = new URLSearchParams({
         page: "0",
         size: "1000", // Cargar muchos para reimprimir
-        estado: "todos", // Todos los estados excepto eliminados
-        origen: "todos", // Todos los orígenes excepto Flex
+        estado: "todos",
+        tipoFecha: filters.tipoFecha || "fechaVenta",
+        fechaDesde: filters.fechaDesde || "",
+        fechaHasta: filters.fechaHasta || "",
+        origen: filters.origen || "todos",
+        nombreFantasia: filters.nombreFantasia || "",
+        destinoNombre: filters.nombreDestinatario || "",
+        destinoDireccion: filters.destinoDireccion || "",
+        zonasEntrega: filters.zonasEntrega && filters.zonasEntrega !== "todos" ? filters.zonasEntrega : "",
       })
 
-      // Si el usuario es Cliente, agregar filtro de código de cliente
       if (userProfile === "Cliente" && userCodigoCliente) {
         params.append("codigoCliente", userCodigoCliente)
       }
@@ -113,45 +125,36 @@ export default function ReimprimirNoflexPage() {
       const response = await fetch(`${apiBaseUrl}/envios?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
-        if (data.content && data.content.length > 0) {
-          // Convertir y filtrar envíos (excluir Flex y eliminados)
-          const enviosFormateados = data.content
-            .filter((envio: any) => envio.origen !== "Flex" && !envio.eliminado)
-            .map((envio: any) => ({
-              id: envio.id,
-              fecha: envio.fecha ? new Date(envio.fecha).toISOString() : undefined,
-              fechaVenta: envio.fechaVenta ? new Date(envio.fechaVenta).toISOString() : undefined,
-              fechaLlegue: envio.fechaLlegue ? new Date(envio.fechaLlegue).toISOString() : undefined,
-              fechaEntregado: envio.fechaEntregado ? new Date(envio.fechaEntregado).toISOString() : undefined,
-              origen: envio.origen,
-              tracking: envio.tracking,
-              cliente: envio.cliente,
-              direccion: envio.direccion,
-              nombreDestinatario: envio.nombreDestinatario,
-              telefono: envio.telefono,
-              impreso: envio.impreso || "NO",
-              observaciones: envio.observaciones,
-              totalACobrar: envio.totalACobrar,
-              cambioRetiro: envio.cambioRetiro,
-              localidad: envio.localidad,
-              qrData: envio.qrData || envio.tracking, // Usar tracking como fallback si no hay qrData
-            }))
-          setEnvios(enviosFormateados)
-          setFilteredEnvios(enviosFormateados)
-        } else {
-          // Si el backend no tiene datos, intentar localStorage
-          warnDev("Backend no tiene datos, usando localStorage")
-          const enviosGuardados = JSON.parse(localStorage.getItem("enviosNoflex") || "[]")
-          const enviosSinFlex = enviosGuardados.filter((envio: EnvioNoflex) => envio.origen !== "Flex")
-          setEnvios(enviosSinFlex)
-          setFilteredEnvios(enviosSinFlex)
-        }
+        const content = data.content ?? []
+        // Convertir y excluir Flex y eliminados (Flex no se reimprime con NoFlex)
+        const enviosFormateados = content
+          .filter((envio: any) => envio.origen !== "Flex" && !envio.eliminado)
+          .map((envio: any) => ({
+            id: envio.id,
+            fecha: envio.fecha ? new Date(envio.fecha).toISOString() : undefined,
+            fechaVenta: envio.fechaVenta ? new Date(envio.fechaVenta).toISOString() : undefined,
+            fechaLlegue: envio.fechaLlegue ? new Date(envio.fechaLlegue).toISOString() : undefined,
+            fechaEntregado: envio.fechaEntregado ? new Date(envio.fechaEntregado).toISOString() : undefined,
+            origen: envio.origen,
+            tracking: envio.tracking,
+            cliente: envio.cliente,
+            direccion: envio.direccion,
+            nombreDestinatario: envio.nombreDestinatario,
+            telefono: envio.telefono,
+            impreso: envio.impreso || "NO",
+            observaciones: envio.observaciones,
+            totalACobrar: envio.totalACobrar,
+            cambioRetiro: envio.cambioRetiro,
+            localidad: envio.localidad,
+            qrData: envio.qrData || envio.tracking,
+          }))
+        setEnvios(enviosFormateados)
+        // filteredEnvios se actualiza en el useEffect que aplica pendienteImprimir y trackings
       } else {
         throw new Error("Error al cargar envíos desde el backend")
       }
     } catch (error) {
       warnDev("Error al cargar desde backend, usando localStorage:", error)
-      // Fallback a localStorage
       const enviosGuardados = JSON.parse(localStorage.getItem("enviosNoflex") || "[]")
       const enviosSinFlex = enviosGuardados.filter((envio: EnvioNoflex) => envio.origen !== "Flex")
       setEnvios(enviosSinFlex)
@@ -912,6 +915,7 @@ export default function ReimprimirNoflexPage() {
                       <SelectItem value="Tienda Nube">Tienda Nube</SelectItem>
                       <SelectItem value="Shopify">Shopify</SelectItem>
                       <SelectItem value="Vtex">Vtex</SelectItem>
+                      <SelectItem value="Mercado Libre">Mercado Libre</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -983,9 +987,8 @@ export default function ReimprimirNoflexPage() {
               {/* Action Buttons */}
               <div className="flex gap-2">
                 <Button
-                  onClick={() => {
-                    // Los filtros se aplican automáticamente con useEffect
-                  }}
+                  onClick={loadEnvios}
+                  disabled={isLoading}
                   className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white h-8 px-4"
                 >
                   FILTRAR
