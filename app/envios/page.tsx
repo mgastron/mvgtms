@@ -174,91 +174,50 @@ export default function EnviosPage() {
       }
 
       const apiBaseUrl = getApiBaseUrl()
-      
-      // OPTIMIZACIÓN: Si es la primera página y tenemos caché, mostrar datos del caché inmediatamente
-      if (page === 0 && enviosCache.length > 0 && !filters.tracking && !filters.idVenta && filters.estado === "todos" && filters.origen === "todos") {
-        // Aplicar filtros básicos al caché
+
+      // Solo usar caché cuando no hay ningún filtro activo (fechas, estado, origen, tracking, idVenta)
+      const sinFiltros =
+        !filters.fechaDesde &&
+        !filters.fechaHasta &&
+        filters.estado === "todos" &&
+        filters.origen === "todos" &&
+        !filters.tracking?.trim() &&
+        !filters.idVenta?.trim()
+
+      if (page === 0 && enviosCache.length > 0 && sinFiltros) {
         let enviosFiltrados = enviosCache
-        
-        // Filtrar por cliente si es necesario
         if (userProfile === "Cliente" && userCodigoCliente) {
           enviosFiltrados = enviosFiltrados.filter((envio: any) => {
             const clienteCodigo = envio.cliente?.split(" - ")[0]?.trim() || envio.cliente
             return clienteCodigo?.toLowerCase() === userCodigoCliente.toLowerCase()
           })
         }
-        // Filtrar por chofer asignado si es necesario (cache)
         if (userProfile === "Chofer" && choferId != null) {
           enviosFiltrados = enviosFiltrados.filter((envio: any) => envio.choferAsignadoId === choferId)
         }
-        
-        // Filtrar por eliminados
         enviosFiltrados = enviosFiltrados.filter((envio: any) => !envio.eliminado)
-        
-        // Aplicar paginación local
         const enviosPaginados = enviosFiltrados.slice(0, size)
-        
-        // Mostrar datos del caché inmediatamente
         setEnvios(enviosPaginados)
         setTotalPages(Math.ceil(enviosFiltrados.length / size))
         setTotalElements(enviosFiltrados.length)
-        if (showLoading) {
-          setIsLoading(false)
-        }
+        if (showLoading) setIsLoading(false)
       }
-      
-      // Cargar datos actualizados del backend en segundo plano
+
       const response = await fetch(`${apiBaseUrl}/envios?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
-        // Si el backend devuelve datos, usarlos
-        if (data.content && data.content.length > 0) {
-          // OPTIMIZACIÓN: No convertir fechas aquí, se convierten solo cuando se necesitan mostrar
-          const enviosFormateados = data.content.map((envio: any) => ({
-            ...envio,
-            fecha: envio.fecha,
-            fechaVenta: envio.fechaVenta,
-            fechaLlegue: envio.fechaLlegue,
-            fechaEntregado: envio.fechaEntregado,
-          }))
-          setEnvios(enviosFormateados)
-          setTotalPages(data.totalPages)
-          setTotalElements(data.totalElements)
-        } else {
-          // Si el backend no tiene datos, intentar localStorage
-          warnDev("Backend no tiene datos, usando localStorage")
-          const enviosGuardados = JSON.parse(localStorage.getItem("enviosNoflex") || "[]")
-          
-          // Aplicar filtros localmente si hay datos en localStorage
-          let enviosFiltrados = enviosGuardados
-          
-          // Filtrar por cliente si es necesario
-          if (userProfile === "Cliente" && userCodigoCliente) {
-            enviosFiltrados = enviosFiltrados.filter((envio: any) => {
-              const clienteCodigo = envio.cliente?.split(" - ")[0]?.trim() || envio.cliente
-              return clienteCodigo?.toLowerCase() === userCodigoCliente.toLowerCase()
-            })
-          }
-          if (userProfile === "Chofer" && choferId != null) {
-            enviosFiltrados = enviosFiltrados.filter((envio: any) => envio.choferAsignadoId === choferId)
-          }
-          
-          // Filtrar por eliminados
-          if (filters.estado !== "Eliminados") {
-            enviosFiltrados = enviosFiltrados.filter((envio: any) => !envio.eliminado)
-          } else {
-            enviosFiltrados = enviosFiltrados.filter((envio: any) => envio.eliminado === true)
-          }
-          
-          // Aplicar paginación local
-          const startIndex = page * size
-          const endIndex = startIndex + size
-          const enviosPaginados = enviosFiltrados.slice(startIndex, endIndex)
-          
-          setEnvios(enviosPaginados)
-          setTotalPages(Math.ceil(enviosFiltrados.length / size))
-          setTotalElements(enviosFiltrados.length)
-        }
+        // Usar siempre la respuesta del API (incluye resultado vacío cuando los filtros no dan resultados)
+        const content = data.content ?? []
+        const enviosFormateados = content.map((envio: any) => ({
+          ...envio,
+          fecha: envio.fecha,
+          fechaVenta: envio.fechaVenta,
+          fechaLlegue: envio.fechaLlegue,
+          fechaEntregado: envio.fechaEntregado,
+        }))
+        setEnvios(enviosFormateados)
+        setTotalPages(data.totalPages ?? 0)
+        setTotalElements(data.totalElements ?? 0)
       } else {
         throw new Error("Error al cargar envíos")
       }
