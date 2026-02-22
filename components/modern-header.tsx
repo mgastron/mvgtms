@@ -1,6 +1,6 @@
 "use client"
 
-import { Truck, FileText, Package, Wrench, Users, DollarSign, Route, ChevronDown, Upload, Printer, FileUp, FileCheck, Search, Menu, X } from "lucide-react"
+import { Truck, FileText, Package, Wrench, Users, DollarSign, Route, ChevronDown, Upload, Printer, FileUp, FileCheck, Search, Menu, X, Layers } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
@@ -27,6 +27,7 @@ const allMenuItems = [
     hasSubmenu: true,
     submenu: [
       { icon: Users, label: "Usuarios", path: "/usuarios" },
+      { icon: Layers, label: "Grupos", path: "/sistema/grupos" },
       { icon: DollarSign, label: "Lista Precios", path: "/lista-precios" },
       { icon: FileCheck, label: "Estado Órdenes", path: "/sistema/estado-ordenes" },
     ]
@@ -98,6 +99,7 @@ export function ModernHeader() {
   // Determinar el item activo basado en la ruta actual
   const getActiveItem = () => {
     if (pathname?.includes("/usuarios")) return "Usuarios"
+    if (pathname?.includes("/sistema/grupos")) return "Grupos"
     if (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) return "Lista Precios"
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
     if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de Pedidos"
@@ -120,7 +122,7 @@ export function ModernHeader() {
     // Verificar rutas de Envíos primero (incluye buscador de pedidos)
     if (pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir") || pathname?.includes("/envios") || pathname?.includes("/sistema/buscador-pedidos")) return "Envíos"
     // Verificar rutas de Sistema (excluyendo buscador-pedidos que está en Envíos)
-    if (pathname?.includes("/usuarios") || (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) || pathname?.includes("/sistema/estado-ordenes")) return "Sistema"
+    if (pathname?.includes("/usuarios") || pathname?.includes("/sistema/grupos") || (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) || pathname?.includes("/sistema/estado-ordenes")) return "Sistema"
     if (pathname?.includes("/clientes")) return "Clientes"
     if (pathname?.includes("/ruteate")) return "Ruteate"
     return null

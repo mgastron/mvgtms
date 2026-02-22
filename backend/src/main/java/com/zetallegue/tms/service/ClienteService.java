@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class ClienteService {
 
     private final ClienteRepository clienteRepository;
+    private final com.zetallegue.tms.repository.GrupoRepository grupoRepository;
     private final MercadoLibreService mercadoLibreService;
     private final EnvioService envioService;
     private final Environment environment;
@@ -69,7 +70,16 @@ public class ClienteService {
         if (clienteRepository.existsByCodigo(clienteDTO.getCodigo())) {
             throw new RuntimeException("Ya existe un cliente con el código: " + clienteDTO.getCodigo());
         }
-
+        // Si se indica nuevo grupo, crearlo primero
+        if (clienteDTO.getNuevoGrupoNombre() != null && !clienteDTO.getNuevoGrupoNombre().trim().isEmpty()) {
+            com.zetallegue.tms.model.Grupo grupo = new com.zetallegue.tms.model.Grupo();
+            grupo.setNombre(clienteDTO.getNuevoGrupoNombre().trim());
+            grupo = grupoRepository.save(grupo);
+            clienteDTO.setGrupoId(grupo.getId());
+        }
+        if (clienteDTO.getGrupoId() == null) {
+            throw new RuntimeException("El cliente debe estar asignado a un grupo. Elegí un grupo existente o creá uno nuevo.");
+        }
         Cliente cliente = toEntity(clienteDTO);
         cliente = clienteRepository.save(cliente);
         return toDTO(cliente);
@@ -140,6 +150,7 @@ public class ClienteService {
         cliente.setVtexToken(clienteDTO.getVtexToken());
         cliente.setVtexIdLogistica(clienteDTO.getVtexIdLogistica());
         cliente.setListaPreciosId(clienteDTO.getListaPreciosId());
+        cliente.setGrupoId(clienteDTO.getGrupoId());
 
         cliente = clienteRepository.save(cliente);
         return toDTO(cliente);
@@ -731,7 +742,16 @@ public class ClienteService {
         dto.setVtexToken(cliente.getVtexToken());
         dto.setVtexIdLogistica(cliente.getVtexIdLogistica());
         dto.setListaPreciosId(cliente.getListaPreciosId());
+        dto.setGrupoId(cliente.getGrupoId());
+        if (cliente.getGrupoId() != null) {
+            grupoRepository.findById(cliente.getGrupoId()).ifPresent(g -> dto.setGrupoNombre(g.getNombre()));
+        }
         return dto;
+    }
+
+    /** Expuesto para uso desde GrupoService al listar clientes de un grupo */
+    public ClienteDTO toDTOFromEntity(Cliente cliente) {
+        return toDTO(cliente);
     }
 
     private Cliente toEntity(ClienteDTO dto) {
@@ -761,6 +781,7 @@ public class ClienteService {
         cliente.setVtexToken(dto.getVtexToken());
         cliente.setVtexIdLogistica(dto.getVtexIdLogistica());
         cliente.setListaPreciosId(dto.getListaPreciosId());
+        cliente.setGrupoId(dto.getGrupoId());
         return cliente;
     }
 

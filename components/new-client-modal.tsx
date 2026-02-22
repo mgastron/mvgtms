@@ -18,6 +18,8 @@ interface NewClientModalProps {
     nombreFantasia: string
     tokenApi?: string
     listaPreciosId?: number
+    grupoId?: number | null
+    grupoNombre?: string
     flexIdVendedor?: string
     flexUsername?: string
     tiendanubeUrl?: string
@@ -34,11 +36,16 @@ interface NewClientModalProps {
   } | null
 }
 
-type TabType = "general" | "cuentas"
+type TabType = "general" | "grupo" | "cuentas"
 
 interface ListaPrecio {
   id: number
   codigo: string
+  nombre: string
+}
+
+interface Grupo {
+  id: number
   nombre: string
 }
 
@@ -51,22 +58,24 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [sincronizando, setSincronizando] = useState(false)
   const [clienteCompleto, setClienteCompleto] = useState<any>(null)
+  const [grupos, setGrupos] = useState<Grupo[]>([])
+  const [gruposLoading, setGruposLoading] = useState(false)
   const [formData, setFormData] = useState({
     codigo: "",
     nombreFantasia: "",
     tokenApi: "",
     listaPreciosId: "",
+    grupoModo: "existente" as "existente" | "nuevo",
+    grupoId: "",
+    nuevoGrupoNombre: "",
     // FLEX
     flexIdVendedor: "",
     flexUsername: "",
-    // tiendanube
     tiendanubeUrl: "",
     tiendanubeMetodoEnvio: "",
-    // Shopify
     shopifyUrl: "",
     shopifyClaveUnica: "",
     shopifyMetodoEnvio: "",
-    // WooCommerce
     vtexUrl: "",
     vtexKey: "",
     vtexToken: "",
@@ -104,12 +113,32 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
     }
   }
 
+  const loadGrupos = async () => {
+    setGruposLoading(true)
+    const apiBaseUrl = getApiBaseUrl()
+    try {
+      const response = await fetch(`${apiBaseUrl}/grupos`)
+      if (response.ok) {
+        const data = await response.json()
+        setGrupos(Array.isArray(data) ? data : [])
+      } else {
+        setGrupos([])
+      }
+    } catch (e) {
+      setGrupos([])
+    } finally {
+      setGruposLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (open) {
       loadListasPrecios()
+      loadGrupos()
     } else {
       setListasPrecios([])
       setListasPreciosError(null)
+      setGrupos([])
     }
   }, [open])
 
@@ -130,11 +159,15 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
               const tokenApi = clientData.integraciones !== null && clientData.integraciones !== undefined 
                 ? String(clientData.integraciones) 
                 : ""
-              setFormData({
+              setFormData((prev) => ({
+                ...prev,
                 codigo: clientData.codigo || "",
                 nombreFantasia: clientData.nombreFantasia || "",
                 tokenApi: tokenApi,
                 listaPreciosId: clientData.listaPreciosId ? String(clientData.listaPreciosId) : "",
+                grupoModo: "existente",
+                grupoId: clientData.grupoId != null ? String(clientData.grupoId) : "",
+                nuevoGrupoNombre: "",
                 flexIdVendedor: clientData.flexIdVendedor || "",
                 flexUsername: clientData.flexUsername || "",
                 tiendanubeUrl: clientData.tiendanubeUrl || "",
@@ -146,7 +179,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
                 vtexKey: clientData.vtexKey || "",
                 vtexToken: clientData.vtexToken || "",
                 vtexIdLogistica: clientData.vtexIdLogistica || "",
-              })
+              }))
               return
             }
           } catch (error) {
@@ -156,11 +189,15 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
         // Si no se puede cargar del backend o no hay ID, usar los datos proporcionados
         // Guardar también estos datos para las condiciones
         setClienteCompleto(editingClient)
-        setFormData({
+        setFormData((prev) => ({
+          ...prev,
           codigo: editingClient.codigo || "",
           nombreFantasia: editingClient.nombreFantasia || "",
           tokenApi: editingClient.tokenApi || "",
           listaPreciosId: editingClient.listaPreciosId ? String(editingClient.listaPreciosId) : "",
+          grupoModo: "existente",
+          grupoId: editingClient.grupoId != null ? String(editingClient.grupoId) : "",
+          nuevoGrupoNombre: "",
           flexIdVendedor: editingClient.flexIdVendedor || "",
           flexUsername: editingClient.flexUsername || "",
           tiendanubeUrl: editingClient.tiendanubeUrl || "",
@@ -172,17 +209,19 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
           vtexKey: editingClient.vtexKey || "",
           vtexToken: editingClient.vtexToken || "",
           vtexIdLogistica: editingClient.vtexIdLogistica || "",
-        })
+        }))
       }
       loadClientData()
     } else if (open && !editingClient) {
-      // Si se abre para crear nuevo, resetear el formulario
       setClienteCompleto(null)
       setFormData({
         codigo: "",
         nombreFantasia: "",
         tokenApi: "",
         listaPreciosId: "",
+        grupoModo: "existente",
+        grupoId: "",
+        nuevoGrupoNombre: "",
         flexIdVendedor: "",
         flexUsername: "",
         tiendanubeUrl: "",
@@ -207,22 +246,31 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
       alert("El código es obligatorio")
       return
     }
-
     if (!formData.listaPreciosId) {
       alert("La lista de precios es obligatoria")
       return
     }
+    if (formData.grupoModo === "existente") {
+      if (!formData.grupoId) {
+        alert(editingClient ? "Elegí un grupo para el cliente." : "Elegí un grupo existente o creá uno nuevo en la solapa Grupo.")
+        return
+      }
+    } else {
+      if (!formData.nuevoGrupoNombre?.trim()) {
+        alert("El nombre del nuevo grupo es obligatorio.")
+        return
+      }
+    }
 
     setIsSaving(true)
     try {
-      const clientDataToSave = {
+      const clientDataToSave: any = {
         id: editingClient?.id,
         codigo: formData.codigo,
         nombreFantasia: formData.nombreFantasia,
-        habilitado: true, // Por defecto habilitado
+        habilitado: true,
         integraciones: formData.tokenApi && formData.tokenApi.trim() !== "" ? formData.tokenApi : null,
         listaPreciosId: formData.listaPreciosId ? Number(formData.listaPreciosId) : null,
-        // Cuentas/Integraciones
         flexIdVendedor: formData.flexIdVendedor || null,
         flexUsername: formData.flexUsername || null,
         tiendanubeUrl: formData.tiendanubeUrl || null,
@@ -235,6 +283,14 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
         vtexToken: formData.vtexToken || null,
         vtexIdLogistica: formData.vtexIdLogistica || null,
       }
+      if (formData.grupoModo === "existente" && formData.grupoId) {
+        clientDataToSave.grupoId = Number(formData.grupoId)
+      } else if (formData.grupoModo === "nuevo" && formData.nuevoGrupoNombre?.trim()) {
+        clientDataToSave.nuevoGrupoNombre = formData.nuevoGrupoNombre.trim()
+      }
+      if (editingClient && formData.grupoId) {
+        clientDataToSave.grupoId = Number(formData.grupoId)
+      }
       logDev("Guardando cliente (datos no logueados en producción)")
       await onSave(clientDataToSave)
       // Resetear formulario solo si no se está editando
@@ -244,6 +300,9 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
           nombreFantasia: "",
           tokenApi: "",
           listaPreciosId: "",
+          grupoModo: "existente",
+          grupoId: "",
+          nuevoGrupoNombre: "",
           flexIdVendedor: "",
           flexUsername: "",
           tiendanubeUrl: "",
@@ -296,6 +355,14 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
             }`}
           >
             GENERAL
+          </button>
+          <button
+            onClick={() => setActiveTab("grupo")}
+            className={`rounded px-8 py-2.5 text-sm font-semibold uppercase transition-colors ${
+              activeTab === "grupo" ? "bg-[#6B46FF] text-white" : "border-2 border-[#6B46FF] bg-white text-[#6B46FF]"
+            }`}
+          >
+            GRUPO <span className="text-red-500">*</span>
           </button>
           <button
             onClick={() => setActiveTab("cuentas")}
@@ -384,6 +451,75 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
                   onChange={(e) => handleInputChange("tokenApi", e.target.value)}
                   className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-[#6B46FF] focus:outline-none"
                 />
+              </div>
+            </div>
+          )}
+
+          {activeTab === "grupo" && (
+            <div className="space-y-5">
+              <p className="text-sm text-gray-600">Cada cliente debe pertenecer a un grupo. Asigná uno existente o creá uno nuevo.</p>
+              <div className="space-y-4">
+                <div className="flex flex-col gap-3">
+                  <label className="block text-xs font-semibold text-gray-700">Opción</label>
+                  <div className="flex gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="grupoModo"
+                        checked={formData.grupoModo === "existente"}
+                        onChange={() => handleInputChange("grupoModo", "existente")}
+                        className="rounded border-gray-300 text-[#6B46FF] focus:ring-[#6B46FF]"
+                      />
+                      <span className="text-sm">Asignar a grupo existente</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="grupoModo"
+                        checked={formData.grupoModo === "nuevo"}
+                        onChange={() => handleInputChange("grupoModo", "nuevo")}
+                        className="rounded border-gray-300 text-[#6B46FF] focus:ring-[#6B46FF]"
+                      />
+                      <span className="text-sm">Crear grupo a partir del cliente</span>
+                    </label>
+                  </div>
+                </div>
+                {formData.grupoModo === "existente" && (
+                  <div>
+                    <label className="mb-1.5 block text-xs text-gray-500">Grupo</label>
+                    {gruposLoading ? (
+                      <p className="text-sm text-gray-500">Cargando grupos...</p>
+                    ) : (
+                      <Select
+                        value={formData.grupoId}
+                        onValueChange={(value) => handleInputChange("grupoId", value)}
+                      >
+                        <SelectTrigger className="w-full max-w-md rounded border border-gray-300 px-3 py-2 text-sm">
+                          <SelectValue placeholder={grupos.length === 0 ? "No hay grupos. Creá uno con la opción de arriba." : "Seleccionar grupo"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {grupos.map((g) => (
+                            <SelectItem key={g.id} value={String(g.id)}>
+                              {g.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
+                {formData.grupoModo === "nuevo" && (
+                  <div>
+                    <label className="mb-1.5 block text-xs text-gray-500">Nombre del nuevo grupo <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      value={formData.nuevoGrupoNombre}
+                      onChange={(e) => handleInputChange("nuevoGrupoNombre", e.target.value)}
+                      placeholder="Ej: Tienda Nube Buenos Aires"
+                      className="w-full max-w-md rounded border border-gray-300 px-3 py-2 text-sm focus:border-[#6B46FF] focus:outline-none"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}

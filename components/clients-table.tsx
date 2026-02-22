@@ -26,6 +26,8 @@ interface Client {
   habilitado: boolean
   tokenApi?: string
   listaPreciosId?: number
+  grupoId?: number | null
+  grupoNombre?: string
   flexIdVendedor?: string
   flexUsername?: string
   tiendanubeUrl?: string
@@ -91,6 +93,8 @@ export function ClientsTable({
           habilitado: c.habilitado !== undefined ? c.habilitado : true,
           tokenApi: c.integraciones || "",
           listaPreciosId: c.listaPreciosId || undefined,
+          grupoId: c.grupoId ?? undefined,
+          grupoNombre: c.grupoNombre || "",
           flexIdVendedor: c.flexIdVendedor || "",
           flexUsername: c.flexUsername || "",
           tiendanubeUrl: c.tiendanubeUrl || "",
@@ -131,6 +135,8 @@ export function ClientsTable({
         habilitado: newClient.habilitado !== undefined ? newClient.habilitado : true,
         tokenApi: newClient.integraciones || "",
         listaPreciosId: newClient.listaPreciosId || undefined,
+        grupoId: newClient.grupoId ?? undefined,
+        grupoNombre: newClient.grupoNombre || "",
         flexIdVendedor: newClient.flexIdVendedor || "",
         flexUsername: newClient.flexUsername || "",
         tiendanubeUrl: newClient.tiendanubeUrl || "",
@@ -369,6 +375,9 @@ export function ClientsTable({
               <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
                 Nombre Fantasía
               </th>
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+                Grupo
+              </th>
               <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-700">
                 Acciones
               </th>
@@ -377,7 +386,7 @@ export function ClientsTable({
           <tbody className="divide-y divide-gray-100 bg-white">
             {paginatedClients.length === 0 ? (
               <tr>
-                <td colSpan={3} className="px-6 py-16 text-center">
+                <td colSpan={4} className="px-6 py-16 text-center">
                   <div className="flex flex-col items-center justify-center">
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
                       <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -410,6 +419,9 @@ export function ClientsTable({
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm text-gray-900">{client.nombreFantasia || "-"}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-sm text-gray-600">{client.grupoNombre || "-"}</span>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">

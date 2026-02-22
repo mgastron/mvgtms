@@ -96,5 +96,8 @@ public class Cliente {
 
     @Column(name = "lista_precios_id")
     private Long listaPreciosId;
+
+    @Column(name = "grupo_id")
+    private Long grupoId;
 }
 

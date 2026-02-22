@@ -1,5 +1,6 @@
 package com.zetallegue.tms.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -34,5 +35,10 @@ public class ClienteDTO {
     private String vtexToken;
     private String vtexIdLogistica;
     private Long listaPreciosId;
+    private Long grupoId;
+    private String grupoNombre; // solo para lectura en listados
+    /** Solo para creación: si viene informado, se crea el grupo y se asigna al cliente */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String nuevoGrupoNombre;
 }
 

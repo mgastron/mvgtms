@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface ClienteRepository extends JpaRepository<Cliente, Long>, JpaSpecificationExecutor<Cliente> {
     Optional<Cliente> findByCodigo(String codigo);
     boolean existsByCodigo(String codigo);
+    List<Cliente> findByGrupoId(Long grupoId);
     Optional<Cliente> findByFlexIdVendedor(String flexIdVendedor);
     List<Cliente> findByTiendanubeAccessTokenIsNotNull();
     List<Cliente> findByVtexKeyIsNotNull();
