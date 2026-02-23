@@ -126,7 +126,6 @@ export default function GruposPage() {
         <div className="mx-auto max-w-5xl">
           <div className="mb-6">
             <h1 className="text-2xl font-bold tracking-tight text-gray-900">Grupos de clientes</h1>
-            <p className="text-sm text-gray-500 mt-1">Agrupá clientes para gestionarlos. Los clientes se asignan desde la tabla de Clientes o al crear un cliente.</p>
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
