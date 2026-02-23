@@ -404,30 +404,28 @@ export default function EnviosPage() {
         }),
       })
       if (response.ok) {
-        // Recargar la página actual
         loadEnvios(currentPage, itemsPerPage)
       } else {
-        // Fallback a localStorage si falla
-        const enviosActualizados = envios.map((envio) => {
-          if (envio.id === envioId) {
-            return { ...envio, estado: nuevoEstado }
+        let mensaje = "No se pudo cambiar el estado."
+        try {
+          const text = await response.text()
+          if (text) {
+            try {
+              const json = JSON.parse(text)
+              mensaje = json.message || json.error || text
+            } else {
+              mensaje = text
+            }
           }
-          return envio
-        })
-        setEnvios(enviosActualizados)
-        localStorage.setItem("enviosNoflex", JSON.stringify(enviosActualizados))
-      }
-    } catch (error) {
-      warnDev("Error al actualizar estado, usando localStorage:", error)
-      // Fallback a localStorage
-      const enviosActualizados = envios.map((envio) => {
-        if (envio.id === envioId) {
-          return { ...envio, estado: nuevoEstado }
+        } catch {
+          // usar mensaje por defecto
         }
-        return envio
-      })
-      setEnvios(enviosActualizados)
-      localStorage.setItem("enviosNoflex", JSON.stringify(enviosActualizados))
+        alert(mensaje)
+      }
+    } catch (error: unknown) {
+      warnDev("Error al actualizar estado:", error)
+      const mensaje = error instanceof Error ? error.message : "Error de conexión al cambiar el estado."
+      alert(mensaje)
     }
   }
 
