@@ -109,5 +109,13 @@ public interface EnvioRepository extends JpaRepository<Envio, Long>, JpaSpecific
         @Param("fechaHasta") LocalDateTime fechaHasta,
         @Param("destinatario") String destinatario
     );
+
+    /** Envíos colectados (fechaColecta no nula) en el rango de fechas, no eliminados. */
+    @Query("SELECT e FROM Envio e WHERE e.eliminado = false AND e.fechaColecta IS NOT NULL " +
+           "AND e.fechaColecta >= :desde AND e.fechaColecta <= :hasta ORDER BY e.fechaColecta, e.id")
+    List<Envio> findEnviosColectadosEntreFechas(
+        @Param("desde") LocalDateTime desde,
+        @Param("hasta") LocalDateTime hasta
+    );
 }
 

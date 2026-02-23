@@ -157,7 +157,10 @@ export default function InformesPage() {
       }
       const res = await fetch(`${apiBaseUrl}/informes/generar`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/octet-stream",
+        },
         body: JSON.stringify(body),
       })
       if (!res.ok) {
@@ -167,10 +170,17 @@ export default function InformesPage() {
       }
       const blob = await res.blob()
       const disp = res.headers.get("Content-Disposition")
-      let filename = "informe_colectados.xlsx"
+      const ext = formato === FORMATO.PDF ? "pdf" : "xlsx"
+      let filename = `informe_colectados.${ext}`
       if (disp) {
-        const match = /filename\*?=(?:UTF-8'')?["']?([^"'\s;]+)/i.exec(disp) || /filename=["']?([^"'\s;]+)/i.exec(disp)
-        if (match?.[1]) filename = decodeURIComponent(match[1].trim())
+        const match = /filename\*?=(?:UTF-8'')?([^;\s]+)/i.exec(disp) || /filename=["']?([^"'\s;]+)/i.exec(disp)
+        if (match?.[1]) {
+          try {
+            filename = decodeURIComponent(match[1].replace(/^["']|["']$/g, "").trim())
+          } catch {
+            filename = `informe_colectados.${ext}`
+          }
+        }
       }
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
