@@ -1,6 +1,6 @@
 "use client"
 
-import { Truck, FileText, Package, Wrench, Users, DollarSign, Route, ChevronDown, ChevronRight, List, FileCheck, Upload, PackageSearch, Printer, FileUp, Search, Layers } from "lucide-react"
+import { Truck, FileText, Package, Wrench, Users, DollarSign, Route, ChevronDown, ChevronRight, List, FileCheck, Upload, PackageSearch, Printer, FileUp, Search, Layers, FileBarChart } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { logDev } from "@/lib/logger"
 import { useState, useEffect } from "react"
@@ -26,6 +26,7 @@ const enviosSubmenu = [
 const sistemaSubmenu = [
   { icon: Users, label: "Usuarios" },
   { icon: Layers, label: "Grupos" },
+  { icon: FileBarChart, label: "Informes" },
   { icon: DollarSign, label: "Lista Precios" },
   { icon: FileCheck, label: "Estado Órdenes" },
 ]
@@ -80,6 +81,7 @@ export function Sidebar() {
   const getActiveItem = () => {
     if (pathname?.includes("/usuarios")) return "Usuarios"
     if (pathname?.includes("/sistema/grupos")) return "Grupos"
+    if (pathname?.includes("/sistema/informes")) return "Informes"
     if (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) return "Lista Precios"
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
     if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de Pedidos"
@@ -99,7 +101,7 @@ export function Sidebar() {
   
   // Abrir automáticamente los submenús si estamos en una página del submenú
   useEffect(() => {
-    if (pathname?.includes("/usuarios") || pathname?.includes("/lista-precios") || pathname?.includes("/sistema/estado-ordenes") || pathname?.includes("/sistema/grupos")) {
+    if (pathname?.includes("/usuarios") || pathname?.includes("/lista-precios") || pathname?.includes("/sistema/estado-ordenes") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes")) {
       setSistemaOpen(true)
     }
     if (pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual") || pathname?.includes("/envios") || pathname?.includes("/sistema/buscador-pedidos")) {
@@ -235,6 +237,8 @@ export function Sidebar() {
                             router.push("/usuarios")
                           } else if (subItem.label === "Grupos") {
                             router.push("/sistema/grupos")
+                          } else if (subItem.label === "Informes") {
+                            router.push("/sistema/informes")
                           } else if (subItem.label === "Lista Precios") {
                             router.push("/lista-precios")
                           } else if (subItem.label === "Estado Órdenes") {
