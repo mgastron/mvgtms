@@ -37,6 +37,7 @@ public class InformeController {
             response.setContentType(contentType);
             response.setContentLength(bytes.length);
             response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + encoded);
+            response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
             response.getOutputStream().write(bytes);
             response.getOutputStream().flush();
         } catch (IllegalArgumentException e) {

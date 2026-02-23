@@ -184,9 +184,15 @@ public class InformeService {
 
     private boolean perteneceACodigos(String clienteStr, Set<String> codigos) {
         if (clienteStr == null || codigos == null) return false;
+        String c = clienteStr.trim();
         for (String codigo : codigos) {
             if (codigo == null) continue;
-            if (clienteStr.equals(codigo) || clienteStr.startsWith(codigo + " - ")) return true;
+            String cod = codigo.trim();
+            if (cod.isEmpty()) continue;
+            if (c.equals(cod)) return true;
+            if (c.startsWith(cod + " - ")) return true;
+            if (c.startsWith(cod + " ")) return true;
+            if (c.startsWith(cod + "-")) return true;
         }
         return false;
     }
