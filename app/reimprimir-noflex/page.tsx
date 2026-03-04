@@ -749,20 +749,15 @@ export default function ReimprimirNoflexPage() {
         const marginRight = 18
         const marginTop = 14
         const bulletR = 1.4
-        const bulletX = marginLeft + bulletR + 1
         let currentY = marginTop
 
-        // Título MVG (barra negra superior)
-        const barMvgHeight = 20
-        pdf.setFillColor(0, 0, 0)
-        pdf.rect(0, currentY - 8, width, barMvgHeight, "F")
+        // Título MVG (solo texto, sin fondo negro)
         pdf.setFontSize(14)
         pdf.setFont("helvetica", "bold")
-        pdf.setTextColor(255, 255, 255)
+        pdf.setTextColor(0, 0, 0)
         const titleWidth = pdf.getTextWidth("MVG")
         pdf.text("MVG", (width - titleWidth) / 2, currentY)
-        pdf.setTextColor(0, 0, 0)
-        currentY += barMvgHeight + 6
+        currentY += 14
 
         // Barra negra con zona (CABA)
         const barHeight = 20
@@ -785,29 +780,31 @@ export default function ReimprimirNoflexPage() {
         pdf.setLineWidth(1)
         pdf.roundedRect(qrX, qrY, qrSize, qrSize, 2, 2, "S")
         pdf.addImage(qrCodeDataUrl, "PNG", qrX + 2, qrY + 2, qrSize - 4, qrSize - 4)
-        const qrRight = qrX + qrSize + 12
+        const qrRight = qrX + qrSize + 10
         const qrBottom = qrY + qrSize
-        const iconX = qrRight - 2
+        const iconTextGap = 8
+        const textStartX = qrRight + iconSz + iconTextGap
 
-        // Bloque datos: íconos nuevos en lugar de bullets (mismo layout que antes)
-        const infoLineH = formato === "10x15" ? 11 : 10
-        let infoY = currentY + 4
+        // Bloque datos: íconos con más espacio
+        const infoLineH = formato === "10x15" ? 12 : 11
+        const infoLineGap = 3
+        let infoY = currentY + 5
         pdf.setFontSize(formato === "10x15" ? 7.5 : 7)
         pdf.setFont("helvetica", "normal")
         pdf.setTextColor(0, 0, 0)
-        addIcon(iconAssets?.calendar ?? null, iconX, infoY - 1.8)
-        pdf.text(fechaFormateada, qrRight + 2, infoY)
-        infoY += infoLineH
-        addIcon(iconAssets?.business ?? null, iconX, infoY - 1.8)
+        addIcon(iconAssets?.calendar ?? null, qrRight + iconSz / 2, infoY - 0.5)
+        pdf.text(fechaFormateada, textStartX, infoY)
+        infoY += infoLineH + infoLineGap
+        addIcon(iconAssets?.business ?? null, qrRight + iconSz / 2, infoY - 0.5)
         const clienteText = `Cliente: ${envio.cliente || ""}`
-        const clienteLines = pdf.splitTextToSize(clienteText, width - qrRight - marginRight - 8)
-        pdf.text(clienteLines, qrRight + 2, infoY)
-        infoY += clienteLines.length * infoLineH
-        addIcon(iconAssets?.document ?? null, iconX, infoY - 1.8)
-        pdf.text(`Venta: ${getOrigenVentaLabel(envio.origen)}`, qrRight + 2, infoY)
-        infoY += infoLineH
-        addIcon(iconAssets?.package ?? null, iconX, infoY - 1.8)
-        pdf.text(`Envio: ${envio.tracking || String(envio.id)}`, qrRight + 2, infoY)
+        const clienteLines = pdf.splitTextToSize(clienteText, width - textStartX - marginRight)
+        pdf.text(clienteLines, textStartX, infoY)
+        infoY += clienteLines.length * infoLineH + infoLineGap
+        addIcon(iconAssets?.document ?? null, qrRight + iconSz / 2, infoY - 0.5)
+        pdf.text(`Venta: ${getOrigenVentaLabel(envio.origen)}`, textStartX, infoY)
+        infoY += infoLineH + infoLineGap
+        addIcon(iconAssets?.package ?? null, qrRight + iconSz / 2, infoY - 0.5)
+        pdf.text(`Envio: ${envio.tracking || String(envio.id)}`, textStartX, infoY)
 
         currentY = qrBottom + 14
         pdf.setDrawColor(0, 0, 0)
@@ -825,33 +822,35 @@ export default function ReimprimirNoflexPage() {
         pdf.line(marginLeft, currentY + 2, marginLeft + destinatarioWidth, currentY + 2)
         currentY += 14
 
-        const destIconX = marginLeft + bulletR + 1
-        addIcon(iconAssets?.person ?? null, destIconX, currentY - 2)
+        const destIconX = marginLeft + iconSz / 2 + 2
+        const destTextX = marginLeft + iconSz + 10
+        const destTextW = width - marginLeft - marginRight - iconSz - 14
+        addIcon(iconAssets?.person ?? null, destIconX, currentY - 0.5)
         pdf.setFontSize(formato === "10x15" ? 10 : 9)
         pdf.setFont("helvetica", "bold")
-        const nombreLines = pdf.splitTextToSize(envio.nombreDestinatario, width - marginLeft * 2 - 24)
-        pdf.text(nombreLines, bulletX + 4, currentY)
+        const nombreLines = pdf.splitTextToSize(envio.nombreDestinatario, destTextW)
+        pdf.text(nombreLines, destTextX, currentY)
         currentY += nombreLines.length * (formato === "10x15" ? 12 : 11) + 6
 
         if (envio.telefono && envio.telefono !== "null") {
-          addIcon(iconAssets?.phone ?? null, destIconX, currentY - 2)
+          addIcon(iconAssets?.phone ?? null, destIconX, currentY - 0.5)
           pdf.setFontSize(formato === "10x15" ? 8 : 7.5)
           pdf.setFont("helvetica", "normal")
-          pdf.text(`Tel: ${envio.telefono}`, bulletX + 4, currentY)
-          currentY += infoLineH + 2
+          pdf.text(`Tel: ${envio.telefono}`, destTextX, currentY)
+          currentY += infoLineH + infoLineGap + 2
         }
 
-        addIcon(iconAssets?.location ?? null, destIconX, currentY - 2)
+        addIcon(iconAssets?.location ?? null, destIconX, currentY - 0.5)
         pdf.setFontSize(formato === "10x15" ? 8 : 7.5)
-        const direccionLines = pdf.splitTextToSize(envio.direccion, width - marginLeft * 2 - 24)
-        pdf.text(direccionLines, bulletX + 4, currentY)
+        const direccionLines = pdf.splitTextToSize(envio.direccion, destTextW)
+        pdf.text(direccionLines, destTextX, currentY)
         currentY += direccionLines.length * (formato === "10x15" ? 11 : 10) + 8
 
         if (envio.observaciones) {
           pdf.setFontSize(formato === "10x15" ? 7.5 : 7)
           pdf.setFont("helvetica", "italic")
-          const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, width - marginLeft * 2 - 24)
-          pdf.text(obsLines, bulletX + 4, currentY)
+          const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, destTextW)
+          pdf.text(obsLines, destTextX, currentY)
           currentY += obsLines.length * (formato === "10x15" ? 10 : 9) + 6
           pdf.setFont("helvetica", "normal")
         }
