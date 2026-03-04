@@ -342,176 +342,128 @@ export default function ReimprimirNoflexPage() {
         return
       }
 
-      // Formato A4 en puntos (595.28 x 841.89)
       const a4Width = 595.28
       const a4Height = 841.89
-      const margin = 5
-      const padding = 3
+      const margin = 4
+      const gap = 2
+      const labelWidth = (a4Width - margin * 2 - gap) / 2
+      const labelHeight = (a4Height - margin * 2 - gap * 2) / 3
+      const labelsPerPage = 6
 
-      // Dimensiones de cada etiqueta compacta - aprovechar mejor el espacio
-      const labelWidth = (a4Width - margin * 2 - padding) / 2 // 2 columnas
-      const labelHeight = (a4Height - margin * 2 - padding * 2) / 3 // 3 filas
-      const labelsPerPage = 6 // 2 columnas x 3 filas
-
-      // Crear PDF A4
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "pt",
         format: "a4",
       })
 
-      // Procesar cada envío
       for (let i = 0; i < enviosAReimprimir.length; i++) {
         const envio = enviosAReimprimir[i]
-        const pageIndex = Math.floor(i / labelsPerPage)
         const labelIndexInPage = i % labelsPerPage
+        if (i > 0 && labelIndexInPage === 0) pdf.addPage()
 
-        // Agregar nueva página si es necesario
-        if (i > 0 && labelIndexInPage === 0) {
-          pdf.addPage()
-        }
+        const col = labelIndexInPage % 2
+        const row = Math.floor(labelIndexInPage / 2)
+        const startX = margin + col * (labelWidth + gap)
+        const startY = margin + row * (labelHeight + gap)
 
-        // Calcular posición de la etiqueta en la página
-        const col = labelIndexInPage % 2 // 0 o 1
-        const row = Math.floor(labelIndexInPage / 2) // 0, 1 o 2
-
-        const startX = margin + col * (labelWidth + padding)
-        const startY = margin + row * (labelHeight + padding)
-
-        // Generar QR usando el mismo QR data guardado
         const qrDataToUse = envio.qrData || `${envio.tracking}-${envio.id}`
-        const qrCodeDataUrl = await QRCode.toDataURL(qrDataToUse, {
-          width: 80,
-          margin: 1,
-        })
+        const qrCodeDataUrl = await QRCode.toDataURL(qrDataToUse, { width: 72, margin: 1 })
 
-        // Obtener fecha formateada
         const fecha = new Date(envio.fecha)
         const fechaFormateada = `${fecha.getDate().toString().padStart(2, "0")}/${(fecha.getMonth() + 1).toString().padStart(2, "0")}/${fecha.getFullYear()}`
 
-        // Calcular espacio disponible y distribuir mejor el contenido
-        const innerPadding = 4
-        let currentY = startY + innerPadding
+        const pad = 3
+        const qrSize = 48
+        const colLeftW = qrSize + pad * 2
+        const colMidW = Math.floor((labelWidth - colLeftW - pad * 3) * 0.52)
+        const rightColX = startX + colLeftW + pad + colMidW
+        const bulletR = 0.9
+        const lineH = 6.5
 
-        // Localidad con borde negro
-        const localidadText = (envio.localidad || "Sin localidad").toUpperCase()
-        pdf.setFontSize(13)
+        let y = startY + pad
+
+        // Columna izquierda: Zona + QR
+        const zonaText = (envio.localidad || "Sin zona").toUpperCase()
+        pdf.setFontSize(10)
         pdf.setFont("helvetica", "bold")
-        const localidadTextWidth = pdf.getTextWidth(localidadText)
-        const localidadBoxHeight = 16
-        pdf.setDrawColor(0, 0, 0)
-        pdf.setLineWidth(1)
-        pdf.roundedRect(startX + innerPadding, currentY - 12, localidadTextWidth + 8, localidadBoxHeight, 2, 2, "S")
         pdf.setTextColor(0, 0, 0)
-        pdf.text(localidadText, startX + innerPadding + 4, currentY - 2)
-        
-        // Nombre destinatario a la derecha (arriba a la derecha)
-        pdf.setFontSize(7.5)
+        pdf.text(zonaText, startX + pad, y)
+        y += 10
+
+        pdf.addImage(qrCodeDataUrl, "PNG", startX + pad, y, qrSize, qrSize)
+        const qrBottom = y + qrSize
+        y = qrBottom + 2
+
+        // Columna derecha: Fecha, Cliente, Venta, Envio (logo va abajo)
+        let rightY = startY + pad
+        pdf.setFontSize(6.5)
         pdf.setFont("helvetica", "normal")
         pdf.setTextColor(0, 0, 0)
-        const nombreDestinatario = envio.nombreDestinatario || ""
-        const nombreWidth = pdf.getTextWidth(nombreDestinatario)
-        const nombreX = startX + labelWidth - nombreWidth - innerPadding
-        if (nombreX > startX + localidadTextWidth + innerPadding + 12) {
-          pdf.text(nombreDestinatario, nombreX, currentY - 2)
-        }
-        currentY += 10
+        pdf.setFillColor(0, 0, 0)
+        pdf.circle(rightColX + 1, rightY - 1, bulletR, "F")
+        pdf.text(fechaFormateada, rightColX + 5, rightY)
+        rightY += lineH
+        pdf.circle(rightColX + 1, rightY - 1, bulletR, "F")
+        const clienteStr = `Cliente: ${(envio.cliente || "").slice(0, 20)}${(envio.cliente || "").length > 20 ? "…" : ""}`
+        pdf.text(clienteStr, rightColX + 5, rightY)
+        rightY += lineH
+        pdf.circle(rightColX + 1, rightY - 1, bulletR, "F")
+        pdf.text(`Venta: ${getOrigenVentaLabel(envio.origen)}`, rightColX + 5, rightY)
+        rightY += lineH
+        pdf.circle(rightColX + 1, rightY - 1, bulletR, "F")
+        pdf.text(`Envio: ${envio.tracking || envio.id}`, rightColX + 5, rightY)
 
-        // QR Code (izquierda) - tamaño ajustado
-        const qrSize = 55
-        const qrX = startX + innerPadding
-        const qrY = currentY
-        pdf.addImage(qrCodeDataUrl, "PNG", qrX, qrY, qrSize, qrSize)
-        const qrRight = qrX + qrSize + 5
-        const qrBottom = qrY + qrSize
-        const availableWidth = labelWidth - qrSize - innerPadding * 3
-
-        // Información a la derecha del QR
+        // Columna central: Destinatario con bullets (nombre, tel, dirección, obs)
+        const midX = startX + colLeftW + pad
+        let midY = startY + pad
         pdf.setFontSize(7)
-        pdf.setFont("helvetica", "normal")
-        pdf.setTextColor(0, 0, 0)
-        let infoY = qrY + 3
-        pdf.text(fechaFormateada, qrRight, infoY)
-        infoY += 8
-        const clienteText = pdf.splitTextToSize(`Cliente: ${envio.cliente || ""}`, availableWidth)
-        pdf.text(clienteText, qrRight, infoY)
-        infoY += clienteText.length * 8
-        pdf.text(`Venta: ${getOrigenVentaLabel(envio.origen)}`, qrRight, infoY)
-        infoY += 8
-        pdf.text(`Envio: ${envio.tracking || String(envio.id)}`, qrRight, infoY)
-
-        // Calcular espacio restante y distribuir contenido inferior
-        const bottomSectionStart = qrBottom + 6
-        const bottomSectionHeight = labelHeight - (bottomSectionStart - startY) - innerPadding - 15 // 15 para logo
-        const bottomY = bottomSectionStart
-
-        // Información del destinatario (distribuida mejor)
-        pdf.setFontSize(7)
-        pdf.setFont("helvetica", "normal")
-        pdf.setTextColor(0, 0, 0)
-        let destY = bottomY
-
-        // Nombre destinatario
         pdf.setFont("helvetica", "bold")
-        const nombreLines = pdf.splitTextToSize(envio.nombreDestinatario, labelWidth - innerPadding * 2)
-        pdf.text(nombreLines, startX + innerPadding, destY)
-        destY += nombreLines.length * 8 + 2
-
-        // Teléfono
+        pdf.setFillColor(0, 0, 0)
+        pdf.circle(midX + bulletR, midY - 1.2, bulletR, "F")
+        const nombreLines = pdf.splitTextToSize(envio.nombreDestinatario || "", colMidW - 6)
+        pdf.text(nombreLines, midX + 5, midY)
+        midY += nombreLines.length * lineH + 2
         pdf.setFont("helvetica", "normal")
-        pdf.text(envio.telefono, startX + innerPadding, destY)
-        destY += 8
-
-        // Peso
-        pdf.text("Sin información", startX + innerPadding, destY)
-        destY += 8
-
-        // Dirección
-        const direccionLines = pdf.splitTextToSize(envio.direccion, labelWidth - innerPadding * 2)
-        pdf.text(direccionLines, startX + innerPadding, destY)
-        destY += direccionLines.length * 8 + 3
-
-        // Observación
+        pdf.circle(midX + bulletR, midY - 1.2, bulletR, "F")
+        pdf.text(String(envio.telefono || "").slice(0, 14), midX + 5, midY)
+        midY += lineH + 2
+        pdf.circle(midX + bulletR, midY - 1.2, bulletR, "F")
+        const dirLines = pdf.splitTextToSize(envio.direccion || "", colMidW - 6)
+        pdf.text(dirLines, midX + 5, midY)
+        midY += dirLines.length * lineH + 2
         if (envio.observaciones) {
-          pdf.setFontSize(6.5)
-          pdf.setTextColor(60, 60, 60)
-          const obsLines = pdf.splitTextToSize(`Observación: ${envio.observaciones}`, labelWidth - innerPadding * 2)
-          pdf.text(obsLines, startX + innerPadding, destY)
-          destY += obsLines.length * 7.5 + 2
+          pdf.setFontSize(6)
+          pdf.setFont("helvetica", "italic")
+          pdf.circle(midX + bulletR, midY - 1.2, bulletR, "F")
+          const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, colMidW - 6)
+          pdf.text(obsLines, midX + 5, midY)
+          midY += obsLines.length * (lineH - 0.5) + 2
         }
-
+        pdf.setFont("helvetica", "normal")
+        pdf.setFontSize(6.5)
         if (envio.totalACobrar && String(envio.totalACobrar).trim() !== "") {
-          pdf.setFontSize(7)
-          pdf.setFont("helvetica", "bold")
-          pdf.setTextColor(0, 0, 0)
-          pdf.text(`Cobrar en Efectivo: $ ${String(envio.totalACobrar).trim()}`, startX + innerPadding, destY)
-          destY += 8
+          pdf.text(`Cobrar: $ ${String(envio.totalACobrar).trim()}`, midX, midY)
+          midY += lineH + 2
         }
         if (envio.cambioRetiro && String(envio.cambioRetiro).trim() !== "") {
-          const valor = String(envio.cambioRetiro).trim().toUpperCase()
-          pdf.setFontSize(8)
-          pdf.setFont("helvetica", "bold")
-          pdf.setTextColor(0, 0, 0)
+          const v = String(envio.cambioRetiro).trim().toUpperCase()
           pdf.setDrawColor(0, 0, 0)
-          pdf.setLineWidth(0.5)
-          const badgeW = Math.max(pdf.getTextWidth(valor) + 6, 28)
-          pdf.roundedRect(startX + innerPadding, destY - 6, badgeW, 12, 1.5, 1.5, "S")
-          pdf.text(valor, startX + innerPadding + badgeW / 2 - pdf.getTextWidth(valor) / 2, destY + 1)
-          destY += 14
+          pdf.setLineWidth(0.4)
+          const bw = Math.max(pdf.getTextWidth(v) + 4, 22)
+          pdf.roundedRect(midX, midY - 5, bw, 9, 1, 1, "S")
+          pdf.text(v, midX + bw / 2 - pdf.getTextWidth(v) / 2, midY + 0.5)
+          midY += 11
         }
 
-        const logoText = "MVG"
-        pdf.setFontSize(9)
+        // Logo MVG abajo a la derecha
+        pdf.setFontSize(8)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(0, 0, 0)
-        const logoWidth = pdf.getTextWidth(logoText)
-        const logoX = startX + labelWidth - logoWidth - innerPadding
-        const logoY = startY + labelHeight - innerPadding - 2
-        pdf.text(logoText, logoX, logoY)
+        const logoW = pdf.getTextWidth("MVG")
+        pdf.text("MVG", startX + labelWidth - logoW - pad, startY + labelHeight - pad - 2)
 
-        // Borde de la etiqueta (para visualización)
-        pdf.setDrawColor(200, 200, 200)
-        pdf.setLineWidth(0.5)
+        pdf.setDrawColor(180, 180, 180)
+        pdf.setLineWidth(0.3)
         pdf.rect(startX, startY, labelWidth, labelHeight)
       }
 
