@@ -658,6 +658,18 @@ export default function ReimprimirNoflexPage() {
       setEnvios(enviosActualizados)
       localStorage.setItem("enviosNoflex", JSON.stringify(enviosActualizados))
 
+      // Persistir impreso en backend para que al actualizar la página siga en SI
+      const apiBaseUrl = getApiBaseUrl()
+      await Promise.allSettled(
+        envioIds.map((id) =>
+          fetch(`${apiBaseUrl}/envios/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ impreso: "SI" }),
+          })
+        )
+      )
+
       // Limpiar selección
       setSelectedEnvios(new Set())
     } catch (error) {
@@ -904,6 +916,18 @@ export default function ReimprimirNoflexPage() {
 
       setEnvios(enviosActualizados)
       localStorage.setItem("enviosNoflex", JSON.stringify(enviosActualizados))
+
+      // Persistir impreso en backend para que al actualizar la página siga en SI
+      const apiBaseUrl = getApiBaseUrl()
+      await Promise.allSettled(
+        envioIds.map((id) =>
+          fetch(`${apiBaseUrl}/envios/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ impreso: "SI" }),
+          })
+        )
+      )
 
       // Limpiar selección
       setSelectedEnvios(new Set())
