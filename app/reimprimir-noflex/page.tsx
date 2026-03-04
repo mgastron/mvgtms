@@ -368,16 +368,40 @@ export default function ReimprimirNoflexPage() {
 
         const drawIconCalendar = (cx: number, cy: number) => {
           pdf.setFillColor(0, 0, 0)
-          pdf.rect(cx - 3.5, cy - 2.8, 7, 5.6, "F")
+          pdf.setDrawColor(0, 0, 0)
+          pdf.setLineWidth(0.35)
+          pdf.rect(cx - 2.7, cy - 2.7, 5.4, 0.85, "F")
+          pdf.roundedRect(cx - 3, cy - 2.1, 6, 4, 0.35, 0.35, "S")
+          pdf.line(cx - 2.3, cy - 0.9, cx + 2.3, cy - 0.9)
+          pdf.line(cx - 2.3, cy + 0.3, cx + 2.3, cy + 0.3)
         }
         const drawIconPerson = (cx: number, cy: number) => {
           pdf.setFillColor(0, 0, 0)
           pdf.circle(cx, cy - 1.6, 2.4, "F")
           pdf.circle(cx, cy + 2.6, 3.2, "F")
         }
+        const drawIconVenta = (cx: number, cy: number) => {
+          pdf.setDrawColor(0, 0, 0)
+          pdf.setLineWidth(0.4)
+          pdf.roundedRect(cx - 1.9, cy - 2.5, 3.8, 4.8, 0.35, 0.35, "S")
+          pdf.line(cx - 1.3, cy - 1.2, cx + 1.3, cy - 1.2)
+          pdf.line(cx - 1.3, cy + 0.1, cx + 1.2, cy + 0.1)
+          pdf.line(cx - 1.3, cy + 1.4, cx + 1, cy + 1.4)
+        }
         const drawIconPhone = (cx: number, cy: number) => {
           pdf.setFillColor(0, 0, 0)
-          pdf.roundedRect(cx - 2.8, cy - 2.4, 5.6, 4.4, 1, 1, "F")
+          pdf.circle(cx, cy - 1.8, 1.5, "F")
+          pdf.circle(cx, cy + 1.8, 1.5, "F")
+          pdf.setLineWidth(1.4)
+          pdf.setDrawColor(0, 0, 0)
+          pdf.line(cx, cy - 0.3, cx, cy + 0.3)
+        }
+        const drawIconEnvio = (cx: number, cy: number) => {
+          pdf.setDrawColor(0, 0, 0)
+          pdf.setLineWidth(0.7)
+          pdf.rect(cx - 2.8, cy - 2, 5.6, 3.8, "S")
+          pdf.line(cx - 2.8, cy - 2, cx + 2.8, cy + 1.8)
+          pdf.line(cx + 2.8, cy - 2, cx - 2.8, cy + 1.8)
         }
         const drawIconPin = (cx: number, cy: number) => {
           pdf.setFillColor(0, 0, 0)
@@ -428,15 +452,14 @@ export default function ReimprimirNoflexPage() {
         const clienteShort = (envio.cliente || "").length > 24 ? (envio.cliente || "").slice(0, 23) + "…" : (envio.cliente || "")
         pdf.text(`Cliente: ${clienteShort}`, qrRight + 20, infoY)
         infoY += lineH + lineGap
-        drawIconPhone(iconX, infoY - 0.5)
+        drawIconVenta(iconX, infoY - 0.5)
         pdf.setFont("helvetica", "normal")
         pdf.text("Venta: ", qrRight + 20, infoY)
         pdf.setFont("helvetica", "bold")
         pdf.text(getOrigenVentaLabel(envio.origen), qrRight + 20 + pdf.getTextWidth("Venta: "), infoY)
         infoY += lineH + lineGap
         pdf.setFont("helvetica", "normal")
-        pdf.setFillColor(0, 0, 0)
-        pdf.circle(iconX, infoY - 1, 2.8, "F")
+        drawIconEnvio(iconX, infoY - 0.5)
         pdf.text("Envio: ", qrRight + 20, infoY)
         pdf.setFont("helvetica", "bold")
         pdf.text(String(envio.tracking || envio.id), qrRight + 20 + pdf.getTextWidth("Envio: "), infoY)
@@ -447,6 +470,13 @@ export default function ReimprimirNoflexPage() {
         pdf.setLineWidth(0.5)
         pdf.line(startX + pad, y, startX + labelWidth - pad, y)
         y += 12
+
+        const destSectionTop = y
+        pdf.setFillColor(248, 248, 250)
+        pdf.setDrawColor(220, 220, 224)
+        pdf.setLineWidth(0.2)
+        pdf.roundedRect(startX + pad, destSectionTop, labelWidth - pad * 2, 118, 4, 4, "FD")
+        pdf.setDrawColor(0, 0, 0)
 
         // 4) Destinatario: iconos doble tamaño, más espacio entre líneas
         const destIconX = startX + pad + 4
