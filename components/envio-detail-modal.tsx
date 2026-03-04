@@ -566,9 +566,9 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
     try {
       const width = 283.46
       const height = 425.2
-      const marginLeft = 14
-      const marginRight = 14
-      const marginTop = 10
+      const marginLeft = 18
+      const marginRight = 18
+      const marginTop = 14
 
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -585,98 +585,105 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       const fecha = envio.fecha ? new Date(envio.fecha) : new Date()
       const fechaFormateada = `${fecha.getDate().toString().padStart(2, "0")}/${(fecha.getMonth() + 1).toString().padStart(2, "0")}/${fecha.getFullYear()}`
 
-      let currentY = marginTop
+      const bulletR = 1.4
+      const bulletX = marginLeft + bulletR + 1
+      let currentY = marginTop + 4
 
-      // Título MVG
-      pdf.setFontSize(13)
+      pdf.setFontSize(14)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(0, 0, 0)
       pdf.text("MVG", (width - pdf.getTextWidth("MVG")) / 2, currentY)
-      currentY += 10
+      currentY += 14
 
-      // Barra negra con zona (estilo referencia)
-      const barHeight = 18
+      const barHeight = 20
       pdf.setFillColor(0, 0, 0)
-      pdf.rect(0, currentY - 6, width, barHeight, "F")
+      pdf.rect(0, currentY - 8, width, barHeight, "F")
       const zonaText = (envio.localidad || "Sin zona").toUpperCase()
-      pdf.setFontSize(11)
+      pdf.setFontSize(12)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(255, 255, 255)
       pdf.text(zonaText, (width - pdf.getTextWidth(zonaText)) / 2, currentY + 6)
       pdf.setTextColor(0, 0, 0)
-      currentY += barHeight + 8
+      currentY += barHeight + 14
 
       const qrSize = 72
       pdf.setDrawColor(0, 0, 0)
       pdf.setLineWidth(1)
       pdf.roundedRect(marginLeft, currentY, qrSize, qrSize, 2, 2, "S")
       pdf.addImage(qrCodeDataUrl, "PNG", marginLeft + 2, currentY + 2, qrSize - 4, qrSize - 4)
-      const qrRight = marginLeft + qrSize + 10
+      const qrRight = marginLeft + qrSize + 12
       const qrBottom = currentY + qrSize
 
-      const infoLineH = 9
-      let infoY = currentY + 2
-      pdf.setFontSize(7)
+      const infoLineH = 11
+      let infoY = currentY + 4
+      pdf.setFontSize(7.5)
       pdf.setFont("helvetica", "normal")
       pdf.setTextColor(0, 0, 0)
       pdf.setFillColor(0, 0, 0)
-      pdf.circle(qrRight - 2, infoY - 1.5, 1.2, "F")
+      pdf.circle(qrRight - 2, infoY - 1.8, bulletR, "F")
       pdf.text(fechaFormateada, qrRight + 2, infoY)
       infoY += infoLineH
-      pdf.circle(qrRight - 2, infoY - 1.5, 1.2, "F")
+      pdf.circle(qrRight - 2, infoY - 1.8, bulletR, "F")
       pdf.text(`Cliente: ${envio.cliente || ""}`, qrRight + 2, infoY)
       infoY += infoLineH
-      pdf.circle(qrRight - 2, infoY - 1.5, 1.2, "F")
+      pdf.circle(qrRight - 2, infoY - 1.8, bulletR, "F")
       pdf.text(`Venta: ${getOrigenVentaLabel(envio.origen)}`, qrRight + 2, infoY)
       infoY += infoLineH
-      pdf.circle(qrRight - 2, infoY - 1.5, 1.2, "F")
+      pdf.circle(qrRight - 2, infoY - 1.8, bulletR, "F")
       pdf.text(`Envio: ${envio.tracking || String(envio.id)}`, qrRight + 2, infoY)
 
-      currentY = qrBottom + 10
+      currentY = qrBottom + 14
       pdf.setDrawColor(0, 0, 0)
       pdf.setLineWidth(0.5)
       pdf.line(marginLeft, currentY, width - marginRight, currentY)
-      currentY += 10
+      currentY += 14
 
-      pdf.setFontSize(7)
+      pdf.setFontSize(7.5)
       pdf.setFont("helvetica", "bold")
       pdf.text("Destinatario", marginLeft, currentY)
       const destWidth = pdf.getTextWidth("Destinatario")
       pdf.setLineWidth(0.4)
       pdf.line(marginLeft, currentY + 2, marginLeft + destWidth, currentY + 2)
-      currentY += 10
+      currentY += 14
 
-      pdf.setFontSize(8.5)
-      pdf.text(envio.nombreDestinatario, marginLeft, currentY)
-      currentY += 9
+      pdf.setFillColor(0, 0, 0)
+      pdf.circle(marginLeft + bulletR, currentY - 2, bulletR, "F")
+      pdf.setFontSize(10)
+      pdf.setFont("helvetica", "bold")
+      pdf.text(envio.nombreDestinatario, bulletX + 4, currentY)
+      currentY += 12 + 6
 
+      pdf.setFillColor(0, 0, 0)
+      pdf.circle(marginLeft + bulletR, currentY - 2, bulletR, "F")
       pdf.setFont("helvetica", "normal")
-      pdf.text(`Tel: ${envio.telefono}`, marginLeft, currentY)
-      currentY += 9
+      pdf.setFontSize(8)
+      pdf.text(`Tel: ${envio.telefono}`, bulletX + 4, currentY)
+      currentY += infoLineH + 2
 
-      const direccionLines = pdf.splitTextToSize(envio.direccion, width - marginLeft * 2 - 20)
-      pdf.text(direccionLines, marginLeft, currentY)
-      currentY += direccionLines.length * 9 + 5
+      pdf.setFillColor(0, 0, 0)
+      pdf.circle(marginLeft + bulletR, currentY - 2, bulletR, "F")
+      const direccionLines = pdf.splitTextToSize(envio.direccion, width - marginLeft * 2 - 24)
+      pdf.text(direccionLines, bulletX + 4, currentY)
+      currentY += direccionLines.length * 11 + 8
 
       if (envio.observaciones) {
+        pdf.setFillColor(0, 0, 0)
+        pdf.circle(marginLeft + bulletR, currentY - 2, bulletR, "F")
         pdf.setFontSize(7.5)
         pdf.setFont("helvetica", "italic")
-        pdf.setTextColor(0, 0, 0)
-        const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, width - marginLeft * 2 - 20)
-        pdf.text(obsLines, marginLeft, currentY)
-        currentY += obsLines.length * 9 + 3
+        const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, width - marginLeft * 2 - 24)
+        pdf.text(obsLines, bulletX + 4, currentY)
+        currentY += obsLines.length * 10 + 6
       }
 
-      // Cobrar en Efectivo
       if (envio.totalACobrar && String(envio.totalACobrar).trim() !== "") {
-        pdf.setFontSize(8)
+        pdf.setFontSize(8.5)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(0, 0, 0)
         pdf.text(`Cobrar en Efectivo: $ ${String(envio.totalACobrar).trim()}`, marginLeft, currentY)
-        currentY += 11
+        currentY += 14
       }
 
-      // Cambio o Retiro (badge)
       if (envio.cambioRetiro && String(envio.cambioRetiro).trim() !== "") {
         const valor = String(envio.cambioRetiro).trim().toUpperCase()
         pdf.setFontSize(9)
@@ -684,10 +691,10 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         pdf.setTextColor(0, 0, 0)
         pdf.setDrawColor(0, 0, 0)
         pdf.setLineWidth(0.8)
-        const badgeW = Math.max(pdf.getTextWidth(valor) + 10, 36)
-        pdf.roundedRect(marginLeft, currentY - 8, badgeW, 14, 2, 2, "S")
-        pdf.text(valor, marginLeft + badgeW / 2 - pdf.getTextWidth(valor) / 2, currentY + 1)
-        currentY += 18
+        const badgeW = Math.max(pdf.getTextWidth(valor) + 12, 40)
+        pdf.roundedRect(marginLeft, currentY - 8, badgeW, 15, 2, 2, "S")
+        pdf.text(valor, marginLeft + badgeW / 2 - pdf.getTextWidth(valor) / 2, currentY + 2)
+        currentY += 20
       }
 
       // Descargar PDF
