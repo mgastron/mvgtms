@@ -365,18 +365,18 @@ export default function ReimprimirNoflexPage() {
       let iconPhoneDataUrl: string | null = null
       let iconMapPinDataUrl: string | null = null
       let iconMailDataUrl: string | null = null
-      let iconCircleDataUrl: string | null = null
+      let iconClienteDataUrl: string | null = null
       try {
         const assets = await getLabelIconDataUrls()
         logoMvgDataUrl = assets.logo || null
         iconCalendarDataUrl = assets.calendar || null
         iconUserDataUrl = assets.person || null
+        iconClienteDataUrl = assets.business || null
         iconFileTextDataUrl = assets.document || null
         iconPackageDataUrl = assets.package || null
         iconPhoneDataUrl = assets.phone || null
         iconMapPinDataUrl = assets.location || null
         iconMailDataUrl = assets.mail || null
-        iconCircleDataUrl = assets.circle || null
       } catch (e) {
         warnDev("Error generando logo/íconos para PDF:", e)
       }
@@ -407,6 +407,15 @@ export default function ReimprimirNoflexPage() {
         pdf.line(cx - 1.8, cy - 1.6, cx + 1.8, cy - 1.6)
         pdf.line(cx - 1.8, cy + 0.2, cx + 1.6, cy + 0.2)
         pdf.line(cx - 1.8, cy + 1.9, cx + 1.4, cy + 1.9)
+      }
+      const drawIconBusiness = (cx: number, cy: number) => {
+        pdf.setDrawColor(0, 0, 0)
+        pdf.setLineWidth(0.45)
+        pdf.line(cx - 2.5, cy + 2.2, cx, cy - 2)
+        pdf.line(cx, cy - 2, cx + 2.5, cy + 2.2)
+        pdf.line(cx + 2.5, cy + 2.2, cx - 2.5, cy + 2.2)
+        pdf.rect(cx - 2.2, cy - 0.5, 1.2, 1.8, "S")
+        pdf.rect(cx + 0.2, cy - 0.5, 1.2, 1.8, "S")
       }
       const drawIconPhone = (cx: number, cy: number) => {
         pdf.setFillColor(0, 0, 0)
@@ -483,8 +492,8 @@ export default function ReimprimirNoflexPage() {
         const pad = 6
         const qrSize = 48
         const lineH = 11
-        const lineGap = 6
-        const iconTextOffset = 32
+        const lineGap = 7
+        const iconTextOffset = 40
         let y = startY
 
         // 1) Barra negra con zona
@@ -516,7 +525,7 @@ export default function ReimprimirNoflexPage() {
         addIcon(iconCalendarDataUrl, iconX, infoY - 0.5, () => drawIconCalendar(iconX, infoY - 0.5))
         pdf.text(fechaFormateada, qrRight + iconTextOffset, infoY)
         infoY += lineH + lineGap
-        addIcon(iconUserDataUrl, iconX, infoY - 0.5, () => drawIconPerson(iconX, infoY - 0.5))
+        addIcon(iconClienteDataUrl, iconX, infoY - 0.5, () => drawIconBusiness(iconX, infoY - 0.5))
         const clienteShort = (envio.cliente || "").length > 24 ? (envio.cliente || "").slice(0, 23) + "…" : (envio.cliente || "")
         pdf.text(`Cliente: ${clienteShort}`, qrRight + iconTextOffset, infoY)
         infoY += lineH + lineGap
@@ -546,15 +555,15 @@ export default function ReimprimirNoflexPage() {
         pdf.roundedRect(startX + pad, destSectionTop, labelWidth - pad * 2, 118, 4, 4, "FD")
         pdf.setDrawColor(0, 0, 0)
 
-        // 4) Destinatario: más espacio entre líneas para llenar y que no quede hueco bajo MVG
+        // 4) Destinatario: más espacio entre ícono y texto para que no se solapen
         const destIconX = startX + pad + 6
-        const destTextX = startX + pad + 42
-        const destTextW = labelWidth - pad * 2 - 48
+        const destTextX = startX + pad + 48
+        const destTextW = labelWidth - pad * 2 - 54
         pdf.setFontSize(8)
         pdf.setFont("helvetica", "bold")
         pdf.text("Destinatario", startX + pad, y)
         y += lineH + 8
-        addIcon(iconMailDataUrl, destIconX, y - 0.5, () => drawIconMail(destIconX, y - 0.5))
+        addIcon(iconUserDataUrl, destIconX, y - 0.5, () => drawIconPerson(destIconX, y - 0.5))
         pdf.setFont("helvetica", "bold")
         const nomLines = pdf.splitTextToSize(envio.nombreDestinatario || "", destTextW)
         pdf.text(nomLines, destTextX, y)
@@ -569,7 +578,6 @@ export default function ReimprimirNoflexPage() {
         pdf.text(dirLines, destTextX, y)
         y += dirLines.length * (lineH + 2.5) + 6
         if (envio.observaciones) {
-          addIcon(iconCircleDataUrl, destIconX, y - 1, () => drawIconCircle(destIconX, y - 1))
           pdf.setFont("helvetica", "italic")
           const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, destTextW)
           pdf.text(obsLines, destTextX, y)
@@ -592,8 +600,8 @@ export default function ReimprimirNoflexPage() {
           y += 18
         }
 
-        // 5) Logo MVG: mismo estilo que header (gradiente indigo→cyan→teal + "MVG" blanco)
-        const logoY = startY + labelHeight - 16
+        // 5) Logo MVG: levantado para que no se corte (dentro del borde de la etiqueta)
+        const logoY = startY + labelHeight - 40
         const logoBoxW = 36
         const logoBoxH = 36
         const logoBoxX = startX + labelWidth - pad - logoBoxW - 4
