@@ -7,8 +7,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Calendar, User, FileText, Package, Phone, MapPin, Circle, Mail } from "lucide-react"
 import { MvgLogo } from "@/components/MvgLogo"
+import {
+  MdCalendarToday,
+  MdPerson,
+  MdDescription,
+  MdLocalShipping,
+  MdPhone,
+  MdLocationOn,
+  MdEmail,
+  MdLens,
+} from "react-icons/md"
 import jsPDF from "jspdf"
 import QRCode from "qrcode"
 import html2canvas from "html2canvas"
@@ -369,7 +378,16 @@ export default function ReimprimirNoflexPage() {
         format: "a4",
       })
 
-      const captureOpt = { scale: 2, useCORS: true, backgroundColor: "#ffffff" as const }
+      const makeCaptureVisible = (clonedDoc: Document) => {
+        const zone = clonedDoc.getElementById("pdf-capture-zone")
+        if (zone) (zone as HTMLElement).style.opacity = "1"
+      }
+      const captureOpt = {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff" as const,
+        onclone: makeCaptureVisible,
+      }
       let logoMvgDataUrl: string | null = null
       let iconCalendarDataUrl: string | null = null
       let iconUserDataUrl: string | null = null
@@ -925,38 +943,49 @@ export default function ReimprimirNoflexPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50" suppressHydrationWarning>
       <ModernHeader />
-      {/* Zona oculta para capturar logo e íconos (mismo logo e íconos que header/app) */}
+      {/* Zona en viewport (invisible) para que html2canvas capture el logo del header y los íconos */}
       <div
+        id="pdf-capture-zone"
         aria-hidden
-        className="fixed -left-[9999px] top-0 z-[-1] flex flex-wrap items-center gap-2 bg-white p-2"
-        style={{ width: 400, height: 200 }}
+        className="flex flex-wrap items-center gap-2 bg-white p-2"
+        style={{
+          position: "fixed",
+          left: 0,
+          top: 0,
+          width: 420,
+          height: 220,
+          opacity: 0,
+          pointerEvents: "none",
+          zIndex: -1,
+          overflow: "hidden",
+        }}
       >
         <div ref={logoCaptureRef} className="flex shrink-0">
           <MvgLogo size="md" className="h-10 w-10" />
         </div>
         <div ref={iconCalendarRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <Calendar size={24} strokeWidth={2} />
+          <MdCalendarToday size={28} />
         </div>
         <div ref={iconUserRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <User size={24} strokeWidth={2} />
+          <MdPerson size={28} />
         </div>
         <div ref={iconFileTextRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <FileText size={24} strokeWidth={2} />
+          <MdDescription size={28} />
         </div>
         <div ref={iconPackageRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <Package size={24} strokeWidth={2} />
+          <MdLocalShipping size={28} />
         </div>
         <div ref={iconPhoneRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <Phone size={24} strokeWidth={2} />
+          <MdPhone size={28} />
         </div>
         <div ref={iconMapPinRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <MapPin size={24} strokeWidth={2} />
+          <MdLocationOn size={28} />
         </div>
         <div ref={iconMailRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <Mail size={24} strokeWidth={2} />
+          <MdEmail size={28} />
         </div>
         <div ref={iconCircleRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <Circle size={20} strokeWidth={2.5} fill="currentColor" />
+          <MdLens size={22} />
         </div>
       </div>
       <main className="p-4">
