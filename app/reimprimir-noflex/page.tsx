@@ -540,19 +540,21 @@ export default function ReimprimirNoflexPage() {
         pdf.text("Envio: ", qrRight + iconTextOffset, infoY)
         pdf.setFont("helvetica", "bold")
         pdf.text(String(envio.tracking || envio.id), qrRight + iconTextOffset + pdf.getTextWidth("Envio: "), infoY)
-        y += qrSize + 14
+        y = infoY + 14
 
-        // 3) Línea separadora
+        // 3) Línea separadora (bajada para que el ícono de Envio no la sobrepase)
         pdf.setDrawColor(0, 0, 0)
         pdf.setLineWidth(0.5)
         pdf.line(startX + pad, y, startX + labelWidth - pad, y)
         y += 14
 
         const destSectionTop = y
+        const destSectionBottom = startY + labelHeight - pad - 8
+        const destSectionHeight = destSectionBottom - destSectionTop
         pdf.setFillColor(248, 248, 250)
         pdf.setDrawColor(220, 220, 224)
         pdf.setLineWidth(0.2)
-        pdf.roundedRect(startX + pad, destSectionTop, labelWidth - pad * 2, 118, 4, 4, "FD")
+        pdf.roundedRect(startX + pad, destSectionTop, labelWidth - pad * 2, destSectionHeight, 4, 4, "FD")
         pdf.setDrawColor(0, 0, 0)
 
         // 4) Destinatario: más espacio entre ícono y texto para que no se solapen
@@ -600,11 +602,11 @@ export default function ReimprimirNoflexPage() {
           y += 18
         }
 
-        // 5) Logo MVG: levantado para que no se corte (dentro del borde de la etiqueta)
-        const logoY = startY + labelHeight - 40
+        // 5) Logo MVG: dentro del recuadro gris, abajo a la derecha (sin pisar)
         const logoBoxW = 36
         const logoBoxH = 36
-        const logoBoxX = startX + labelWidth - pad - logoBoxW - 4
+        const logoBoxX = startX + labelWidth - pad - logoBoxW - 6
+        const logoY = destSectionBottom - logoBoxH - 6
         let logoDrawn = false
         if (logoMvgDataUrl) {
           try {
