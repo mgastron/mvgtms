@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
+import { MvgLogo } from "@/components/MvgLogo"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -67,9 +68,7 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
           {/* Logo MVG */}
           <div className="flex justify-center mb-6">
-            <div className="flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-600 via-cyan-500 to-teal-500 shadow-xl shadow-cyan-500/30">
-              <span className="text-3xl font-black tracking-tighter text-white drop-shadow-sm">MVG</span>
-            </div>
+            <MvgLogo size="lg" className="shadow-xl shadow-cyan-500/30 rounded-2xl" />
           </div>
 
           {/* Title */}

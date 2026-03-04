@@ -1,14 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { ModernHeader } from "@/components/modern-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Calendar, User, FileText, Package, Phone, MapPin, Circle, Mail } from "lucide-react"
+import { MvgLogo } from "@/components/MvgLogo"
 import jsPDF from "jspdf"
 import QRCode from "qrcode"
+import html2canvas from "html2canvas"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev, errorDev } from "@/lib/logger"
 
@@ -54,6 +57,16 @@ export default function ReimprimirNoflexPage() {
     zonasEntrega: "todos",
     trackings: "",
   })
+
+  const logoCaptureRef = useRef<HTMLDivElement>(null)
+  const iconCalendarRef = useRef<HTMLDivElement>(null)
+  const iconUserRef = useRef<HTMLDivElement>(null)
+  const iconFileTextRef = useRef<HTMLDivElement>(null)
+  const iconPackageRef = useRef<HTMLDivElement>(null)
+  const iconPhoneRef = useRef<HTMLDivElement>(null)
+  const iconMapPinRef = useRef<HTMLDivElement>(null)
+  const iconMailRef = useRef<HTMLDivElement>(null)
+  const iconCircleRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // Verificar autenticación
@@ -356,21 +369,58 @@ export default function ReimprimirNoflexPage() {
         format: "a4",
       })
 
+      const captureOpt = { scale: 2, useCORS: true, backgroundColor: "#ffffff" as const }
       let logoMvgDataUrl: string | null = null
+      let iconCalendarDataUrl: string | null = null
+      let iconUserDataUrl: string | null = null
+      let iconFileTextDataUrl: string | null = null
+      let iconPackageDataUrl: string | null = null
+      let iconPhoneDataUrl: string | null = null
+      let iconMapPinDataUrl: string | null = null
+      let iconMailDataUrl: string | null = null
+      let iconCircleDataUrl: string | null = null
       try {
-        const logoRes = await fetch("/logo-mvg.png")
-        if (logoRes.ok) {
-          const blob = await logoRes.blob()
-          logoMvgDataUrl = await new Promise<string>((res, rej) => {
-            const r = new FileReader()
-            r.onload = () => res(r.result as string)
-            r.onerror = rej
-            r.readAsDataURL(blob)
-          })
+        if (logoCaptureRef.current) {
+          const canvas = await html2canvas(logoCaptureRef.current, captureOpt)
+          logoMvgDataUrl = canvas.toDataURL("image/png")
         }
-      } catch {
-        // Usar logo dibujado si no hay asset
+        if (iconCalendarRef.current) {
+          const c = await html2canvas(iconCalendarRef.current, captureOpt)
+          iconCalendarDataUrl = c.toDataURL("image/png")
+        }
+        if (iconUserRef.current) {
+          const c = await html2canvas(iconUserRef.current, captureOpt)
+          iconUserDataUrl = c.toDataURL("image/png")
+        }
+        if (iconFileTextRef.current) {
+          const c = await html2canvas(iconFileTextRef.current, captureOpt)
+          iconFileTextDataUrl = c.toDataURL("image/png")
+        }
+        if (iconPackageRef.current) {
+          const c = await html2canvas(iconPackageRef.current, captureOpt)
+          iconPackageDataUrl = c.toDataURL("image/png")
+        }
+        if (iconPhoneRef.current) {
+          const c = await html2canvas(iconPhoneRef.current, captureOpt)
+          iconPhoneDataUrl = c.toDataURL("image/png")
+        }
+        if (iconMapPinRef.current) {
+          const c = await html2canvas(iconMapPinRef.current, captureOpt)
+          iconMapPinDataUrl = c.toDataURL("image/png")
+        }
+        if (iconMailRef.current) {
+          const c = await html2canvas(iconMailRef.current, captureOpt)
+          iconMailDataUrl = c.toDataURL("image/png")
+        }
+        if (iconCircleRef.current) {
+          const c = await html2canvas(iconCircleRef.current, captureOpt)
+          iconCircleDataUrl = c.toDataURL("image/png")
+        }
+      } catch (e) {
+        warnDev("Error capturando logo/íconos para PDF:", e)
       }
+
+      const iconSizePdf = 14
 
       for (let i = 0; i < enviosAReimprimir.length; i++) {
         const envio = enviosAReimprimir[i]
@@ -382,62 +432,15 @@ export default function ReimprimirNoflexPage() {
         const startX = margin + col * (labelWidth + gap)
         const startY = margin + row * (labelHeight + gap)
 
-        const drawIconCalendar = (cx: number, cy: number) => {
-          pdf.setFillColor(0, 0, 0)
-          pdf.setDrawColor(0, 0, 0)
-          pdf.setLineWidth(0.4)
-          const W = 10
-          const H = 7.2
-          pdf.rect(cx - W / 2, cy - H / 2 - 1.1, W, 1.4, "F")
-          pdf.roundedRect(cx - W / 2, cy - H / 2 + 0.2, W, H, 0.5, 0.5, "S")
-          pdf.line(cx - W / 2 + 0.8, cy - 1.4, cx + W / 2 - 0.8, cy - 1.4)
-          pdf.line(cx - W / 2 + 0.8, cy - 0.2, cx + W / 2 - 0.8, cy - 0.2)
-          pdf.line(cx - W / 2 + 0.8, cy + 1, cx + W / 2 - 0.8, cy + 1)
-        }
-        const drawIconPerson = (cx: number, cy: number) => {
-          pdf.setFillColor(0, 0, 0)
-          pdf.circle(cx, cy - 2.2, 3.4, "F")
-          pdf.circle(cx, cy + 3.4, 4.2, "F")
-        }
-        const drawIconDestinatario = (cx: number, cy: number) => {
-          pdf.setDrawColor(0, 0, 0)
-          pdf.setLineWidth(0.5)
-          const w = 4.8
-          const h = 3.6
-          pdf.rect(cx - w / 2, cy - h / 2 + 0.5, w, h, "S")
-          pdf.line(cx - w / 2, cy - h / 2 + 0.5, cx, cy - h / 2 - 0.5)
-          pdf.line(cx, cy - h / 2 - 0.5, cx + w / 2, cy - h / 2 + 0.5)
-        }
-        const drawIconVenta = (cx: number, cy: number) => {
-          pdf.setDrawColor(0, 0, 0)
-          pdf.setLineWidth(0.5)
-          pdf.roundedRect(cx - 2.6, cy - 3.2, 5.2, 6.4, 0.5, 0.5, "S")
-          pdf.line(cx - 1.8, cy - 1.6, cx + 1.8, cy - 1.6)
-          pdf.line(cx - 1.8, cy + 0.2, cx + 1.6, cy + 0.2)
-          pdf.line(cx - 1.8, cy + 1.9, cx + 1.4, cy + 1.9)
-        }
-        const drawIconPhone = (cx: number, cy: number) => {
-          pdf.setFillColor(0, 0, 0)
-          pdf.setDrawColor(0, 0, 0)
-          pdf.setLineWidth(0.4)
-          const r = 2.2
-          pdf.circle(cx, cy - 2.8, r, "F")
-          pdf.circle(cx, cy + 2.8, r, "F")
-          pdf.roundedRect(cx - 1.3, cy - 1.1, 2.6, 2.2, 0.8, 0.8, "F")
-        }
-        const drawIconEnvio = (cx: number, cy: number) => {
-          pdf.setDrawColor(0, 0, 0)
-          pdf.setLineWidth(0.85)
-          pdf.rect(cx - 3.8, cy - 2.6, 7.6, 5.2, "S")
-          pdf.line(cx - 3.8, cy - 2.6, cx + 3.8, cy + 2.6)
-          pdf.line(cx + 3.8, cy - 2.6, cx - 3.8, cy + 2.6)
-        }
-        const drawIconPin = (cx: number, cy: number) => {
-          pdf.setFillColor(0, 0, 0)
-          pdf.circle(cx, cy - 1.6, 3.2, "F")
-          pdf.setDrawColor(0, 0, 0)
-          pdf.setLineWidth(1)
-          pdf.line(cx, cy + 1.9, cx, cy + 7.2)
+        const addIcon = (dataUrl: string | null, cx: number, cy: number) => {
+          if (!dataUrl) return
+          const w = iconSizePdf
+          const h = iconSizePdf
+          try {
+            pdf.addImage(dataUrl, "PNG", cx - w / 2, cy - h / 2, w, h)
+          } catch {
+            // ignorar si falla
+          }
         }
 
         const qrDataToUse = envio.qrData || `${envio.tracking}-${envio.id}`
@@ -448,7 +451,6 @@ export default function ReimprimirNoflexPage() {
 
         const pad = 6
         const qrSize = 48
-        const bulletR = 2.8
         const lineH = 11
         const lineGap = 6
         const iconTextOffset = 32
@@ -480,21 +482,21 @@ export default function ReimprimirNoflexPage() {
         pdf.setFontSize(8)
         pdf.setFont("helvetica", "normal")
         pdf.setTextColor(0, 0, 0)
-        drawIconCalendar(iconX, infoY - 0.5)
+        addIcon(iconCalendarDataUrl, iconX, infoY - 0.5)
         pdf.text(fechaFormateada, qrRight + iconTextOffset, infoY)
         infoY += lineH + lineGap
-        drawIconPerson(iconX, infoY - 0.5)
+        addIcon(iconUserDataUrl, iconX, infoY - 0.5)
         const clienteShort = (envio.cliente || "").length > 24 ? (envio.cliente || "").slice(0, 23) + "…" : (envio.cliente || "")
         pdf.text(`Cliente: ${clienteShort}`, qrRight + iconTextOffset, infoY)
         infoY += lineH + lineGap
-        drawIconVenta(iconX, infoY - 0.5)
+        addIcon(iconFileTextDataUrl, iconX, infoY - 0.5)
         pdf.setFont("helvetica", "normal")
         pdf.text("Venta: ", qrRight + iconTextOffset, infoY)
         pdf.setFont("helvetica", "bold")
         pdf.text(getOrigenVentaLabel(envio.origen), qrRight + iconTextOffset + pdf.getTextWidth("Venta: "), infoY)
         infoY += lineH + lineGap
         pdf.setFont("helvetica", "normal")
-        drawIconEnvio(iconX, infoY - 0.5)
+        addIcon(iconPackageDataUrl, iconX, infoY - 0.5)
         pdf.text("Envio: ", qrRight + iconTextOffset, infoY)
         pdf.setFont("helvetica", "bold")
         pdf.text(String(envio.tracking || envio.id), qrRight + iconTextOffset + pdf.getTextWidth("Envio: "), infoY)
@@ -521,23 +523,22 @@ export default function ReimprimirNoflexPage() {
         pdf.setFont("helvetica", "bold")
         pdf.text("Destinatario", startX + pad, y)
         y += lineH + 8
-        drawIconDestinatario(destIconX, y - 0.5)
+        addIcon(iconMailDataUrl, destIconX, y - 0.5)
         pdf.setFont("helvetica", "bold")
         const nomLines = pdf.splitTextToSize(envio.nombreDestinatario || "", destTextW)
         pdf.text(nomLines, destTextX, y)
         y += nomLines.length * (lineH + 3) + 6
         pdf.setFont("helvetica", "normal")
-        drawIconPhone(destIconX, y - 0.5)
+        addIcon(iconPhoneDataUrl, destIconX, y - 0.5)
         pdf.text(String(envio.telefono || ""), destTextX, y)
         y += lineH + lineGap
-        drawIconPin(destIconX, y - 0.5)
+        addIcon(iconMapPinDataUrl, destIconX, y - 0.5)
         pdf.setFont("helvetica", "normal")
         const dirLines = pdf.splitTextToSize(envio.direccion || "", destTextW)
         pdf.text(dirLines, destTextX, y)
         y += dirLines.length * (lineH + 2.5) + 6
         if (envio.observaciones) {
-          pdf.setFillColor(0, 0, 0)
-          pdf.circle(destIconX, y - 1, bulletR, "F")
+          addIcon(iconCircleDataUrl, destIconX, y - 1)
           pdf.setFont("helvetica", "italic")
           const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, destTextW)
           pdf.text(obsLines, destTextX, y)
@@ -560,7 +561,7 @@ export default function ReimprimirNoflexPage() {
           y += 18
         }
 
-        // 5) Logo MVG igual que página principal (header): cuadrado redondeado indigo + "MVG" blanco
+        // 5) Logo MVG: mismo que header (capturado del componente MvgLogo)
         const logoY = startY + labelHeight - 16
         const logoBoxW = 38
         const logoBoxH = 16
@@ -569,26 +570,8 @@ export default function ReimprimirNoflexPage() {
           try {
             pdf.addImage(logoMvgDataUrl, "PNG", logoBoxX, logoY - 2, logoBoxW, logoBoxH)
           } catch {
-            pdf.setFillColor(79, 70, 229)
-            pdf.roundedRect(logoBoxX, logoY - 2, logoBoxW, logoBoxH, 4, 4, "F")
-            pdf.setFontSize(10)
-            pdf.setFont("helvetica", "bold")
-            pdf.setTextColor(255, 255, 255)
-            const mvgW = pdf.getTextWidth("MVG")
-            pdf.text("MVG", logoBoxX + (logoBoxW - mvgW) / 2, logoY + 6)
-            pdf.setFont("helvetica", "normal")
-            pdf.setTextColor(0, 0, 0)
+            warnDev("No se pudo agregar logo al PDF")
           }
-        } else {
-          pdf.setFillColor(79, 70, 229)
-          pdf.roundedRect(logoBoxX, logoY - 2, logoBoxW, logoBoxH, 4, 4, "F")
-          pdf.setFontSize(10)
-          pdf.setFont("helvetica", "bold")
-          pdf.setTextColor(255, 255, 255)
-          const mvgW = pdf.getTextWidth("MVG")
-          pdf.text("MVG", logoBoxX + (logoBoxW - mvgW) / 2, logoY + 6)
-          pdf.setFont("helvetica", "normal")
-          pdf.setTextColor(0, 0, 0)
         }
 
         // Borde
@@ -859,6 +842,40 @@ export default function ReimprimirNoflexPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50" suppressHydrationWarning>
       <ModernHeader />
+      {/* Zona oculta para capturar logo e íconos (mismo logo e íconos que header/app) */}
+      <div
+        aria-hidden
+        className="fixed -left-[9999px] top-0 z-[-1] flex flex-wrap items-center gap-2 bg-white p-2"
+        style={{ width: 400, height: 200 }}
+      >
+        <div ref={logoCaptureRef} className="flex shrink-0">
+          <MvgLogo size="md" className="h-10 w-10" />
+        </div>
+        <div ref={iconCalendarRef} className="flex h-10 w-10 items-center justify-center text-black">
+          <Calendar size={24} strokeWidth={2} />
+        </div>
+        <div ref={iconUserRef} className="flex h-10 w-10 items-center justify-center text-black">
+          <User size={24} strokeWidth={2} />
+        </div>
+        <div ref={iconFileTextRef} className="flex h-10 w-10 items-center justify-center text-black">
+          <FileText size={24} strokeWidth={2} />
+        </div>
+        <div ref={iconPackageRef} className="flex h-10 w-10 items-center justify-center text-black">
+          <Package size={24} strokeWidth={2} />
+        </div>
+        <div ref={iconPhoneRef} className="flex h-10 w-10 items-center justify-center text-black">
+          <Phone size={24} strokeWidth={2} />
+        </div>
+        <div ref={iconMapPinRef} className="flex h-10 w-10 items-center justify-center text-black">
+          <MapPin size={24} strokeWidth={2} />
+        </div>
+        <div ref={iconMailRef} className="flex h-10 w-10 items-center justify-center text-black">
+          <Mail size={24} strokeWidth={2} />
+        </div>
+        <div ref={iconCircleRef} className="flex h-10 w-10 items-center justify-center text-black">
+          <Circle size={20} strokeWidth={2.5} fill="currentColor" />
+        </div>
+      </div>
       <main className="p-4">
         <div className="mx-auto max-w-7xl">
 

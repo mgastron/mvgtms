@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { UserProfile } from "@/components/user-profile"
+import { MvgLogo } from "@/components/MvgLogo"
 
 const allMenuItems = [
   { 
@@ -171,9 +172,7 @@ export function ModernHeader() {
                 onClick={() => router.push("/envios")}
                 className="flex items-center gap-3 hover:opacity-90 transition-opacity"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 via-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/40">
-                  <span className="text-lg font-black tracking-tight text-white">MVG</span>
-                </div>
+                <MvgLogo size="md" />
                 <div className="hidden sm:block">
                   <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-cyan-500 to-teal-500 bg-clip-text text-transparent tracking-tight">
                     MVG
