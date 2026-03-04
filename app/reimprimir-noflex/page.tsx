@@ -422,6 +422,68 @@ export default function ReimprimirNoflexPage() {
 
       const iconSizePdf = 14
 
+      const drawIconCalendar = (cx: number, cy: number) => {
+        pdf.setFillColor(0, 0, 0)
+        pdf.setDrawColor(0, 0, 0)
+        pdf.setLineWidth(0.4)
+        const W = 10
+        const H = 7.2
+        pdf.rect(cx - W / 2, cy - H / 2 - 1.1, W, 1.4, "F")
+        pdf.roundedRect(cx - W / 2, cy - H / 2 + 0.2, W, H, 0.5, 0.5, "S")
+        pdf.line(cx - W / 2 + 0.8, cy - 1.4, cx + W / 2 - 0.8, cy - 1.4)
+        pdf.line(cx - W / 2 + 0.8, cy - 0.2, cx + W / 2 - 0.8, cy - 0.2)
+        pdf.line(cx - W / 2 + 0.8, cy + 1, cx + W / 2 - 0.8, cy + 1)
+      }
+      const drawIconPerson = (cx: number, cy: number) => {
+        pdf.setFillColor(0, 0, 0)
+        pdf.circle(cx, cy - 2.2, 3.4, "F")
+        pdf.circle(cx, cy + 3.4, 4.2, "F")
+      }
+      const drawIconDoc = (cx: number, cy: number) => {
+        pdf.setDrawColor(0, 0, 0)
+        pdf.setLineWidth(0.5)
+        pdf.roundedRect(cx - 2.6, cy - 3.2, 5.2, 6.4, 0.5, 0.5, "S")
+        pdf.line(cx - 1.8, cy - 1.6, cx + 1.8, cy - 1.6)
+        pdf.line(cx - 1.8, cy + 0.2, cx + 1.6, cy + 0.2)
+        pdf.line(cx - 1.8, cy + 1.9, cx + 1.4, cy + 1.9)
+      }
+      const drawIconPhone = (cx: number, cy: number) => {
+        pdf.setFillColor(0, 0, 0)
+        pdf.setDrawColor(0, 0, 0)
+        pdf.setLineWidth(0.4)
+        const r = 2.2
+        pdf.circle(cx, cy - 2.8, r, "F")
+        pdf.circle(cx, cy + 2.8, r, "F")
+        pdf.roundedRect(cx - 1.3, cy - 1.1, 2.6, 2.2, 0.8, 0.8, "F")
+      }
+      const drawIconPackage = (cx: number, cy: number) => {
+        pdf.setDrawColor(0, 0, 0)
+        pdf.setLineWidth(0.85)
+        pdf.rect(cx - 3.8, cy - 2.6, 7.6, 5.2, "S")
+        pdf.line(cx - 3.8, cy - 2.6, cx + 3.8, cy + 2.6)
+        pdf.line(cx + 3.8, cy - 2.6, cx - 3.8, cy + 2.6)
+      }
+      const drawIconPin = (cx: number, cy: number) => {
+        pdf.setFillColor(0, 0, 0)
+        pdf.circle(cx, cy - 1.6, 3.2, "F")
+        pdf.setDrawColor(0, 0, 0)
+        pdf.setLineWidth(1)
+        pdf.line(cx, cy + 1.9, cx, cy + 7.2)
+      }
+      const drawIconMail = (cx: number, cy: number) => {
+        pdf.setDrawColor(0, 0, 0)
+        pdf.setLineWidth(0.5)
+        const w = 4.8
+        const h = 3.6
+        pdf.rect(cx - w / 2, cy - h / 2 + 0.5, w, h, "S")
+        pdf.line(cx - w / 2, cy - h / 2 + 0.5, cx, cy - h / 2 - 0.5)
+        pdf.line(cx, cy - h / 2 - 0.5, cx + w / 2, cy - h / 2 + 0.5)
+      }
+      const drawIconCircle = (cx: number, cy: number) => {
+        pdf.setFillColor(0, 0, 0)
+        pdf.circle(cx, cy, 2.8, "F")
+      }
+
       for (let i = 0; i < enviosAReimprimir.length; i++) {
         const envio = enviosAReimprimir[i]
         const labelIndexInPage = i % labelsPerPage
@@ -432,15 +494,23 @@ export default function ReimprimirNoflexPage() {
         const startX = margin + col * (labelWidth + gap)
         const startY = margin + row * (labelHeight + gap)
 
-        const addIcon = (dataUrl: string | null, cx: number, cy: number) => {
-          if (!dataUrl) return
-          const w = iconSizePdf
-          const h = iconSizePdf
-          try {
-            pdf.addImage(dataUrl, "PNG", cx - w / 2, cy - h / 2, w, h)
-          } catch {
-            // ignorar si falla
+        const addIcon = (
+          dataUrl: string | null,
+          cx: number,
+          cy: number,
+          drawFallback: () => void
+        ) => {
+          if (dataUrl) {
+            const w = iconSizePdf
+            const h = iconSizePdf
+            try {
+              pdf.addImage(dataUrl, "PNG", cx - w / 2, cy - h / 2, w, h)
+              return
+            } catch {
+              // fallback si addImage falla
+            }
           }
+          drawFallback()
         }
 
         const qrDataToUse = envio.qrData || `${envio.tracking}-${envio.id}`
@@ -482,21 +552,21 @@ export default function ReimprimirNoflexPage() {
         pdf.setFontSize(8)
         pdf.setFont("helvetica", "normal")
         pdf.setTextColor(0, 0, 0)
-        addIcon(iconCalendarDataUrl, iconX, infoY - 0.5)
+        addIcon(iconCalendarDataUrl, iconX, infoY - 0.5, () => drawIconCalendar(iconX, infoY - 0.5))
         pdf.text(fechaFormateada, qrRight + iconTextOffset, infoY)
         infoY += lineH + lineGap
-        addIcon(iconUserDataUrl, iconX, infoY - 0.5)
+        addIcon(iconUserDataUrl, iconX, infoY - 0.5, () => drawIconPerson(iconX, infoY - 0.5))
         const clienteShort = (envio.cliente || "").length > 24 ? (envio.cliente || "").slice(0, 23) + "…" : (envio.cliente || "")
         pdf.text(`Cliente: ${clienteShort}`, qrRight + iconTextOffset, infoY)
         infoY += lineH + lineGap
-        addIcon(iconFileTextDataUrl, iconX, infoY - 0.5)
+        addIcon(iconFileTextDataUrl, iconX, infoY - 0.5, () => drawIconDoc(iconX, infoY - 0.5))
         pdf.setFont("helvetica", "normal")
         pdf.text("Venta: ", qrRight + iconTextOffset, infoY)
         pdf.setFont("helvetica", "bold")
         pdf.text(getOrigenVentaLabel(envio.origen), qrRight + iconTextOffset + pdf.getTextWidth("Venta: "), infoY)
         infoY += lineH + lineGap
         pdf.setFont("helvetica", "normal")
-        addIcon(iconPackageDataUrl, iconX, infoY - 0.5)
+        addIcon(iconPackageDataUrl, iconX, infoY - 0.5, () => drawIconPackage(iconX, infoY - 0.5))
         pdf.text("Envio: ", qrRight + iconTextOffset, infoY)
         pdf.setFont("helvetica", "bold")
         pdf.text(String(envio.tracking || envio.id), qrRight + iconTextOffset + pdf.getTextWidth("Envio: "), infoY)
@@ -523,22 +593,22 @@ export default function ReimprimirNoflexPage() {
         pdf.setFont("helvetica", "bold")
         pdf.text("Destinatario", startX + pad, y)
         y += lineH + 8
-        addIcon(iconMailDataUrl, destIconX, y - 0.5)
+        addIcon(iconMailDataUrl, destIconX, y - 0.5, () => drawIconMail(destIconX, y - 0.5))
         pdf.setFont("helvetica", "bold")
         const nomLines = pdf.splitTextToSize(envio.nombreDestinatario || "", destTextW)
         pdf.text(nomLines, destTextX, y)
         y += nomLines.length * (lineH + 3) + 6
         pdf.setFont("helvetica", "normal")
-        addIcon(iconPhoneDataUrl, destIconX, y - 0.5)
+        addIcon(iconPhoneDataUrl, destIconX, y - 0.5, () => drawIconPhone(destIconX, y - 0.5))
         pdf.text(String(envio.telefono || ""), destTextX, y)
         y += lineH + lineGap
-        addIcon(iconMapPinDataUrl, destIconX, y - 0.5)
+        addIcon(iconMapPinDataUrl, destIconX, y - 0.5, () => drawIconPin(destIconX, y - 0.5))
         pdf.setFont("helvetica", "normal")
         const dirLines = pdf.splitTextToSize(envio.direccion || "", destTextW)
         pdf.text(dirLines, destTextX, y)
         y += dirLines.length * (lineH + 2.5) + 6
         if (envio.observaciones) {
-          addIcon(iconCircleDataUrl, destIconX, y - 1)
+          addIcon(iconCircleDataUrl, destIconX, y - 1, () => drawIconCircle(destIconX, y - 1))
           pdf.setFont("helvetica", "italic")
           const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, destTextW)
           pdf.text(obsLines, destTextX, y)
@@ -561,17 +631,30 @@ export default function ReimprimirNoflexPage() {
           y += 18
         }
 
-        // 5) Logo MVG: mismo que header (capturado del componente MvgLogo)
+        // 5) Logo MVG: captura del componente si hay; si no, dibujado (mismo estilo que header)
         const logoY = startY + labelHeight - 16
         const logoBoxW = 38
         const logoBoxH = 16
         const logoBoxX = startX + labelWidth - pad - logoBoxW - 4
+        let logoDrawn = false
         if (logoMvgDataUrl) {
           try {
             pdf.addImage(logoMvgDataUrl, "PNG", logoBoxX, logoY - 2, logoBoxW, logoBoxH)
+            logoDrawn = true
           } catch {
-            warnDev("No se pudo agregar logo al PDF")
+            // fallback abajo
           }
+        }
+        if (!logoDrawn) {
+          pdf.setFillColor(79, 70, 229)
+          pdf.roundedRect(logoBoxX, logoY - 2, logoBoxW, logoBoxH, 4, 4, "F")
+          pdf.setFontSize(10)
+          pdf.setFont("helvetica", "bold")
+          pdf.setTextColor(255, 255, 255)
+          const mvgW = pdf.getTextWidth("MVG")
+          pdf.text("MVG", logoBoxX + (logoBoxW - mvgW) / 2, logoY + 6)
+          pdf.setFont("helvetica", "normal")
+          pdf.setTextColor(0, 0, 0)
         }
 
         // Borde
