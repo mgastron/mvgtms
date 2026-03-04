@@ -12,6 +12,7 @@ import { EnvioDetailModal } from "@/components/envio-detail-modal"
 import * as XLSX from "xlsx"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { logDev, warnDev, errorDev } from "@/lib/logger"
+import { toast } from "sonner"
 
 interface Envio {
   id: number
@@ -356,15 +357,21 @@ export default function EnviosPage() {
   }
 
   const handleEstadoChange = async (envioId: number, nuevoEstado: string) => {
-    // Verificar si el envío es Flex
     const envio = envios.find((e) => e.id === envioId)
-    if (envio && envio.origen === "Flex") {
-      alert("No se puede cambiar manualmente el estado de un envío Flex. El estado se sincroniza automáticamente desde MercadoLibre.")
+    if (!envio) return
+
+    if (envio.origen === "Flex") {
+      toast.error("No se puede cambiar manualmente el estado de un envío Flex. El estado se sincroniza desde MercadoLibre.")
       return
     }
-    // Permitir cambio de estado a Administrativo o Chofer (el chofer solo ve sus envíos asignados)
     if (userProfile !== "Administrativo" && userProfile !== "Chofer") {
-      alert("No tenés permiso para cambiar el estado de los envíos")
+      toast.error("No tenés permiso para cambiar el estado de los envíos")
+      return
+    }
+
+    const estadoActual = envio.estado || "A retirar"
+    if (estadoActual === "A retirar" && nuevoEstado !== "Retirado") {
+      toast.error("Desde 'A retirar' solo se puede pasar a 'Retirado'. Primero hay que marcar el envío como colectado.")
       return
     }
 
@@ -405,6 +412,7 @@ export default function EnviosPage() {
       })
       if (response.ok) {
         loadEnvios(currentPage, itemsPerPage)
+        toast.success("Estado actualizado correctamente")
       } else {
         let mensaje = "No se pudo cambiar el estado."
         try {
@@ -420,12 +428,15 @@ export default function EnviosPage() {
         } catch {
           // usar mensaje por defecto
         }
-        alert(mensaje)
+        if (mensaje.includes("A retirar") && mensaje.includes("Retirado")) {
+          mensaje = "Desde 'A retirar' solo se puede pasar a 'Retirado'. Primero hay que marcar el envío como colectado."
+        }
+        toast.error(mensaje)
       }
     } catch (error: unknown) {
       warnDev("Error al actualizar estado:", error)
       const mensaje = error instanceof Error ? error.message : "Error de conexión al cambiar el estado."
-      alert(mensaje)
+      toast.error(mensaje)
     }
   }
 
@@ -1196,7 +1207,10 @@ export default function EnviosPage() {
                                   <SelectValue className="truncate" />
                                 </SelectTrigger>
                                 <SelectContent className="max-w-[200px]">
-                                  {estadosEnvio.map((estado) => (
+                                  {((envio.estado || "A retirar") === "A retirar"
+                                    ? ["A retirar", "Retirado"]
+                                    : estadosEnvio
+                                  ).map((estado) => (
                                     <SelectItem key={estado} value={estado} className="text-xs">
                                       <span className="truncate block">{estado}</span>
                                     </SelectItem>

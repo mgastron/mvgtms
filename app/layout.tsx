@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import { RouteGuardClient } from "@/components/route-guard-client"
+import { Toaster } from "sonner"
 
 export const metadata: Metadata = {
   title: "TMS Llegue - Sistema de Gestión de Transporte",
@@ -21,6 +22,7 @@ export default function RootLayout({
         <RouteGuardClient>
           <div suppressHydrationWarning>{children}</div>
         </RouteGuardClient>
+        <Toaster richColors position="top-center" />
       </body>
     </html>
   )
