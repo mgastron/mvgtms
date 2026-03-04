@@ -385,11 +385,14 @@ export default function ReimprimirNoflexPage() {
         const drawIconCalendar = (cx: number, cy: number) => {
           pdf.setFillColor(0, 0, 0)
           pdf.setDrawColor(0, 0, 0)
-          pdf.setLineWidth(0.45)
-          pdf.rect(cx - 3.8, cy - 3.6, 7.6, 1.2, "F")
-          pdf.roundedRect(cx - 4.2, cy - 2.8, 8.4, 5.4, 0.5, 0.5, "S")
-          pdf.line(cx - 3.2, cy - 1.1, cx + 3.2, cy - 1.1)
-          pdf.line(cx - 3.2, cy + 0.5, cx + 3.2, cy + 0.5)
+          pdf.setLineWidth(0.4)
+          const W = 10
+          const H = 7.2
+          pdf.rect(cx - W / 2, cy - H / 2 - 1.1, W, 1.4, "F")
+          pdf.roundedRect(cx - W / 2, cy - H / 2 + 0.2, W, H, 0.5, 0.5, "S")
+          pdf.line(cx - W / 2 + 0.8, cy - 1.4, cx + W / 2 - 0.8, cy - 1.4)
+          pdf.line(cx - W / 2 + 0.8, cy - 0.2, cx + W / 2 - 0.8, cy - 0.2)
+          pdf.line(cx - W / 2 + 0.8, cy + 1, cx + W / 2 - 0.8, cy + 1)
         }
         const drawIconPerson = (cx: number, cy: number) => {
           pdf.setFillColor(0, 0, 0)
@@ -416,10 +419,11 @@ export default function ReimprimirNoflexPage() {
         const drawIconPhone = (cx: number, cy: number) => {
           pdf.setFillColor(0, 0, 0)
           pdf.setDrawColor(0, 0, 0)
-          pdf.setLineWidth(0.5)
-          pdf.circle(cx, cy - 2.4, 1.8, "F")
-          pdf.circle(cx, cy + 2.4, 1.8, "F")
-          pdf.roundedRect(cx - 1.1, cy - 0.9, 2.2, 1.8, 0.6, 0.6, "F")
+          pdf.setLineWidth(0.4)
+          const r = 2.2
+          pdf.circle(cx, cy - 2.8, r, "F")
+          pdf.circle(cx, cy + 2.8, r, "F")
+          pdf.roundedRect(cx - 1.3, cy - 1.1, 2.6, 2.2, 0.8, 0.8, "F")
         }
         const drawIconEnvio = (cx: number, cy: number) => {
           pdf.setDrawColor(0, 0, 0)
@@ -471,7 +475,7 @@ export default function ReimprimirNoflexPage() {
         pdf.setDrawColor(0, 0, 0)
         pdf.addImage(qrCodeDataUrl, "PNG", qrLeft, y, qrSize, qrSize)
         const qrRight = startX + pad + qrSize + 12
-        const iconX = qrRight + 4
+        const iconX = qrRight + 6
         let infoY = y + 6
         pdf.setFontSize(8)
         pdf.setFont("helvetica", "normal")
@@ -556,7 +560,7 @@ export default function ReimprimirNoflexPage() {
           y += 18
         }
 
-        // 5) Logo MVG: imagen /logo-mvg.png si existe, si no cuadrado azul–teal + "MVG" blanco serif (estilo 2da imagen)
+        // 5) Logo MVG igual que página principal (header): cuadrado redondeado indigo + "MVG" blanco
         const logoY = startY + labelHeight - 16
         const logoBoxW = 38
         const logoBoxH = 16
@@ -565,10 +569,10 @@ export default function ReimprimirNoflexPage() {
           try {
             pdf.addImage(logoMvgDataUrl, "PNG", logoBoxX, logoY - 2, logoBoxW, logoBoxH)
           } catch {
-            pdf.setFillColor(14, 165, 233)
+            pdf.setFillColor(79, 70, 229)
             pdf.roundedRect(logoBoxX, logoY - 2, logoBoxW, logoBoxH, 4, 4, "F")
             pdf.setFontSize(10)
-            pdf.setFont("times", "bold")
+            pdf.setFont("helvetica", "bold")
             pdf.setTextColor(255, 255, 255)
             const mvgW = pdf.getTextWidth("MVG")
             pdf.text("MVG", logoBoxX + (logoBoxW - mvgW) / 2, logoY + 6)
@@ -576,10 +580,10 @@ export default function ReimprimirNoflexPage() {
             pdf.setTextColor(0, 0, 0)
           }
         } else {
-          pdf.setFillColor(14, 165, 233)
+          pdf.setFillColor(79, 70, 229)
           pdf.roundedRect(logoBoxX, logoY - 2, logoBoxW, logoBoxH, 4, 4, "F")
           pdf.setFontSize(10)
-          pdf.setFont("times", "bold")
+          pdf.setFont("helvetica", "bold")
           pdf.setTextColor(255, 255, 255)
           const mvgW = pdf.getTextWidth("MVG")
           pdf.text("MVG", logoBoxX + (logoBoxW - mvgW) / 2, logoY + 6)
