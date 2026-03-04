@@ -391,7 +391,7 @@ export default function ReimprimirNoflexPage() {
         pdf.setTextColor(0, 0, 0)
         y += barH + 5
 
-        // 2) QR + bloque con iconos (calendario, persona, venta, envio)
+        // 2) QR + bloque fecha/cliente/venta/envio (solo círculos rellenos, sin cuadrados)
         pdf.addImage(qrCodeDataUrl, "PNG", startX + pad, y, qrSize, qrSize)
         const qrRight = startX + pad + qrSize + 4
         const iconX = qrRight - 0.5
@@ -399,15 +399,14 @@ export default function ReimprimirNoflexPage() {
         pdf.setFontSize(6)
         pdf.setFont("helvetica", "normal")
         pdf.setFillColor(0, 0, 0)
-        pdf.setDrawColor(0, 0, 0)
-        pdf.rect(iconX - 0.8, infoY - 2.2, 2.2, 2, "S")
+        pdf.circle(iconX, infoY - 1, bulletR, "F")
         pdf.text(fechaFormateada, qrRight + 3, infoY)
         infoY += lineH + 1
         pdf.circle(iconX, infoY - 1, bulletR, "F")
         const clienteShort = (envio.cliente || "").length > 22 ? (envio.cliente || "").slice(0, 21) + "…" : (envio.cliente || "")
         pdf.text(`Cliente: ${clienteShort}`, qrRight + 3, infoY)
         infoY += lineH + 1
-        pdf.roundedRect(iconX - 0.6, infoY - 1.8, 1.8, 1.4, 0.3, 0.3, "S")
+        pdf.circle(iconX, infoY - 1, bulletR, "F")
         pdf.text(`Venta: ${getOrigenVentaLabel(envio.origen)}`, qrRight + 3, infoY)
         infoY += lineH + 1
         pdf.circle(iconX, infoY - 1, bulletR, "F")
@@ -435,7 +434,7 @@ export default function ReimprimirNoflexPage() {
         pdf.text(nomLines, startX + pad + 6, y)
         y += nomLines.length * (lineH + 1) + 2
         pdf.setFont("helvetica", "normal")
-        pdf.roundedRect(destIconX - 0.5, y - 1.6, 1.6, 1.2, 0.2, 0.2, "S")
+        pdf.circle(destIconX, y - 1, bulletR, "F")
         pdf.text(String(envio.telefono || ""), startX + pad + 6, y)
         y += lineH + 2
         pdf.circle(destIconX, y - 1, bulletR, "F")
@@ -466,15 +465,15 @@ export default function ReimprimirNoflexPage() {
           y += 10
         }
 
-        // 5) Logo MVG justo debajo del contenido (sin hueco al pedo)
-        y += 4
+        // 5) Logo MVG pegado al borde inferior (sin espacio al pedo)
         pdf.setFontSize(7)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(0, 0, 0)
         const mvgW = pdf.getTextWidth("MVG")
-        pdf.text("MVG", startX + labelWidth - mvgW - pad, y)
+        const mvgY = startY + labelHeight - 4
+        pdf.text("MVG", startX + labelWidth - mvgW - pad, mvgY)
 
-        // Borde discreto
+        // Borde
         pdf.setDrawColor(0, 0, 0)
         pdf.setLineWidth(0.25)
         pdf.rect(startX, startY, labelWidth, labelHeight)
