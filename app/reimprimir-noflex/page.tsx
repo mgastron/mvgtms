@@ -375,10 +375,10 @@ export default function ReimprimirNoflexPage() {
         const pad = 4
         const qrSize = 40
         const bulletR = 0.8
-        const lineH = 5.5
+        const lineH = 6.5
         let y = startY
 
-        // 1) Barra negra con zona (como 10x15)
+        // 1) Barra negra con zona
         const barH = 12
         pdf.setFillColor(0, 0, 0)
         pdf.rect(startX, y, labelWidth, barH, "F")
@@ -389,68 +389,71 @@ export default function ReimprimirNoflexPage() {
         const zw = pdf.getTextWidth(zonaText)
         pdf.text(zonaText, startX + (labelWidth - zw) / 2, y + 8)
         pdf.setTextColor(0, 0, 0)
-        y += barH + 4
+        y += barH + 5
 
-        // 2) QR + bloque fecha/cliente/venta/envio
+        // 2) QR + bloque con iconos (calendario, persona, venta, envio)
         pdf.addImage(qrCodeDataUrl, "PNG", startX + pad, y, qrSize, qrSize)
         const qrRight = startX + pad + qrSize + 4
-        const infoW = labelWidth - (qrRight - startX) - pad * 2
+        const iconX = qrRight - 0.5
         let infoY = y + 2
         pdf.setFontSize(6)
         pdf.setFont("helvetica", "normal")
         pdf.setFillColor(0, 0, 0)
-        pdf.circle(qrRight - 0.5, infoY - 1, bulletR, "F")
+        pdf.setDrawColor(0, 0, 0)
+        pdf.rect(iconX - 0.8, infoY - 2.2, 2.2, 2, "S")
         pdf.text(fechaFormateada, qrRight + 3, infoY)
-        infoY += lineH
-        pdf.circle(qrRight - 0.5, infoY - 1, bulletR, "F")
+        infoY += lineH + 1
+        pdf.circle(iconX, infoY - 1, bulletR, "F")
         const clienteShort = (envio.cliente || "").length > 22 ? (envio.cliente || "").slice(0, 21) + "…" : (envio.cliente || "")
         pdf.text(`Cliente: ${clienteShort}`, qrRight + 3, infoY)
-        infoY += lineH
-        pdf.circle(qrRight - 0.5, infoY - 1, bulletR, "F")
+        infoY += lineH + 1
+        pdf.roundedRect(iconX - 0.6, infoY - 1.8, 1.8, 1.4, 0.3, 0.3, "S")
         pdf.text(`Venta: ${getOrigenVentaLabel(envio.origen)}`, qrRight + 3, infoY)
-        infoY += lineH
-        pdf.circle(qrRight - 0.5, infoY - 1, bulletR, "F")
+        infoY += lineH + 1
+        pdf.circle(iconX, infoY - 1, bulletR, "F")
         pdf.text(`Envio: ${envio.tracking || envio.id}`, qrRight + 3, infoY)
-        y += qrSize + 2
+        y += qrSize + 3
 
         // 3) Línea separadora
         pdf.setDrawColor(0, 0, 0)
         pdf.setLineWidth(0.4)
         pdf.line(startX + pad, y, startX + labelWidth - pad, y)
-        y += 5
+        y += 6
 
-        // 4) Destinatario (título + datos compactos)
+        // 4) Destinatario (más aire entre líneas, iconos: persona, teléfono, ubicación)
+        const destIconX = startX + pad + bulletR
         pdf.setFontSize(6)
         pdf.setFont("helvetica", "bold")
         pdf.text("Destinatario", startX + pad, y)
-        y += lineH + 1
+        y += lineH + 2
         pdf.setFont("helvetica", "normal")
         pdf.setFillColor(0, 0, 0)
-        pdf.circle(startX + pad + bulletR, y - 1, bulletR, "F")
+        pdf.setDrawColor(0, 0, 0)
+        pdf.circle(destIconX, y - 1, bulletR, "F")
         pdf.setFont("helvetica", "bold")
         const nomLines = pdf.splitTextToSize(envio.nombreDestinatario || "", labelWidth - pad * 2 - 10)
         pdf.text(nomLines, startX + pad + 6, y)
-        y += nomLines.length * lineH + 1
+        y += nomLines.length * (lineH + 1) + 2
         pdf.setFont("helvetica", "normal")
-        pdf.circle(startX + pad + bulletR, y - 1, bulletR, "F")
+        pdf.roundedRect(destIconX - 0.5, y - 1.6, 1.6, 1.2, 0.2, 0.2, "S")
         pdf.text(String(envio.telefono || ""), startX + pad + 6, y)
-        y += lineH + 1
-        pdf.circle(startX + pad + bulletR, y - 1, bulletR, "F")
+        y += lineH + 2
+        pdf.circle(destIconX, y - 1, bulletR, "F")
         const dirLines = pdf.splitTextToSize(envio.direccion || "", labelWidth - pad * 2 - 10)
         pdf.text(dirLines, startX + pad + 6, y)
-        y += dirLines.length * lineH + 1
+        y += dirLines.length * (lineH + 1) + 2
         if (envio.observaciones) {
-          pdf.circle(startX + pad + bulletR, y - 1, bulletR, "F")
+          pdf.circle(destIconX, y - 1, bulletR, "F")
           pdf.setFont("helvetica", "italic")
           const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, labelWidth - pad * 2 - 10)
           pdf.text(obsLines, startX + pad + 6, y)
-          y += obsLines.length * (lineH - 0.3) + 1
+          y += obsLines.length * (lineH + 0.5) + 2
           pdf.setFont("helvetica", "normal")
         }
         if (envio.totalACobrar && String(envio.totalACobrar).trim() !== "") {
           pdf.setFont("helvetica", "bold")
           pdf.text(`Cobrar: $ ${String(envio.totalACobrar).trim()}`, startX + pad, y)
-          y += lineH + 1
+          y += lineH + 2
         }
         if (envio.cambioRetiro && String(envio.cambioRetiro).trim() !== "") {
           const v = String(envio.cambioRetiro).trim().toUpperCase()
@@ -463,11 +466,13 @@ export default function ReimprimirNoflexPage() {
           y += 10
         }
 
-        // 5) Logo MVG abajo derecha
+        // 5) Logo MVG justo debajo del contenido (sin hueco al pedo)
+        y += 4
         pdf.setFontSize(7)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(0, 0, 0)
-        pdf.text("MVG", startX + labelWidth - pdf.getTextWidth("MVG") - pad, startY + labelHeight - 4)
+        const mvgW = pdf.getTextWidth("MVG")
+        pdf.text("MVG", startX + labelWidth - mvgW - pad, y)
 
         // Borde discreto
         pdf.setDrawColor(0, 0, 0)
