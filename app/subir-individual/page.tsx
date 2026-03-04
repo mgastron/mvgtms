@@ -265,24 +265,24 @@ export default function SubirIndividualPage() {
       pdf.text(fechaFormateada, qrRight + 2, infoY)
       infoY += 10
       
-      // Remitente
+      // Cliente
       pdf.setFillColor(0, 0, 0)
       pdf.circle(qrRight - 3, infoY - 2, 1.5, "F")
-      const clienteText = `Rte.: ${nombreCliente}`
+      const clienteText = `Cliente: ${nombreCliente}`
       const clienteLines = pdf.splitTextToSize(clienteText, pageWidth - qrRight - marginRight - 8)
       pdf.text(clienteLines, qrRight + 2, infoY)
       infoY += clienteLines.length * 10
       
-      // Venta
+      // Venta (carga manual = directo)
       pdf.setFillColor(0, 0, 0)
       pdf.circle(qrRight - 3, infoY - 2, 1.5, "F")
-      pdf.text(`Venta: ${formData.destinatarioNombre}`, qrRight + 2, infoY)
+      pdf.text("Venta: Venta x afuera", qrRight + 2, infoY)
       infoY += 10
       
-      // Envío
+      // Envío = número de tracking
       pdf.setFillColor(0, 0, 0)
       pdf.circle(qrRight - 3, infoY - 2, 1.5, "F")
-      pdf.text(`Envio: ${formData.destinatarioNombre}`, qrRight + 2, infoY)
+      pdf.text(`Envio: ${formData.tracking || ""}`, qrRight + 2, infoY)
 
       // Espacio después del bloque superior
       currentY = qrBottom + 12
@@ -298,9 +298,8 @@ export default function SubirIndividualPage() {
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(0, 0, 0)
       const destinatarioY = currentY
-      pdf.text("DESTINATARIO", marginLeft, currentY)
-      // Subrayado
-      const destinatarioWidth = pdf.getTextWidth("DESTINATARIO")
+      pdf.text("Destinatario", marginLeft, currentY)
+      const destinatarioWidth = pdf.getTextWidth("Destinatario")
       pdf.setLineWidth(0.5)
       pdf.line(marginLeft, currentY + 2, marginLeft + destinatarioWidth, currentY + 2)
       currentY += 10

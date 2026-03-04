@@ -183,6 +183,16 @@ export default function SubirEnvioPage() {
     XLSX.writeFile(wb, "modelo_envios.xlsx")
   }
 
+  const getOrigenVentaLabel = (origen: string | undefined): string => {
+    if (!origen || !String(origen).trim()) return "Venta x afuera"
+    const o = String(origen).trim()
+    if (o === "Flex" || o === "MercadoLibre" || /meli|mercado|flex/i.test(o)) return "Meli"
+    if (o === "Shopify") return "Shopify"
+    if (o === "VTEX" || o === "Vtex") return "VTEX"
+    if (o === "Tienda Nube") return "Tienda Nube"
+    return "Venta x afuera"
+  }
+
   const generatePDFForEnvio = async (
     envio: any,
     formato: "A4" | "10x15" | "10x10",
@@ -256,14 +266,12 @@ export default function SubirEnvioPage() {
       let infoY = qrY + 3
       pdf.text(fechaFormateada, qrRight, infoY)
       infoY += 8
-      const rteText = pdf.splitTextToSize(`Rte.: ${envio.cliente}`, availableWidth)
-      pdf.text(rteText, qrRight, infoY)
-      infoY += rteText.length * 8
-      const ventaText = pdf.splitTextToSize(`Venta: ${envio.nombreDestinatario}`, availableWidth)
-      pdf.text(ventaText, qrRight, infoY)
-      infoY += ventaText.length * 8
-      const envioText = pdf.splitTextToSize(`Envio: ${envio.nombreDestinatario}`, availableWidth)
-      pdf.text(envioText, qrRight, infoY)
+      const clienteText = pdf.splitTextToSize(`Cliente: ${envio.cliente || ""}`, availableWidth)
+      pdf.text(clienteText, qrRight, infoY)
+      infoY += clienteText.length * 8
+      pdf.text(`Venta: ${getOrigenVentaLabel(envio.origen)}`, qrRight, infoY)
+      infoY += 8
+      pdf.text(`Envio: ${envio.tracking || ""}`, qrRight, infoY)
 
       const bottomY = qrBottom + 6
       pdf.setFontSize(7)
@@ -406,8 +414,8 @@ export default function SubirEnvioPage() {
       pdf.setFontSize(formato === "10x15" ? 7 : 6)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(0, 0, 0)
-      pdf.text("DESTINATARIO", marginLeft, currentY)
-      const destW = pdf.getTextWidth("DESTINATARIO")
+      pdf.text("Destinatario", marginLeft, currentY)
+      const destW = pdf.getTextWidth("Destinatario")
       pdf.setLineWidth(0.5)
       pdf.line(marginLeft, currentY + 2, marginLeft + destW, currentY + 2)
       currentY += formato === "10x15" ? 10 : 8

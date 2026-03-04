@@ -433,14 +433,12 @@ export default function ReimprimirNoflexPage() {
         let infoY = qrY + 3
         pdf.text(fechaFormateada, qrRight, infoY)
         infoY += 8
-        const rteText = pdf.splitTextToSize(`Rte.: ${envio.cliente}`, availableWidth)
-        pdf.text(rteText, qrRight, infoY)
-        infoY += rteText.length * 8
-        const ventaText = pdf.splitTextToSize(`Venta: ${envio.nombreDestinatario}`, availableWidth)
-        pdf.text(ventaText, qrRight, infoY)
-        infoY += ventaText.length * 8
-        const envioText = pdf.splitTextToSize(`Envio: ${envio.nombreDestinatario}`, availableWidth)
-        pdf.text(envioText, qrRight, infoY)
+        const clienteText = pdf.splitTextToSize(`Cliente: ${envio.cliente || ""}`, availableWidth)
+        pdf.text(clienteText, qrRight, infoY)
+        infoY += clienteText.length * 8
+        pdf.text(`Venta: ${getOrigenVentaLabel(envio.origen)}`, qrRight, infoY)
+        infoY += 8
+        pdf.text(`Envio: ${envio.tracking || String(envio.id)}`, qrRight, infoY)
 
         // Calcular espacio restante y distribuir contenido inferior
         const bottomSectionStart = qrBottom + 6
@@ -549,6 +547,17 @@ export default function ReimprimirNoflexPage() {
     }
   }
 
+  /** Etiqueta de origen para "Venta": Meli, Shopify, VTEX, Tienda Nube o Venta x afuera (directo). */
+  const getOrigenVentaLabel = (origen: string): string => {
+    if (!origen || !String(origen).trim()) return "Venta x afuera"
+    const o = String(origen).trim()
+    if (o === "Flex" || o === "MercadoLibre" || /meli|mercado|flex/i.test(o)) return "Meli"
+    if (o === "Shopify") return "Shopify"
+    if (o === "VTEX" || o === "Vtex") return "VTEX"
+    if (o === "Tienda Nube") return "Tienda Nube"
+    return "Venta x afuera"
+  }
+
   const handleReimprimir = async (envioIds: number[], formato: "10x15" | "10x10") => {
     try {
       const enviosAReimprimir = envios.filter((envio) => envioIds.includes(envio.id))
@@ -595,131 +604,92 @@ export default function ReimprimirNoflexPage() {
         const fecha = new Date(envio.fecha)
         const fechaFormateada = `${fecha.getDate().toString().padStart(2, "0")}/${(fecha.getMonth() + 1).toString().padStart(2, "0")}/${fecha.getFullYear()}`
 
-        // Configuración de márgenes y posiciones (blanco y negro)
-        const marginLeft = 12
-        const marginTop = 12
-        const marginRight = 12
+        // Configuración de márgenes y posiciones (etiqueta limpia, estilo referencia)
+        const marginLeft = 14
+        const marginTop = 10
+        const marginRight = 14
         let currentY = marginTop
-        
-        // Título centrado (primero el texto)
-        pdf.setFontSize(14)
+
+        // Título MVG (sin "Zeta Llegue")
+        pdf.setFontSize(13)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(0, 0, 0)
         const titleWidth = pdf.getTextWidth("MVG")
-        const titleX = (width - titleWidth) / 2
-        pdf.text("MVG", titleX, currentY)
-        
-        // Línea superior (debajo del texto, no lo corta)
-        pdf.setDrawColor(0, 0, 0)
-        pdf.setLineWidth(2)
-        pdf.line(marginLeft, currentY - 12, width - marginRight, currentY - 12)
-        
-        // Línea inferior (debajo del título)
-        currentY += 18
-        pdf.setDrawColor(0, 0, 0)
-        pdf.setLineWidth(1)
-        pdf.line(marginLeft, currentY - 3, width - marginRight, currentY - 3)
-        currentY += 5
+        pdf.text("MVG", (width - titleWidth) / 2, currentY)
+        currentY += 10
 
-        // QR Code con borde negro
-        const qrSize = formato === "10x15" ? 75 : 65
+        // Barra negra con zona en blanco (como referencia: AVELLANEDA)
+        const barHeight = 18
+        pdf.setFillColor(0, 0, 0)
+        pdf.rect(0, currentY - 6, width, barHeight, "F")
+        const zonaText = (envio.localidad || "Sin zona").toUpperCase()
+        pdf.setFontSize(formato === "10x15" ? 11 : 10)
+        pdf.setFont("helvetica", "bold")
+        pdf.setTextColor(255, 255, 255)
+        const zonaW = pdf.getTextWidth(zonaText)
+        pdf.text(zonaText, (width - zonaW) / 2, currentY + 6)
+        pdf.setTextColor(0, 0, 0)
+        currentY += barHeight + 8
+
+        // QR Code
+        const qrSize = formato === "10x15" ? 72 : 62
         const qrX = marginLeft
         const qrY = currentY
-        
-        // Borde del QR (negro, sin fondo)
         pdf.setDrawColor(0, 0, 0)
-        pdf.setLineWidth(1.5)
+        pdf.setLineWidth(1)
         pdf.roundedRect(qrX, qrY, qrSize, qrSize, 2, 2, "S")
-        
-        // QR Code
         pdf.addImage(qrCodeDataUrl, "PNG", qrX + 2, qrY + 2, qrSize - 4, qrSize - 4)
-        
         const qrRight = qrX + qrSize + 10
         const qrBottom = qrY + qrSize
 
-        // Localidad con borde (sin fondo de color)
-        const localidadText = (envio.localidad || "Sin localidad").toUpperCase()
-        pdf.setFontSize(formato === "10x15" ? 16 : 14)
-        pdf.setFont("helvetica", "bold")
-
-        // Calcular dimensiones del texto
-        const localidadLines = pdf.splitTextToSize(localidadText, width - qrRight - marginRight - 8)
-        const localidadTextWidth = Math.max(...localidadLines.map((line: string) => pdf.getTextWidth(line)))
-        const lineHeight = formato === "10x15" ? 14 : 12
-        const localidadTextHeight = localidadLines.length * lineHeight
-        const padding = 8
-        const boxWidth = Math.min(localidadTextWidth + (padding * 2), width - qrRight - marginRight - 8)
-        const boxHeight = localidadTextHeight + (padding * 2)
-        const boxX = qrRight
-        const boxY = currentY
-        const borderRadius = 3
-
-        // Borde negro (sin relleno)
-        pdf.setDrawColor(0, 0, 0)
-        pdf.setLineWidth(2)
-        pdf.roundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius, borderRadius, "S")
-
-        // Texto en negro
-        pdf.setTextColor(0, 0, 0)
-        const totalTextHeight = localidadLines.length * lineHeight
-        const startY = boxY + (boxHeight - totalTextHeight) / 2 + lineHeight - 2
-
-        localidadLines.forEach((line: string, index: number) => {
-          const lineWidth = pdf.getTextWidth(line)
-          const textX = boxX + (boxWidth - lineWidth) / 2
-          const textY = startY + (index * lineHeight)
-          pdf.text(line, textX, textY)
-        })
-
-        // Información del envío con bullets negros
-        let infoY = currentY + boxHeight + 10
-        pdf.setFontSize(formato === "10x15" ? 7.5 : 6.5)
+        // Bloque de datos con bullets (más limpio)
+        const infoLineH = formato === "10x15" ? 9 : 8
+        let infoY = currentY + 2
+        pdf.setFontSize(formato === "10x15" ? 7 : 6.5)
         pdf.setFont("helvetica", "normal")
         pdf.setTextColor(0, 0, 0)
-        
-        // Fecha con bullet negro
+
+        // Fecha
         pdf.setFillColor(0, 0, 0)
-        pdf.circle(qrRight - 3, infoY - 2, 1.5, "F")
+        pdf.circle(qrRight - 2, infoY - 1.5, 1.2, "F")
         pdf.text(fechaFormateada, qrRight + 2, infoY)
-        infoY += formato === "10x15" ? 10 : 9
-        
-        // Remitente
+        infoY += infoLineH
+
+        // Cliente (antes Rte.)
         pdf.setFillColor(0, 0, 0)
-        pdf.circle(qrRight - 3, infoY - 2, 1.5, "F")
-        const clienteText = `Rte.: ${envio.cliente}`
-        const clienteLines = pdf.splitTextToSize(clienteText, width - qrRight - marginRight - 8)
+        pdf.circle(qrRight - 2, infoY - 1.5, 1.2, "F")
+        const clienteText = `Cliente: ${envio.cliente || ""}`
+        const clienteLines = pdf.splitTextToSize(clienteText, width - qrRight - marginRight - 6)
         pdf.text(clienteLines, qrRight + 2, infoY)
-        infoY += clienteLines.length * (formato === "10x15" ? 10 : 9)
-        
-        // Venta
+        infoY += clienteLines.length * infoLineH
+
+        // Venta = origen (Meli, Shopify, Venta x afuera, etc.)
         pdf.setFillColor(0, 0, 0)
-        pdf.circle(qrRight - 3, infoY - 2, 1.5, "F")
-        pdf.text(`Venta: ${envio.nombreDestinatario}`, qrRight + 2, infoY)
-        infoY += formato === "10x15" ? 10 : 9
-        
-        // Envío
+        pdf.circle(qrRight - 2, infoY - 1.5, 1.2, "F")
+        pdf.text(`Venta: ${getOrigenVentaLabel(envio.origen)}`, qrRight + 2, infoY)
+        infoY += infoLineH
+
+        // Envío = número de tracking
         pdf.setFillColor(0, 0, 0)
-        pdf.circle(qrRight - 3, infoY - 2, 1.5, "F")
-        pdf.text(`Envio: ${envio.nombreDestinatario}`, qrRight + 2, infoY)
+        pdf.circle(qrRight - 2, infoY - 1.5, 1.2, "F")
+        pdf.text(`Envio: ${envio.tracking || String(envio.id)}`, qrRight + 2, infoY)
 
         // Espacio después del bloque superior
-        currentY = qrBottom + 12
+        currentY = qrBottom + 10
 
-        // Línea separadora negra
+        // Línea separadora (fina, más limpia)
         pdf.setDrawColor(0, 0, 0)
-        pdf.setLineWidth(1)
+        pdf.setLineWidth(0.5)
         pdf.line(marginLeft, currentY, width - marginRight, currentY)
-        currentY += 8
+        currentY += 10
 
-        // Sección Destinatario con subrayado
+        // Sección Destinatario
         pdf.setFontSize(formato === "10x15" ? 7 : 6)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(0, 0, 0)
-        const destinatarioY = currentY
-        pdf.text("DESTINATARIO", marginLeft, currentY)
-        // Subrayado
-        const destinatarioWidth = pdf.getTextWidth("DESTINATARIO")
-        pdf.setLineWidth(0.5)
+        pdf.text("Destinatario", marginLeft, currentY)
+        const destinatarioWidth = pdf.getTextWidth("Destinatario")
+        pdf.setLineWidth(0.4)
         pdf.line(marginLeft, currentY + 2, marginLeft + destinatarioWidth, currentY + 2)
         currentY += formato === "10x15" ? 10 : 9
 
