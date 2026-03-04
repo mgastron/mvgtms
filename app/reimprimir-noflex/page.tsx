@@ -685,6 +685,13 @@ export default function ReimprimirNoflexPage() {
         return
       }
 
+      let iconAssets: Awaited<ReturnType<typeof getLabelIconDataUrls>> | null = null
+      try {
+        iconAssets = await getLabelIconDataUrls()
+      } catch {
+        warnDev("No se pudieron cargar íconos para 10x15/10x10")
+      }
+
       // Determinar dimensiones según el formato
       let width: number, height: number
       if (formato === "10x15") {
@@ -702,6 +709,17 @@ export default function ReimprimirNoflexPage() {
         unit: "pt",
         format: [width, height],
       })
+
+      const iconSz = formato === "10x15" ? 12 : 10
+      const addIcon = (dataUrl: string | null, cx: number, cy: number) => {
+        if (!dataUrl) return
+        try {
+          pdf.addImage(dataUrl, "PNG", cx - iconSz / 2, cy - iconSz / 2, iconSz, iconSz)
+        } catch {
+          pdf.setFillColor(0, 0, 0)
+          pdf.circle(cx, cy, 1.4, "F")
+        }
+      }
 
       // Procesar cada envío y agregarlo como una página
       for (let i = 0; i < enviosAReimprimir.length; i++) {
@@ -723,32 +741,24 @@ export default function ReimprimirNoflexPage() {
         const fecha = new Date(envio.fecha)
         const fechaFormateada = `${fecha.getDate().toString().padStart(2, "0")}/${(fecha.getMonth() + 1).toString().padStart(2, "0")}/${fecha.getFullYear()}`
 
-        // Etiqueta más espaciada y con iconos (bullets) estilo referencia
         const marginLeft = 18
         const marginRight = 18
         const marginTop = 14
-        const bulletR = 1.4
-        const bulletX = marginLeft + bulletR + 1
+        const bulletX = marginLeft + 10
+        const destTextX = marginLeft + 22
+        const destTextW = width - marginLeft - marginRight - 26
         let currentY = marginTop
 
-        // Título MVG
-        pdf.setFontSize(14)
-        pdf.setFont("helvetica", "bold")
-        pdf.setTextColor(0, 0, 0)
-        const titleWidth = pdf.getTextWidth("MVG")
-        pdf.text("MVG", (width - titleWidth) / 2, currentY)
-        currentY += 14
-
-        // Barra negra con zona
+        // Barra negra con zona (sin título MVG arriba; logo va abajo a la derecha)
         const barHeight = 20
         pdf.setFillColor(0, 0, 0)
-        pdf.rect(0, currentY - 8, width, barHeight, "F")
+        pdf.rect(0, currentY, width, barHeight, "F")
         const zonaText = (envio.localidad || "Sin zona").toUpperCase()
         pdf.setFontSize(formato === "10x15" ? 12 : 11)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(255, 255, 255)
         const zonaW = pdf.getTextWidth(zonaText)
-        pdf.text(zonaText, (width - zonaW) / 2, currentY + 6)
+        pdf.text(zonaText, (width - zonaW) / 2, currentY + 14)
         pdf.setTextColor(0, 0, 0)
         currentY += barHeight + 14
 
@@ -756,41 +766,47 @@ export default function ReimprimirNoflexPage() {
         const qrSize = formato === "10x15" ? 72 : 62
         const qrX = marginLeft
         const qrY = currentY
+        pdf.setDrawColor(80, 80, 80)
+        pdf.setLineWidth(0.6)
+        pdf.roundedRect(qrX, qrY, qrSize, qrSize, 3, 3, "S")
         pdf.setDrawColor(0, 0, 0)
-        pdf.setLineWidth(1)
-        pdf.roundedRect(qrX, qrY, qrSize, qrSize, 2, 2, "S")
         pdf.addImage(qrCodeDataUrl, "PNG", qrX + 2, qrY + 2, qrSize - 4, qrSize - 4)
-        const qrRight = qrX + qrSize + 12
+        const qrRight = qrX + qrSize + 14
         const qrBottom = qrY + qrSize
+        const iconX = qrRight + 2
 
-        // Bloque datos con bullets (iconos)
+        // Bloque datos con íconos (mismos que A4)
         const infoLineH = formato === "10x15" ? 11 : 10
-        let infoY = currentY + 4
+        let infoY = currentY + 5
         pdf.setFontSize(formato === "10x15" ? 7.5 : 7)
         pdf.setFont("helvetica", "normal")
         pdf.setTextColor(0, 0, 0)
-        pdf.setFillColor(0, 0, 0)
-        pdf.circle(qrRight - 2, infoY - 1.8, bulletR, "F")
-        pdf.text(fechaFormateada, qrRight + 2, infoY)
+        addIcon(iconAssets?.calendar ?? null, iconX, infoY - 0.5)
+        pdf.text(fechaFormateada, qrRight + 18, infoY)
         infoY += infoLineH
-        pdf.circle(qrRight - 2, infoY - 1.8, bulletR, "F")
+        addIcon(iconAssets?.business ?? null, iconX, infoY - 0.5)
         const clienteText = `Cliente: ${envio.cliente || ""}`
-        const clienteLines = pdf.splitTextToSize(clienteText, width - qrRight - marginRight - 8)
-        pdf.text(clienteLines, qrRight + 2, infoY)
+        const clienteLines = pdf.splitTextToSize(clienteText, width - qrRight - marginRight - 20)
+        pdf.text(clienteLines, qrRight + 18, infoY)
         infoY += clienteLines.length * infoLineH
-        pdf.circle(qrRight - 2, infoY - 1.8, bulletR, "F")
-        pdf.text(`Venta: ${getOrigenVentaLabel(envio.origen)}`, qrRight + 2, infoY)
+        addIcon(iconAssets?.document ?? null, iconX, infoY - 0.5)
+        pdf.text("Venta: ", qrRight + 18, infoY)
+        pdf.setFont("helvetica", "bold")
+        pdf.text(getOrigenVentaLabel(envio.origen), qrRight + 18 + pdf.getTextWidth("Venta: "), infoY)
         infoY += infoLineH
-        pdf.circle(qrRight - 2, infoY - 1.8, bulletR, "F")
-        pdf.text(`Envio: ${envio.tracking || String(envio.id)}`, qrRight + 2, infoY)
+        pdf.setFont("helvetica", "normal")
+        addIcon(iconAssets?.package ?? null, iconX, infoY - 0.5)
+        pdf.text("Envio: ", qrRight + 18, infoY)
+        pdf.setFont("helvetica", "bold")
+        pdf.text(String(envio.tracking || envio.id), qrRight + 18 + pdf.getTextWidth("Envio: "), infoY)
 
-        currentY = qrBottom + 14
+        currentY = infoY + 8
         pdf.setDrawColor(0, 0, 0)
         pdf.setLineWidth(0.5)
         pdf.line(marginLeft, currentY, width - marginRight, currentY)
         currentY += 14
 
-        // Sección Destinatario
+        // Sección Destinatario con íconos
         pdf.setFontSize(formato === "10x15" ? 7.5 : 7)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(0, 0, 0)
@@ -800,39 +816,35 @@ export default function ReimprimirNoflexPage() {
         pdf.line(marginLeft, currentY + 2, marginLeft + destinatarioWidth, currentY + 2)
         currentY += 14
 
-        // Nombre con bullet
-        pdf.setFillColor(0, 0, 0)
-        pdf.circle(marginLeft + bulletR, currentY - 2, bulletR, "F")
+        const destIconX = marginLeft + 6
+        addIcon(iconAssets?.person ?? null, destIconX, currentY - 0.5)
         pdf.setFontSize(formato === "10x15" ? 10 : 9)
         pdf.setFont("helvetica", "bold")
-        const nombreLines = pdf.splitTextToSize(envio.nombreDestinatario, width - marginLeft * 2 - 24)
-        pdf.text(nombreLines, bulletX + 4, currentY)
+        const nombreLines = pdf.splitTextToSize(envio.nombreDestinatario || "", destTextW)
+        pdf.text(nombreLines, destTextX, currentY)
         currentY += nombreLines.length * (formato === "10x15" ? 12 : 11) + 6
 
         if (envio.telefono && envio.telefono !== "null") {
-          pdf.setFillColor(0, 0, 0)
-          pdf.circle(marginLeft + bulletR, currentY - 2, bulletR, "F")
+          addIcon(iconAssets?.phone ?? null, destIconX, currentY - 0.5)
           pdf.setFontSize(formato === "10x15" ? 8 : 7.5)
           pdf.setFont("helvetica", "normal")
-          pdf.text(`Tel: ${envio.telefono}`, bulletX + 4, currentY)
+          pdf.text(`Tel: ${envio.telefono}`, destTextX, currentY)
           currentY += infoLineH + 2
         }
 
-        pdf.setFillColor(0, 0, 0)
-        pdf.circle(marginLeft + bulletR, currentY - 2, bulletR, "F")
+        addIcon(iconAssets?.location ?? null, destIconX, currentY - 0.5)
         pdf.setFontSize(formato === "10x15" ? 8 : 7.5)
-        const direccionLines = pdf.splitTextToSize(envio.direccion, width - marginLeft * 2 - 24)
-        pdf.text(direccionLines, bulletX + 4, currentY)
+        const direccionLines = pdf.splitTextToSize(envio.direccion || "", destTextW)
+        pdf.text(direccionLines, destTextX, currentY)
         currentY += direccionLines.length * (formato === "10x15" ? 11 : 10) + 8
 
         if (envio.observaciones) {
-          pdf.setFillColor(0, 0, 0)
-          pdf.circle(marginLeft + bulletR, currentY - 2, bulletR, "F")
           pdf.setFontSize(formato === "10x15" ? 7.5 : 7)
           pdf.setFont("helvetica", "italic")
-          const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, width - marginLeft * 2 - 24)
-          pdf.text(obsLines, bulletX + 4, currentY)
+          const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, destTextW)
+          pdf.text(obsLines, destTextX, currentY)
           currentY += obsLines.length * (formato === "10x15" ? 10 : 9) + 6
+          pdf.setFont("helvetica", "normal")
         }
 
         if (envio.totalACobrar && String(envio.totalACobrar).trim() !== "") {
@@ -854,6 +866,35 @@ export default function ReimprimirNoflexPage() {
           pdf.roundedRect(marginLeft, currentY - 8, badgeW, 15, 2, 2, "S")
           pdf.text(valor, marginLeft + badgeW / 2 - pdf.getTextWidth(valor) / 2, currentY + 2)
           currentY += 20
+        }
+
+        // Logo MVG abajo a la derecha (mismo que A4)
+        const logoW = formato === "10x15" ? 32 : 28
+        const logoH = logoW
+        const logoX = width - marginRight - logoW - 6
+        const logoY = height - marginTop - logoH - 6
+        if (iconAssets?.logo) {
+          try {
+            pdf.addImage(iconAssets.logo, "PNG", logoX, logoY, logoW, logoH)
+          } catch {
+            pdf.setFillColor(79, 70, 229)
+            pdf.roundedRect(logoX, logoY, logoW, logoH, 3, 3, "F")
+            pdf.setFontSize(10)
+            pdf.setFont("helvetica", "bold")
+            pdf.setTextColor(255, 255, 255)
+            pdf.text("MVG", logoX + logoW / 2 - pdf.getTextWidth("MVG") / 2, logoY + logoH / 2 + 3)
+            pdf.setFont("helvetica", "normal")
+            pdf.setTextColor(0, 0, 0)
+          }
+        } else {
+          pdf.setFillColor(79, 70, 229)
+          pdf.roundedRect(logoX, logoY, logoW, logoH, 3, 3, "F")
+          pdf.setFontSize(10)
+          pdf.setFont("helvetica", "bold")
+          pdf.setTextColor(255, 255, 255)
+          pdf.text("MVG", logoX + logoW / 2 - pdf.getTextWidth("MVG") / 2, logoY + logoH / 2 + 3)
+          pdf.setFont("helvetica", "normal")
+          pdf.setTextColor(0, 0, 0)
         }
 
         pdf.setDrawColor(0, 0, 0)
