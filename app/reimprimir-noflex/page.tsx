@@ -1,27 +1,16 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ModernHeader } from "@/components/modern-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { MvgLogo } from "@/components/MvgLogo"
-import {
-  MdCalendarToday,
-  MdPerson,
-  MdDescription,
-  MdLocalShipping,
-  MdPhone,
-  MdLocationOn,
-  MdEmail,
-  MdLens,
-} from "react-icons/md"
 import jsPDF from "jspdf"
 import QRCode from "qrcode"
-import html2canvas from "html2canvas"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { getLabelIconDataUrls } from "@/lib/pdf-label-assets"
 import { warnDev, errorDev } from "@/lib/logger"
 
 interface EnvioNoflex {
@@ -66,16 +55,6 @@ export default function ReimprimirNoflexPage() {
     zonasEntrega: "todos",
     trackings: "",
   })
-
-  const logoCaptureRef = useRef<HTMLDivElement>(null)
-  const iconCalendarRef = useRef<HTMLDivElement>(null)
-  const iconUserRef = useRef<HTMLDivElement>(null)
-  const iconFileTextRef = useRef<HTMLDivElement>(null)
-  const iconPackageRef = useRef<HTMLDivElement>(null)
-  const iconPhoneRef = useRef<HTMLDivElement>(null)
-  const iconMapPinRef = useRef<HTMLDivElement>(null)
-  const iconMailRef = useRef<HTMLDivElement>(null)
-  const iconCircleRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // Verificar autenticación
@@ -378,16 +357,6 @@ export default function ReimprimirNoflexPage() {
         format: "a4",
       })
 
-      const makeCaptureVisible = (clonedDoc: Document) => {
-        const zone = clonedDoc.getElementById("pdf-capture-zone")
-        if (zone) (zone as HTMLElement).style.opacity = "1"
-      }
-      const captureOpt = {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff" as const,
-        onclone: makeCaptureVisible,
-      }
       let logoMvgDataUrl: string | null = null
       let iconCalendarDataUrl: string | null = null
       let iconUserDataUrl: string | null = null
@@ -398,44 +367,18 @@ export default function ReimprimirNoflexPage() {
       let iconMailDataUrl: string | null = null
       let iconCircleDataUrl: string | null = null
       try {
-        if (logoCaptureRef.current) {
-          const canvas = await html2canvas(logoCaptureRef.current, captureOpt)
-          logoMvgDataUrl = canvas.toDataURL("image/png")
-        }
-        if (iconCalendarRef.current) {
-          const c = await html2canvas(iconCalendarRef.current, captureOpt)
-          iconCalendarDataUrl = c.toDataURL("image/png")
-        }
-        if (iconUserRef.current) {
-          const c = await html2canvas(iconUserRef.current, captureOpt)
-          iconUserDataUrl = c.toDataURL("image/png")
-        }
-        if (iconFileTextRef.current) {
-          const c = await html2canvas(iconFileTextRef.current, captureOpt)
-          iconFileTextDataUrl = c.toDataURL("image/png")
-        }
-        if (iconPackageRef.current) {
-          const c = await html2canvas(iconPackageRef.current, captureOpt)
-          iconPackageDataUrl = c.toDataURL("image/png")
-        }
-        if (iconPhoneRef.current) {
-          const c = await html2canvas(iconPhoneRef.current, captureOpt)
-          iconPhoneDataUrl = c.toDataURL("image/png")
-        }
-        if (iconMapPinRef.current) {
-          const c = await html2canvas(iconMapPinRef.current, captureOpt)
-          iconMapPinDataUrl = c.toDataURL("image/png")
-        }
-        if (iconMailRef.current) {
-          const c = await html2canvas(iconMailRef.current, captureOpt)
-          iconMailDataUrl = c.toDataURL("image/png")
-        }
-        if (iconCircleRef.current) {
-          const c = await html2canvas(iconCircleRef.current, captureOpt)
-          iconCircleDataUrl = c.toDataURL("image/png")
-        }
+        const assets = await getLabelIconDataUrls()
+        logoMvgDataUrl = assets.logo || null
+        iconCalendarDataUrl = assets.calendar || null
+        iconUserDataUrl = assets.person || null
+        iconFileTextDataUrl = assets.document || null
+        iconPackageDataUrl = assets.package || null
+        iconPhoneDataUrl = assets.phone || null
+        iconMapPinDataUrl = assets.location || null
+        iconMailDataUrl = assets.mail || null
+        iconCircleDataUrl = assets.circle || null
       } catch (e) {
-        warnDev("Error capturando logo/íconos para PDF:", e)
+        warnDev("Error generando logo/íconos para PDF:", e)
       }
 
       const iconSizePdf = 14
@@ -649,10 +592,10 @@ export default function ReimprimirNoflexPage() {
           y += 18
         }
 
-        // 5) Logo MVG: captura del componente si hay; si no, dibujado (mismo estilo que header)
+        // 5) Logo MVG: mismo estilo que header (gradiente indigo→cyan→teal + "MVG" blanco)
         const logoY = startY + labelHeight - 16
-        const logoBoxW = 38
-        const logoBoxH = 16
+        const logoBoxW = 36
+        const logoBoxH = 36
         const logoBoxX = startX + labelWidth - pad - logoBoxW - 4
         let logoDrawn = false
         if (logoMvgDataUrl) {
@@ -666,11 +609,11 @@ export default function ReimprimirNoflexPage() {
         if (!logoDrawn) {
           pdf.setFillColor(79, 70, 229)
           pdf.roundedRect(logoBoxX, logoY - 2, logoBoxW, logoBoxH, 4, 4, "F")
-          pdf.setFontSize(10)
+          pdf.setFontSize(12)
           pdf.setFont("helvetica", "bold")
           pdf.setTextColor(255, 255, 255)
           const mvgW = pdf.getTextWidth("MVG")
-          pdf.text("MVG", logoBoxX + (logoBoxW - mvgW) / 2, logoY + 6)
+          pdf.text("MVG", logoBoxX + (logoBoxW - mvgW) / 2, logoY - 2 + logoBoxH / 2 + 4)
           pdf.setFont("helvetica", "normal")
           pdf.setTextColor(0, 0, 0)
         }
@@ -943,51 +886,6 @@ export default function ReimprimirNoflexPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50" suppressHydrationWarning>
       <ModernHeader />
-      {/* Zona en viewport (invisible) para que html2canvas capture el logo del header y los íconos */}
-      <div
-        id="pdf-capture-zone"
-        aria-hidden
-        className="flex flex-wrap items-center gap-2 bg-white p-2"
-        style={{
-          position: "fixed",
-          left: 0,
-          top: 0,
-          width: 420,
-          height: 220,
-          opacity: 0,
-          pointerEvents: "none",
-          zIndex: -1,
-          overflow: "hidden",
-        }}
-      >
-        <div ref={logoCaptureRef} className="flex shrink-0">
-          <MvgLogo size="md" className="h-10 w-10" />
-        </div>
-        <div ref={iconCalendarRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <MdCalendarToday size={28} />
-        </div>
-        <div ref={iconUserRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <MdPerson size={28} />
-        </div>
-        <div ref={iconFileTextRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <MdDescription size={28} />
-        </div>
-        <div ref={iconPackageRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <MdLocalShipping size={28} />
-        </div>
-        <div ref={iconPhoneRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <MdPhone size={28} />
-        </div>
-        <div ref={iconMapPinRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <MdLocationOn size={28} />
-        </div>
-        <div ref={iconMailRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <MdEmail size={28} />
-        </div>
-        <div ref={iconCircleRef} className="flex h-10 w-10 items-center justify-center text-black">
-          <MdLens size={22} />
-        </div>
-      </div>
       <main className="p-4">
         <div className="mx-auto max-w-7xl">
 
