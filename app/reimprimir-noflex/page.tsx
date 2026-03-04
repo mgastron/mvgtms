@@ -368,23 +368,23 @@ export default function ReimprimirNoflexPage() {
 
         const drawIconCalendar = (cx: number, cy: number) => {
           pdf.setFillColor(0, 0, 0)
-          pdf.rect(cx - 2.5, cy - 2, 5, 3.8, "F")
+          pdf.rect(cx - 3.5, cy - 2.8, 7, 5.6, "F")
         }
         const drawIconPerson = (cx: number, cy: number) => {
           pdf.setFillColor(0, 0, 0)
-          pdf.circle(cx, cy - 1.2, 1.4, "F")
-          pdf.circle(cx, cy + 1.8, 1.8, "F")
+          pdf.circle(cx, cy - 1.6, 2.4, "F")
+          pdf.circle(cx, cy + 2.6, 3.2, "F")
         }
         const drawIconPhone = (cx: number, cy: number) => {
           pdf.setFillColor(0, 0, 0)
-          pdf.roundedRect(cx - 2, cy - 1.8, 4, 3.2, 0.7, 0.7, "F")
+          pdf.roundedRect(cx - 2.8, cy - 2.4, 5.6, 4.4, 1, 1, "F")
         }
         const drawIconPin = (cx: number, cy: number) => {
           pdf.setFillColor(0, 0, 0)
-          pdf.circle(cx, cy - 0.8, 1.5, "F")
+          pdf.circle(cx, cy - 1.2, 2.4, "F")
           pdf.setDrawColor(0, 0, 0)
-          pdf.setLineWidth(0.6)
-          pdf.line(cx, cy + 0.9, cx, cy + 3)
+          pdf.setLineWidth(0.8)
+          pdf.line(cx, cy + 1.4, cx, cy + 5.5)
         }
 
         const qrDataToUse = envio.qrData || `${envio.tracking}-${envio.id}`
@@ -395,113 +395,113 @@ export default function ReimprimirNoflexPage() {
 
         const pad = 6
         const qrSize = 48
-        const bulletR = 1.2
-        const lineH = 7.5
+        const bulletR = 2.2
+        const lineH = 9
+        const lineGap = 4
         let y = startY
 
-        // 1) Barra negra con zona (estilo original)
-        const barH = 16
+        // 1) Barra negra con zona
+        const barH = 18
         pdf.setFillColor(0, 0, 0)
         pdf.rect(startX, y, labelWidth, barH, "F")
         const zonaText = (envio.localidad || "Sin zona").toUpperCase()
-        pdf.setFontSize(9)
+        pdf.setFontSize(10)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(255, 255, 255)
         const zw = pdf.getTextWidth(zonaText)
-        pdf.text(zonaText, startX + (labelWidth - zw) / 2, y + 11)
+        pdf.text(zonaText, startX + (labelWidth - zw) / 2, y + 12)
         pdf.setTextColor(0, 0, 0)
-        y += barH + 8
+        y += barH + 12
 
-        // 2) QR + bloque con iconos grandes (calendario, persona, teléfono, envío)
+        // 2) QR + bloque con iconos al doble (visibles a simple vista)
         pdf.addImage(qrCodeDataUrl, "PNG", startX + pad, y, qrSize, qrSize)
-        const qrRight = startX + pad + qrSize + 6
-        const iconX = qrRight + 1
-        let infoY = y + 3
-        pdf.setFontSize(7)
+        const qrRight = startX + pad + qrSize + 10
+        const iconX = qrRight + 2
+        let infoY = y + 5
+        pdf.setFontSize(8)
         pdf.setFont("helvetica", "normal")
         pdf.setTextColor(0, 0, 0)
         drawIconCalendar(iconX, infoY - 0.5)
-        pdf.text(fechaFormateada, qrRight + 12, infoY)
-        infoY += lineH + 2
+        pdf.text(fechaFormateada, qrRight + 20, infoY)
+        infoY += lineH + lineGap
         drawIconPerson(iconX, infoY - 0.5)
         const clienteShort = (envio.cliente || "").length > 24 ? (envio.cliente || "").slice(0, 23) + "…" : (envio.cliente || "")
-        pdf.text(`Cliente: ${clienteShort}`, qrRight + 12, infoY)
-        infoY += lineH + 2
+        pdf.text(`Cliente: ${clienteShort}`, qrRight + 20, infoY)
+        infoY += lineH + lineGap
         drawIconPhone(iconX, infoY - 0.5)
         pdf.setFont("helvetica", "normal")
-        pdf.text("Venta: ", qrRight + 12, infoY)
+        pdf.text("Venta: ", qrRight + 20, infoY)
         pdf.setFont("helvetica", "bold")
-        pdf.text(getOrigenVentaLabel(envio.origen), qrRight + 12 + pdf.getTextWidth("Venta: "), infoY)
-        infoY += lineH + 2
+        pdf.text(getOrigenVentaLabel(envio.origen), qrRight + 20 + pdf.getTextWidth("Venta: "), infoY)
+        infoY += lineH + lineGap
         pdf.setFont("helvetica", "normal")
         pdf.setFillColor(0, 0, 0)
-        pdf.circle(iconX, infoY - 1, 1.5, "F")
-        pdf.text("Envio: ", qrRight + 12, infoY)
+        pdf.circle(iconX, infoY - 1, 2.8, "F")
+        pdf.text("Envio: ", qrRight + 20, infoY)
         pdf.setFont("helvetica", "bold")
-        pdf.text(String(envio.tracking || envio.id), qrRight + 12 + pdf.getTextWidth("Envio: "), infoY)
-        y += qrSize + 6
+        pdf.text(String(envio.tracking || envio.id), qrRight + 20 + pdf.getTextWidth("Envio: "), infoY)
+        y += qrSize + 10
 
         // 3) Línea separadora
         pdf.setDrawColor(0, 0, 0)
         pdf.setLineWidth(0.5)
         pdf.line(startX + pad, y, startX + labelWidth - pad, y)
-        y += 8
+        y += 12
 
-        // 4) Destinatario: iconos grandes, lo importante en negrita
-        const destIconX = startX + pad + 3
-        const destTextX = startX + pad + 16
-        const destTextW = labelWidth - pad * 2 - 20
-        pdf.setFontSize(7)
+        // 4) Destinatario: iconos doble tamaño, más espacio entre líneas
+        const destIconX = startX + pad + 4
+        const destTextX = startX + pad + 28
+        const destTextW = labelWidth - pad * 2 - 34
+        pdf.setFontSize(8)
         pdf.setFont("helvetica", "bold")
         pdf.text("Destinatario", startX + pad, y)
-        y += lineH + 3
+        y += lineH + 5
         drawIconPerson(destIconX, y - 0.5)
         pdf.setFont("helvetica", "bold")
         const nomLines = pdf.splitTextToSize(envio.nombreDestinatario || "", destTextW)
         pdf.text(nomLines, destTextX, y)
-        y += nomLines.length * (lineH + 1.5) + 2
+        y += nomLines.length * (lineH + 2) + 4
         pdf.setFont("helvetica", "normal")
         drawIconPhone(destIconX, y - 0.5)
         pdf.text(String(envio.telefono || ""), destTextX, y)
-        y += lineH + 2
+        y += lineH + lineGap
         drawIconPin(destIconX, y - 0.5)
         pdf.setFont("helvetica", "normal")
         const dirLines = pdf.splitTextToSize(envio.direccion || "", destTextW)
         pdf.text(dirLines, destTextX, y)
-        y += dirLines.length * (lineH + 1) + 2
+        y += dirLines.length * (lineH + 1.5) + 4
         if (envio.observaciones) {
           pdf.setFillColor(0, 0, 0)
           pdf.circle(destIconX, y - 1, bulletR, "F")
           pdf.setFont("helvetica", "italic")
           const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, destTextW)
           pdf.text(obsLines, destTextX, y)
-          y += obsLines.length * (lineH + 0.5) + 2
+          y += obsLines.length * (lineH + 1) + 4
           pdf.setFont("helvetica", "normal")
         }
         if (envio.totalACobrar && String(envio.totalACobrar).trim() !== "") {
           pdf.setFont("helvetica", "bold")
           pdf.text(`Cobrar: $ ${String(envio.totalACobrar).trim()}`, startX + pad, y)
-          y += lineH + 2
+          y += lineH + lineGap
         }
         if (envio.cambioRetiro && String(envio.cambioRetiro).trim() !== "") {
           const v = String(envio.cambioRetiro).trim().toUpperCase()
           pdf.setDrawColor(0, 0, 0)
-          pdf.setLineWidth(0.4)
-          const bw = Math.max(pdf.getTextWidth(v) + 8, 28)
-          pdf.roundedRect(startX + pad, y - 5, bw, 10, 2, 2, "S")
+          pdf.setLineWidth(0.5)
+          const bw = Math.max(pdf.getTextWidth(v) + 10, 32)
+          pdf.roundedRect(startX + pad, y - 6, bw, 12, 2, 2, "S")
           pdf.setFont("helvetica", "bold")
-          pdf.text(v, startX + pad + bw / 2 - pdf.getTextWidth(v) / 2, y + 1)
-          y += 12
+          pdf.text(v, startX + pad + bw / 2 - pdf.getTextWidth(v) / 2, y + 1.5)
+          y += 16
         }
 
-        // 5) Logo MVG bien puesto (esquina inferior derecha, con espacio)
-        const logoAreaBottom = startY + labelHeight - 10
+        // 5) MVG justo debajo del contenido (espaciado ya llenó la etiqueta)
+        y += 6
         pdf.setFontSize(10)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(0, 0, 0)
         const mvgW = pdf.getTextWidth("MVG")
-        const mvgX = startX + labelWidth - mvgW - pad - 8
-        pdf.text("MVG", mvgX, logoAreaBottom)
+        pdf.text("MVG", startX + labelWidth - mvgW - pad - 8, y)
 
         // Borde
         pdf.setDrawColor(0, 0, 0)
