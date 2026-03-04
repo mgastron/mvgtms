@@ -413,7 +413,7 @@ export default function EnviosPage() {
             try {
               const json = JSON.parse(text)
               mensaje = json.message || json.error || text
-            } else {
+            } catch {
               mensaje = text
             }
           }
