@@ -39,6 +39,7 @@ export default function GruposPage() {
   const [editingNombre, setEditingNombre] = useState("")
   const [saving, setSaving] = useState(false)
   const [errorDialog, setErrorDialog] = useState<{ open: boolean; message: string }>({ open: false, message: "" })
+  const [clientesModalGroup, setClientesModalGroup] = useState<Grupo | null>(null)
 
   useEffect(() => {
     const isAuthenticated = sessionStorage.getItem("isAuthenticated")
@@ -184,17 +185,25 @@ export default function GruposPage() {
                         </td>
                         <td className="px-6 py-4">
                           {g.clientes && g.clientes.length > 0 ? (
-                            <ul className="text-sm text-gray-600 space-y-0.5">
-                              {g.clientes.slice(0, 5).map((c) => (
-                                <li key={c.id}>
-                                  {c.codigo}
-                                  {c.nombreFantasia ? ` - ${c.nombreFantasia}` : ""}
-                                </li>
-                              ))}
-                              {g.clientes.length > 5 && (
-                                <li className="text-gray-500">+ {g.clientes.length - 5} más</li>
-                              )}
-                            </ul>
+                            <button
+                              type="button"
+                              onClick={() => setClientesModalGroup(g)}
+                              className="text-left w-full rounded-md p-1 -m-1 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1 transition-colors"
+                            >
+                              <ul className="text-sm text-gray-600 space-y-0.5">
+                                {g.clientes.slice(0, 5).map((c) => (
+                                  <li key={c.id}>
+                                    {c.codigo}
+                                    {c.nombreFantasia ? ` - ${c.nombreFantasia}` : ""}
+                                  </li>
+                                ))}
+                                {g.clientes.length > 5 && (
+                                  <li className="text-gray-500 font-medium pt-0.5">
+                                    + {g.clientes.length - 5} más — clic para ver todos
+                                  </li>
+                                )}
+                              </ul>
+                            </button>
                           ) : (
                             <span className="text-sm text-gray-400">Ningún cliente</span>
                           )}
@@ -229,6 +238,34 @@ export default function GruposPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction>Entendido</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!clientesModalGroup} onOpenChange={(open) => !open && setClientesModalGroup(null)}>
+        <AlertDialogContent className="max-w-md max-h-[85vh] flex flex-col">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Clientes de {clientesModalGroup?.nombre ?? ""}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {clientesModalGroup?.clientes?.length ?? 0} cliente(s) en este grupo
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="overflow-y-auto max-h-[50vh] rounded-lg border border-gray-200 bg-gray-50/50 py-2 -mx-1 px-3">
+            <ul className="text-sm text-gray-700 space-y-1.5">
+              {clientesModalGroup?.clientes?.map((c) => (
+                <li key={c.id} className="py-1.5 border-b border-gray-100 last:border-0">
+                  <span className="font-medium text-gray-800">{c.codigo}</span>
+                  {c.nombreFantasia ? (
+                    <span className="text-gray-600"> — {c.nombreFantasia}</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setClientesModalGroup(null)}>Cerrar</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
