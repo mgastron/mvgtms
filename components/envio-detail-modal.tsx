@@ -51,6 +51,8 @@ interface EnvioDetailModalProps {
     metodoEnvio?: string
     deadline?: string
     origen?: string
+    latDestino?: number | null
+    lngDestino?: number | null
   } | null
   onDelete?: (envioId: number) => void
   onAssignSuccess?: () => void
@@ -464,10 +466,31 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
     function initializeMap() {
       if (!mapRef.current || !envio) return
 
-      // Geocodificar la dirección para obtener coordenadas
+      const setMapWithLocation = (lat: number, lng: number, title: string) => {
+        setGeolocalizacionEncontrada(true)
+        const location = { lat, lng }
+        const map = new google.maps.Map(mapRef.current!, {
+          zoom: 15,
+          center: location,
+          mapTypeControl: true,
+          streetViewControl: true,
+          fullscreenControl: true,
+        })
+        mapInstanceRef.current = map
+        const marker = new google.maps.Marker({
+          position: location,
+          map: map,
+          title,
+        })
+        markerRef.current = marker
+      }
+
+      if (envio.latDestino != null && envio.lngDestino != null) {
+        setMapWithLocation(envio.latDestino, envio.lngDestino, envio.direccion || "Destino")
+        return
+      }
+
       const geocoder = new google.maps.Geocoder()
-      // Enriquecer la dirección para evitar ambigüedad (ej: "Roca 1768" existe en varias localidades)
-      // Usamos: dirección + localidad + CP + Argentina
       const addressParts = [
         envio.direccion,
         envio.localidad,
@@ -476,44 +499,21 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       ]
         .map((p) => (p || "").toString().trim())
         .filter(Boolean)
-
       const address = addressParts.join(", ")
 
       geocoder.geocode({ address }, (results, status) => {
         if (status === "OK" && results && results[0]) {
           const location = results[0].geometry.location
-          setGeolocalizacionEncontrada(true)
-
-          // Crear mapa centrado en la ubicación
-          const map = new google.maps.Map(mapRef.current!, {
-            zoom: 15,
-            center: location,
-            mapTypeControl: true,
-            streetViewControl: true,
-            fullscreenControl: true,
-          })
-
-          mapInstanceRef.current = map
-
-          // Crear marcador
-          const marker = new google.maps.Marker({
-            position: location,
-            map: map,
-            title: address,
-          })
-
-          markerRef.current = marker
+          setMapWithLocation(location.lat(), location.lng(), address)
         } else {
-          // Si no se puede geocodificar, mostrar mapa por defecto
           setGeolocalizacionEncontrada(false)
           const map = new google.maps.Map(mapRef.current!, {
             zoom: 10,
-            center: { lat: -34.6037, lng: -58.3816 }, // Buenos Aires por defecto
+            center: { lat: -34.6037, lng: -58.3816 },
             mapTypeControl: true,
             streetViewControl: true,
             fullscreenControl: true,
           })
-
           mapInstanceRef.current = map
         }
       })
