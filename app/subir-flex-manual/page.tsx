@@ -184,7 +184,7 @@ export default function SubirFlexManualPage() {
                     disabled={loading}
                     className="bg-green-500 text-white hover:bg-green-600"
                   >
-                    {loading ? "SUBIRENDO..." : "SUBIR"}
+                    {loading ? "Subiendo..." : "SUBIR"}
                   </Button>
                 </div>
               </form>
