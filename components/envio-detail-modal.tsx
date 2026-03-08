@@ -54,6 +54,8 @@ interface EnvioDetailModalProps {
   } | null
   onDelete?: (envioId: number) => void
   onAssignSuccess?: () => void
+  /** Mismo comportamiento que el cambio de estado desde la tabla: valida (Flex, permisos, A retirar→Retirado) y persiste en backend. Retorna true si se actualizó correctamente. */
+  onEstadoChange?: (envioId: number, nuevoEstado: string) => Promise<boolean>
 }
 
 const estadosEnvio = [
@@ -106,7 +108,7 @@ const PENDIENTES_DEPOSITO: Chofer = {
   usuario: 'PENDIENTES_DEPOSITO',
 }
 
-export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuccess }: EnvioDetailModalProps) {
+export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuccess, onEstadoChange }: EnvioDetailModalProps) {
   // Normalizar valores null a cadenas vacías para evitar errores de React
   const normalizeValue = (value: string | null | undefined): string => {
     return value ?? ""
@@ -173,62 +175,51 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
     generateQR()
   }, [envio, isOpen])
 
-  // Cargar historial desde el backend
+  // Cargar historial desde el backend (reutilizado al agregar estado desde el modal)
+  const loadHistorial = async () => {
+    if (!envio) return
+    try {
+      const apiBaseUrl = getApiBaseUrl()
+      const response = await fetch(`${apiBaseUrl}/envios/${envio.id}/historial`)
+      if (response.ok) {
+        const historialData = await response.json()
+        const historialFormateado: HistorialItem[] = historialData.map((item: any) => {
+          const fecha = new Date(item.fecha)
+          const fechaFormateada = fecha.toLocaleDateString("es-AR")
+          const horaFormateada = fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
+          return {
+            id: item.id,
+            estado: item.estado,
+            fecha: fechaFormateada,
+            horaEstimada: horaFormateada,
+            quien: item.quien || "Usuario",
+            observaciones: item.observaciones,
+            origen: item.origen,
+          }
+        })
+        const historialFiltrado: HistorialItem[] = []
+        let ultimoEstado: string | null = null
+        for (const item of historialFormateado) {
+          if (ultimoEstado === null || item.estado !== ultimoEstado) {
+            historialFiltrado.push(item)
+            ultimoEstado = item.estado
+          }
+        }
+        setHistorial(historialFiltrado)
+      } else {
+        setHistorial([])
+      }
+    } catch (error) {
+      errorDev("Error cargando historial:", error)
+      setHistorial([])
+    }
+  }
+
   useEffect(() => {
     if (!envio || !isOpen) {
       setHistorial([])
       return
     }
-
-    const loadHistorial = async () => {
-      try {
-        const apiBaseUrl = getApiBaseUrl()
-        const response = await fetch(`${apiBaseUrl}/envios/${envio.id}/historial`)
-        if (response.ok) {
-          const historialData = await response.json()
-          // Convertir el formato del backend al formato del frontend
-          const historialFormateado: HistorialItem[] = historialData.map((item: any) => {
-            const fecha = new Date(item.fecha)
-            const fechaFormateada = fecha.toLocaleDateString("es-AR")
-            const horaFormateada = fecha.toLocaleTimeString("es-AR", { 
-              hour: "2-digit", 
-              minute: "2-digit" 
-            })
-            return {
-              id: item.id,
-              estado: item.estado,
-              fecha: fechaFormateada,
-              horaEstimada: horaFormateada,
-              quien: item.quien || "Usuario",
-              observaciones: item.observaciones,
-              origen: item.origen,
-            }
-          })
-          
-          // Filtrar entradas consecutivas con el mismo estado para evitar duplicados
-          // (por ejemplo, cuando hay una reasignación sin cambio de estado)
-          const historialFiltrado: HistorialItem[] = []
-          let ultimoEstado: string | null = null
-          for (const item of historialFormateado) {
-            // Solo agregar si el estado es diferente al anterior
-            // O si es la primera entrada
-            if (ultimoEstado === null || item.estado !== ultimoEstado) {
-              historialFiltrado.push(item)
-              ultimoEstado = item.estado
-            }
-          }
-          
-          setHistorial(historialFiltrado)
-        } else {
-          // Si falla, mantener historial vacío
-          setHistorial([])
-        }
-      } catch (error) {
-        errorDev("Error cargando historial:", error)
-        setHistorial([])
-      }
-    }
-
     loadHistorial()
     loadObservaciones()
     loadImagenes()
@@ -720,15 +711,16 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
   }
 
   const handleOpenAddEstado = () => {
-    // Establecer fecha y hora actual por defecto
     const now = new Date()
-    const fecha = now.toISOString().split("T")[0] // YYYY-MM-DD
+    const fecha = now.toISOString().split("T")[0]
     const horario = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`
-    
+    const estadoActual = envio?.estado || "A retirar"
+    // Si está "A retirar", el único siguiente permitido es "Retirado"
+    const estadoPorDefecto = estadoActual === "A retirar" ? "Retirado" : "Retirado"
     setNuevoEstado({
       fecha,
       horario,
-      estado: "Retirado", // Estado por defecto
+      estado: estadoPorDefecto,
     })
     setIsAddEstadoModalOpen(true)
   }
@@ -742,24 +734,34 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
     })
   }
 
-  const handleAgregarEstado = () => {
-    if (!nuevoEstado.fecha || !nuevoEstado.horario || !nuevoEstado.estado) {
+  const handleAgregarEstado = async () => {
+    if (!envio || !nuevoEstado.fecha || !nuevoEstado.horario || !nuevoEstado.estado) {
       return
     }
 
-    // Formatear fecha para mostrar
-    const fechaFormateada = new Date(nuevoEstado.fecha).toLocaleDateString("es-AR")
-    const fechaCompleta = `${fechaFormateada} ${nuevoEstado.horario}`
+    // Si hay callback (misma lógica que la columna Estado): validar y persistir en backend
+    if (onEstadoChange) {
+      try {
+        const ok = await onEstadoChange(envio.id, nuevoEstado.estado)
+        if (ok) {
+          await loadHistorial()
+          handleCloseAddEstado()
+        }
+      } catch {
+        // Errores y toasts los maneja handleEstadoChange en la página
+      }
+      return
+    }
 
-    // Crear nuevo item de historial
+    // Fallback: solo actualizar historial local (sin backend)
+    const fechaFormateada = new Date(nuevoEstado.fecha).toLocaleDateString("es-AR")
     const nuevoItem: HistorialItem = {
       id: Date.now(),
       estado: nuevoEstado.estado,
-      fecha: fechaCompleta,
+      fecha: `${fechaFormateada} ${nuevoEstado.horario}`,
       horaEstimada: nuevoEstado.horario,
-      quien: "Usuario actual", // Por ahora hardcodeado, después se puede obtener del usuario logueado
+      quien: "Usuario actual",
     }
-
     setHistorial([...historial, nuevoItem])
     handleCloseAddEstado()
   }
@@ -1605,7 +1607,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                       <SelectValue placeholder="Seleccionar estado" />
                     </SelectTrigger>
                     <SelectContent>
-                      {estadosEnvio.map((estado) => (
+                      {((envio?.estado || "A retirar") === "A retirar" ? ["A retirar", "Retirado"] : estadosEnvio).map((estado) => (
                         <SelectItem key={estado} value={estado}>
                           {estado}
                         </SelectItem>

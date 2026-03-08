@@ -356,23 +356,23 @@ export default function EnviosPage() {
     setCurrentPage(0)
   }
 
-  const handleEstadoChange = async (envioId: number, nuevoEstado: string) => {
+  const handleEstadoChange = async (envioId: number, nuevoEstado: string): Promise<boolean> => {
     const envio = envios.find((e) => e.id === envioId)
-    if (!envio) return
+    if (!envio) return false
 
     if (envio.origen === "Flex") {
       toast.error("No se puede cambiar manualmente el estado de un envío Flex. El estado se sincroniza desde MercadoLibre.")
-      return
+      return false
     }
     if (userProfile !== "Administrativo" && userProfile !== "Chofer") {
       toast.error("No tenés permiso para cambiar el estado de los envíos")
-      return
+      return false
     }
 
     const estadoActual = envio.estado || "A retirar"
     if (estadoActual === "A retirar" && nuevoEstado !== "Retirado") {
       toast.error("Desde 'A retirar' solo se puede pasar a 'Retirado'. Primero hay que marcar el envío como colectado.")
-      return
+      return false
     }
 
     try {
@@ -413,6 +413,7 @@ export default function EnviosPage() {
       if (response.ok) {
         loadEnvios(currentPage, itemsPerPage)
         toast.success("Estado actualizado correctamente")
+        return true
       } else {
         let mensaje = "No se pudo cambiar el estado."
         try {
@@ -433,10 +434,12 @@ export default function EnviosPage() {
         }
         toast.error(mensaje)
       }
+      return false
     } catch (error: unknown) {
       warnDev("Error al actualizar estado:", error)
       const mensaje = error instanceof Error ? error.message : "Error de conexión al cambiar el estado."
       toast.error(mensaje)
+      return false
     }
   }
 
@@ -1334,6 +1337,7 @@ export default function EnviosPage() {
             envio={selectedEnvio}
             onDelete={handleDeleteEnvio}
             onAssignSuccess={() => loadEnvios(currentPage, itemsPerPage)}
+            onEstadoChange={handleEstadoChange}
           />
         )}
       </main>
