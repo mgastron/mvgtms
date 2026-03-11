@@ -10,6 +10,7 @@ import { Download, Upload as UploadIcon } from "lucide-react"
 import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { isCodigoPostalValido, geocodeAndGetPostalCode, limpiarCodigoPostal } from "@/lib/geocode-cp"
 import { getLabelIconDataUrls } from "@/lib/pdf-label-assets"
 import { drawA4Label, drawSmallLabel, type EnvioLabel } from "@/lib/pdf-label-draw"
 import { warnDev, errorDev } from "@/lib/logger"
@@ -273,8 +274,18 @@ export default function SubirEnvioPage() {
 
         const qrData = `${tracking}-${Date.now()}-${i}`
 
-        // Limpiar código postal (solo números)
-        const codigoPostalLimpio = codigoPostal ? codigoPostal.replace(/\D/g, "") : ""
+        // CP: si el de la columna es inválido (Caso A), usar el que devuelve Google; si es válido (Caso B), mantenerlo
+        let codigoPostalLimpio = codigoPostal ? codigoPostal.replace(/\D/g, "") : ""
+        if (!isCodigoPostalValido(codigoPostalLimpio)) {
+          const cpGoogle = await geocodeAndGetPostalCode(direccionCompleta)
+          if (cpGoogle) {
+            codigoPostalLimpio = cpGoogle
+            // Actualizar dirección guardada con el CP resuelto para consistencia
+            direccionCompleta = direccion
+            direccionCompleta += `, CP: ${cpGoogle}`
+            if (localidad) direccionCompleta += `, ${localidad}`
+          }
+        }
 
         // Determinar zona de entrega basándose en el código postal
         const { determinarZonaEntrega } = require("@/lib/zonas-utils")

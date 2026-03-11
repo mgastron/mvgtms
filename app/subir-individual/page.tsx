@@ -400,8 +400,7 @@ export default function SubirIndividualPage() {
   const submitEnvio = async () => {
     // Guardar el envío en localStorage para que aparezca en "Reimprimir NoFlex"
     const fechaCarga = new Date().toISOString()
-    
-    // Importar función para determinar zona
+
     const { determinarZonaEntrega } = require("@/lib/zonas-utils")
     const zonaEntrega = determinarZonaEntrega(formData.codigoPostal, formData.localidad)
     
