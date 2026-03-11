@@ -38,6 +38,7 @@ export default function SubirIndividualPage() {
     cambioRetiro: "",
   })
   const [qrData, setQrData] = useState<string>("") // Guardar el QR data para reimpresión
+  const [isSubmitting, setIsSubmitting] = useState(false) // Bloquear doble clic mientras se sube
 
   useEffect(() => {
     // Verificar autenticación
@@ -382,13 +383,21 @@ export default function SubirIndividualPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+    if (isSubmitting) return
     // Validar campos requeridos
     if (!formData.tracking || !formData.destinatarioNombre || !formData.destinatarioTelefono || !formData.direccion) {
       alert("Por favor, complete todos los campos obligatorios (*)")
       return
     }
+    setIsSubmitting(true)
+    try {
+      await submitEnvio()
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
+  const submitEnvio = async () => {
     // Guardar el envío en localStorage para que aparezca en "Reimprimir NoFlex"
     const fechaCarga = new Date().toISOString()
     
@@ -494,6 +503,7 @@ export default function SubirIndividualPage() {
 
     // Generar y descargar PDF usando el tracking único
     await generatePDF(qrDataValue)
+    handleClear()
   }
 
   const handleClear = () => {
@@ -703,9 +713,10 @@ export default function SubirIndividualPage() {
                   </Button>
                   <Button
                     type="submit"
-                    className="bg-green-500 hover:bg-green-600 text-white h-8 px-4 text-sm"
+                    disabled={isSubmitting}
+                    className="bg-green-500 hover:bg-green-600 text-white h-8 px-4 text-sm disabled:opacity-60 disabled:pointer-events-none"
                   >
-                    SUBIR
+                    {isSubmitting ? "Subiendo..." : "SUBIR"}
                   </Button>
                 </div>
               </div>
