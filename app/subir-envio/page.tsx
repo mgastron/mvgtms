@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, Upload as UploadIcon } from "lucide-react"
 import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
-import QRCode from "qrcode"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { getLabelIconDataUrls } from "@/lib/pdf-label-assets"
+import { drawA4Label, drawSmallLabel, type EnvioLabel } from "@/lib/pdf-label-draw"
 import { warnDev, errorDev } from "@/lib/logger"
 
 interface Cliente {
@@ -181,290 +182,6 @@ export default function SubirEnvioPage() {
     
     // Descargar archivo
     XLSX.writeFile(wb, "modelo_envios.xlsx")
-  }
-
-  const getOrigenVentaLabel = (origen: string | undefined): string => {
-    if (!origen || !String(origen).trim()) return "Venta x afuera"
-    const o = String(origen).trim()
-    if (o === "Flex" || o === "MercadoLibre" || /meli|mercado|flex/i.test(o)) return "Meli"
-    if (o === "Shopify") return "Shopify"
-    if (o === "VTEX" || o === "Vtex") return "VTEX"
-    if (o === "Tienda Nube") return "Tienda Nube"
-    return "Venta x afuera"
-  }
-
-  const generatePDFForEnvio = async (
-    envio: any,
-    formato: "A4" | "10x15" | "10x10",
-    pdf: jsPDF,
-    labelIndex: number,
-    labelsPerPage: number
-  ) => {
-    // Generar QR
-    const qrDataToUse = envio.qrData || `${envio.tracking}-${Date.now()}`
-    const qrCodeDataUrl = await QRCode.toDataURL(qrDataToUse, {
-      width: formato === "A4" ? 80 : 120,
-      margin: 1,
-    })
-
-    // Obtener fecha
-    const fecha = new Date(envio.fecha)
-    const fechaFormateada = `${fecha.getDate().toString().padStart(2, "0")}/${(fecha.getMonth() + 1).toString().padStart(2, "0")}/${fecha.getFullYear()}`
-
-    if (formato === "A4") {
-      // Formato A4 compacto
-      const a4Width = 595.28
-      const a4Height = 841.89
-      const margin = 5
-      const padding = 3
-      const labelWidth = (a4Width - margin * 2 - padding) / 2
-      const labelHeight = (a4Height - margin * 2 - padding * 2) / 3
-      
-      const col = labelIndex % 2
-      const row = Math.floor(labelIndex / 2)
-      const startX = margin + col * (labelWidth + padding)
-      const startY = margin + row * (labelHeight + padding)
-      
-      let currentY = startY + 3
-      const innerPadding = 4
-
-      // Localidad con borde negro
-      const localidadText = (envio.localidad || "Sin localidad").toUpperCase()
-      pdf.setFontSize(13)
-      pdf.setFont("helvetica", "bold")
-      const localidadTextWidth = pdf.getTextWidth(localidadText)
-      const localidadBoxHeight = 16
-      pdf.setDrawColor(0, 0, 0)
-      pdf.setLineWidth(1)
-      pdf.roundedRect(startX + innerPadding, currentY - 12, localidadTextWidth + 8, localidadBoxHeight, 2, 2, "S")
-      pdf.setTextColor(0, 0, 0)
-      pdf.text(localidadText, startX + innerPadding + 4, currentY - 2)
-      
-      pdf.setFontSize(7.5)
-      pdf.setFont("helvetica", "normal")
-      pdf.setTextColor(0, 0, 0)
-      const nombreWidth = pdf.getTextWidth(envio.nombreDestinatario)
-      const nombreX = startX + labelWidth - nombreWidth - innerPadding
-      if (nombreX > startX + localidadTextWidth + innerPadding + 12) {
-        pdf.text(envio.nombreDestinatario, nombreX, currentY - 2)
-      }
-      currentY += 10
-
-      // QR Code
-      const qrSize = 50
-      const qrX = startX + innerPadding
-      const qrY = currentY
-      pdf.addImage(qrCodeDataUrl, "PNG", qrX, qrY, qrSize, qrSize)
-      const qrRight = qrX + qrSize + 4
-      const qrBottom = qrY + qrSize
-      const availableWidth = labelWidth - qrSize - innerPadding * 3
-
-      // Información a la derecha del QR
-      pdf.setFontSize(7)
-      pdf.setFont("helvetica", "normal")
-      pdf.setTextColor(0, 0, 0)
-      let infoY = qrY + 3
-      pdf.text(fechaFormateada, qrRight, infoY)
-      infoY += 8
-      const clienteText = pdf.splitTextToSize(`Cliente: ${envio.cliente || ""}`, availableWidth)
-      pdf.text(clienteText, qrRight, infoY)
-      infoY += clienteText.length * 8
-      pdf.text(`Venta: ${getOrigenVentaLabel(envio.origen)}`, qrRight, infoY)
-      infoY += 8
-      pdf.text(`Envio: ${envio.tracking || ""}`, qrRight, infoY)
-
-      const bottomY = qrBottom + 6
-      pdf.setFontSize(7)
-      pdf.setFont("helvetica", "normal")
-      pdf.setTextColor(0, 0, 0)
-      let destY = bottomY
-
-      pdf.setFont("helvetica", "bold")
-      const nombreLines = pdf.splitTextToSize(envio.nombreDestinatario, labelWidth - innerPadding * 2)
-      pdf.text(nombreLines, startX + innerPadding, destY)
-      destY += nombreLines.length * 8 + 2
-
-      pdf.setFont("helvetica", "normal")
-      pdf.text(envio.telefono, startX + innerPadding, destY)
-      destY += 8
-
-      pdf.text("Sin información", startX + innerPadding, destY)
-      destY += 8
-
-      const direccionLines = pdf.splitTextToSize(envio.direccion, labelWidth - innerPadding * 2)
-      pdf.text(direccionLines, startX + innerPadding, destY)
-      destY += direccionLines.length * 8 + 3
-
-      if (envio.observaciones) {
-        pdf.setFontSize(6.5)
-        pdf.setTextColor(60, 60, 60)
-        const obsLines = pdf.splitTextToSize(`Observación: ${envio.observaciones}`, labelWidth - innerPadding * 2)
-        pdf.text(obsLines, startX + innerPadding, destY)
-        destY += obsLines.length * 7.5 + 2
-      }
-
-      if (envio.totalACobrar && String(envio.totalACobrar).trim() !== "") {
-        pdf.setFontSize(7)
-        pdf.setFont("helvetica", "bold")
-        pdf.setTextColor(0, 0, 0)
-        pdf.text(`Cobrar en Efectivo: $ ${String(envio.totalACobrar).trim()}`, startX + innerPadding, destY)
-        destY += 8
-      }
-      if (envio.cambioRetiro && String(envio.cambioRetiro).trim() !== "") {
-        const valor = String(envio.cambioRetiro).trim().toUpperCase()
-        pdf.setFontSize(8)
-        pdf.setFont("helvetica", "bold")
-        pdf.setTextColor(0, 0, 0)
-        pdf.setDrawColor(0, 0, 0)
-        pdf.setLineWidth(0.5)
-        const badgeW = Math.max(pdf.getTextWidth(valor) + 6, 28)
-        pdf.roundedRect(startX + innerPadding, destY - 6, badgeW, 12, 1.5, 1.5, "S")
-        pdf.text(valor, startX + innerPadding + badgeW / 2 - pdf.getTextWidth(valor) / 2, destY + 1)
-        destY += 14
-      }
-
-      const logoText = "MVG"
-      pdf.setFontSize(8.5)
-      pdf.setFont("helvetica", "bold")
-      pdf.setTextColor(0, 0, 0)
-      const logoWidth = pdf.getTextWidth(logoText)
-      const logoX = startX + labelWidth - logoWidth - innerPadding
-      const logoY = startY + labelHeight - innerPadding - 2
-      pdf.text(logoText, logoX, logoY)
-
-      pdf.setDrawColor(200, 200, 200)
-      pdf.setLineWidth(0.5)
-      pdf.rect(startX, startY, labelWidth, labelHeight)
-    } else {
-      // Formato 10x15 o 10x10
-      let width: number, height: number
-      if (formato === "10x15") {
-        width = 283.46
-        height = 425.2
-      } else {
-        width = 283.46
-        height = 283.46
-      }
-
-      const marginLeft = 10
-      const marginTop = 10
-      let currentY = marginTop
-
-      pdf.setFontSize(14)
-      pdf.setFont("helvetica", "bold")
-      pdf.setTextColor(0, 0, 0)
-      const titleWidth = pdf.getTextWidth("MVG")
-      const titleX = (width - titleWidth) / 2
-      pdf.text("MVG", titleX, currentY)
-      currentY += 18
-
-      pdf.setDrawColor(0, 0, 0)
-      pdf.setLineWidth(1.5)
-      pdf.line(marginLeft, currentY - 8, width - marginLeft, currentY - 8)
-
-      const qrSize = formato === "10x15" ? 80 : 70
-      pdf.setDrawColor(0, 0, 0)
-      pdf.setLineWidth(1.5)
-      pdf.roundedRect(marginLeft, currentY, qrSize, qrSize, 2, 2, "S")
-      pdf.addImage(qrCodeDataUrl, "PNG", marginLeft + 2, currentY + 2, qrSize - 4, qrSize - 4)
-      const qrRight = marginLeft + qrSize + 6
-      const qrBottom = currentY + qrSize
-
-      const localidadText = (envio.localidad || "Sin localidad").toUpperCase()
-      pdf.setFontSize(formato === "10x15" ? 15 : 13)
-      pdf.setFont("helvetica", "bold")
-      const localidadLines = pdf.splitTextToSize(localidadText, 150)
-      const localidadTextWidth = Math.max(...localidadLines.map((line: string) => pdf.getTextWidth(line)))
-      const lineHeight = formato === "10x15" ? 13 : 11
-      const localidadTextHeight = localidadLines.length * lineHeight
-      const padding = 6
-      const boxWidth = localidadTextWidth + (padding * 2)
-      const boxHeight = localidadTextHeight + (padding * 2)
-      const boxX = qrRight
-      const boxY = currentY + 6
-      const borderRadius = 3
-      pdf.setDrawColor(0, 0, 0)
-      pdf.setLineWidth(1.5)
-      pdf.roundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius, borderRadius, "S")
-      pdf.setTextColor(0, 0, 0)
-      const totalTextHeight = localidadLines.length * lineHeight
-      const startY = boxY + (boxHeight - totalTextHeight) / 2 + lineHeight - 2
-
-      localidadLines.forEach((line: string, index: number) => {
-        const lineWidth = pdf.getTextWidth(line)
-        const textX = boxX + (boxWidth - lineWidth) / 2
-        const textY = startY + (index * lineHeight)
-        pdf.text(line, textX, textY)
-      })
-
-      let infoY = currentY + boxHeight + 12
-      pdf.setFontSize(formato === "10x15" ? 7 : 6)
-      pdf.setFont("helvetica", "normal")
-      pdf.setTextColor(0, 0, 0)
-      pdf.text(fechaFormateada, qrRight, infoY)
-      infoY += formato === "10x15" ? 9 : 8
-      pdf.text(`Rte.: ${envio.cliente}`, qrRight, infoY)
-      infoY += formato === "10x15" ? 9 : 8
-      pdf.text(`Venta: ${envio.nombreDestinatario}`, qrRight, infoY)
-      infoY += formato === "10x15" ? 9 : 8
-      pdf.text(`Envio: ${envio.nombreDestinatario}`, qrRight, infoY)
-
-      currentY = qrBottom + 10
-
-      pdf.setFontSize(formato === "10x15" ? 7 : 6)
-      pdf.setFont("helvetica", "bold")
-      pdf.setTextColor(0, 0, 0)
-      pdf.text("Destinatario", marginLeft, currentY)
-      const destW = pdf.getTextWidth("Destinatario")
-      pdf.setLineWidth(0.5)
-      pdf.line(marginLeft, currentY + 2, marginLeft + destW, currentY + 2)
-      currentY += formato === "10x15" ? 10 : 8
-
-      pdf.setFontSize(formato === "10x15" ? 8.5 : 7.5)
-      pdf.text(envio.nombreDestinatario, marginLeft, currentY)
-      currentY += formato === "10x15" ? 9 : 8
-
-      pdf.setFont("helvetica", "normal")
-      pdf.text(`Tel: ${envio.telefono}`, marginLeft, currentY)
-      currentY += formato === "10x15" ? 9 : 8
-
-      const direccionLines = pdf.splitTextToSize(envio.direccion, width - marginLeft * 2 - 20)
-      pdf.text(direccionLines, marginLeft, currentY)
-      currentY += direccionLines.length * (formato === "10x15" ? 9 : 8) + 5
-
-      if (envio.observaciones) {
-        pdf.setFontSize(formato === "10x15" ? 7.5 : 6.5)
-        pdf.setFont("helvetica", "italic")
-        pdf.setTextColor(0, 0, 0)
-        const obsLines = pdf.splitTextToSize(`Obs: ${envio.observaciones}`, width - marginLeft * 2 - 20)
-        pdf.text(obsLines, marginLeft, currentY)
-        currentY += obsLines.length * (formato === "10x15" ? 9 : 8) + 3
-      }
-
-      if (envio.totalACobrar && String(envio.totalACobrar).trim() !== "") {
-        pdf.setFontSize(formato === "10x15" ? 8 : 7)
-        pdf.setFont("helvetica", "bold")
-        pdf.setTextColor(0, 0, 0)
-        pdf.text(`Cobrar en Efectivo: $ ${String(envio.totalACobrar).trim()}`, marginLeft, currentY)
-        currentY += formato === "10x15" ? 11 : 10
-      }
-      if (envio.cambioRetiro && String(envio.cambioRetiro).trim() !== "") {
-        const valor = String(envio.cambioRetiro).trim().toUpperCase()
-        pdf.setFontSize(formato === "10x15" ? 9 : 8)
-        pdf.setFont("helvetica", "bold")
-        pdf.setTextColor(0, 0, 0)
-        pdf.setDrawColor(0, 0, 0)
-        pdf.setLineWidth(0.8)
-        const badgeW = Math.max(pdf.getTextWidth(valor) + 10, 36)
-        pdf.roundedRect(marginLeft, currentY - 8, badgeW, 14, 2, 2, "S")
-        pdf.text(valor, marginLeft + badgeW / 2 - pdf.getTextWidth(valor) / 2, currentY + 1)
-        currentY += 18
-      }
-
-      pdf.setDrawColor(0, 0, 0)
-      pdf.setLineWidth(2)
-      pdf.line(marginLeft, currentY + 5, width - marginLeft, currentY + 5)
-    }
   }
 
   const handleSubirModelo = async () => {
@@ -642,23 +359,54 @@ export default function SubirEnvioPage() {
       enviosExistentes.push(...envios)
       localStorage.setItem("enviosNoflex", JSON.stringify(enviosExistentes))
 
-      // Generar PDFs según el formato
+      // Generar PDFs con el mismo diseño que Reimprimir NoFlex (etiquetas actualizadas)
       const formato = formData.etiqueta as "A4" | "10x15" | "10x10"
-      
+      let assets: Awaited<ReturnType<typeof getLabelIconDataUrls>> | null = null
+      try {
+        assets = await getLabelIconDataUrls()
+      } catch {
+        warnDev("No se pudieron cargar íconos para etiquetas, se usan fallbacks")
+      }
+
+      const enviosAsLabel: EnvioLabel[] = envios.map((e) => ({
+        id: e.id,
+        fecha: e.fecha,
+        tracking: e.tracking,
+        nombreDestinatario: e.nombreDestinatario,
+        direccion: e.direccion,
+        telefono: e.telefono,
+        localidad: e.localidad,
+        cliente: e.cliente,
+        origen: e.origen,
+        observaciones: e.observaciones,
+        totalACobrar: e.totalACobrar,
+        cambioRetiro: e.cambioRetiro,
+        qrData: e.qrData,
+      }))
+
       if (formato === "A4") {
+        const a4Width = 595.28
+        const a4Height = 841.89
+        const margin = 6
+        const gap = 4
+        const labelWidth = (a4Width - margin * 2 - gap) / 2
+        const labelHeight = (a4Height - margin * 2 - gap * 2) / 3
+        const labelsPerPage = 6
+
         const pdf = new jsPDF({
           orientation: "portrait",
           unit: "pt",
           format: "a4",
         })
 
-        const labelsPerPage = 6
-        for (let i = 0; i < envios.length; i++) {
+        for (let i = 0; i < enviosAsLabel.length; i++) {
           const labelIndexInPage = i % labelsPerPage
-          if (i > 0 && labelIndexInPage === 0) {
-            pdf.addPage()
-          }
-          await generatePDFForEnvio(envios[i], formato, pdf, labelIndexInPage, labelsPerPage)
+          if (i > 0 && labelIndexInPage === 0) pdf.addPage()
+          const col = labelIndexInPage % 2
+          const row = Math.floor(labelIndexInPage / 2)
+          const startX = margin + col * (labelWidth + gap)
+          const startY = margin + row * (labelHeight + gap)
+          await drawA4Label(pdf, enviosAsLabel[i], startX, startY, labelWidth, labelHeight, assets)
         }
 
         const fechaDescarga = new Date().toISOString().split("T")[0]
@@ -670,11 +418,11 @@ export default function SubirEnvioPage() {
           format: formato === "10x15" ? [283.46, 425.2] : [283.46, 283.46],
         })
 
-        for (let i = 0; i < envios.length; i++) {
+        for (let i = 0; i < enviosAsLabel.length; i++) {
           if (i > 0) {
             pdf.addPage(formato === "10x15" ? [283.46, 425.2] : [283.46, 283.46], "portrait")
           }
-          await generatePDFForEnvio(envios[i], formato, pdf, i, 1)
+          await drawSmallLabel(pdf, enviosAsLabel[i], formato, assets)
         }
 
         const fechaDescarga = new Date().toISOString().split("T")[0]
