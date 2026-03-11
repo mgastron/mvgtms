@@ -535,7 +535,9 @@ export default function SubirEnvioPage() {
         const localidad = String(row[4] || "").trim()
         const codigoPostal = String(row[5] || "").trim()
         const observaciones = String(row[6] || "").trim()
-        const totalACobrar = String(row[7] || "").trim()
+        let totalACobrar = String(row[7] || "").trim()
+        const numCobrar = parseFloat(totalACobrar.replace(",", "."))
+        if (!Number.isNaN(numCobrar) && numCobrar < 0) totalACobrar = "0"
         const cambioRetiro = String(row[8] || "").trim()
 
         // Validar campos requeridos
