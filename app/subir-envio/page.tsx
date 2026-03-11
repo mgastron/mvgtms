@@ -274,16 +274,20 @@ export default function SubirEnvioPage() {
 
         const qrData = `${tracking}-${Date.now()}-${i}`
 
-        // CP: si el de la columna es inválido (Caso A), usar el que devuelve Google; si es válido (Caso B), mantenerlo
+        // CP: si el de la columna es inválido (Caso A), intentar usar el que devuelve Google; si es válido (Caso B), mantenerlo.
+        // Si Google no reconoce la dirección o falla la API, se sube el envío igual (con dirección sin geolocalizar/CP vacío).
         let codigoPostalLimpio = codigoPostal ? codigoPostal.replace(/\D/g, "") : ""
         if (!isCodigoPostalValido(codigoPostalLimpio)) {
-          const cpGoogle = await geocodeAndGetPostalCode(direccionCompleta)
-          if (cpGoogle) {
-            codigoPostalLimpio = cpGoogle
-            // Actualizar dirección guardada con el CP resuelto para consistencia
-            direccionCompleta = direccion
-            direccionCompleta += `, CP: ${cpGoogle}`
-            if (localidad) direccionCompleta += `, ${localidad}`
+          try {
+            const cpGoogle = await geocodeAndGetPostalCode(direccionCompleta)
+            if (cpGoogle) {
+              codigoPostalLimpio = cpGoogle
+              direccionCompleta = direccion
+              direccionCompleta += `, CP: ${cpGoogle}`
+              if (localidad) direccionCompleta += `, ${localidad}`
+            }
+          } catch {
+            // API falló o dirección no reconocida: seguir con CP vacío e igual subir el envío
           }
         }
 
