@@ -10,7 +10,7 @@ import { Download, Upload as UploadIcon } from "lucide-react"
 import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
 import { getApiBaseUrl } from "@/lib/api-config"
-import { isCodigoPostalValido, geocodeAndGetPostalCode, limpiarCodigoPostal } from "@/lib/geocode-cp"
+import { geocodeAndGetPostalCode } from "@/lib/geocode-cp"
 import { getLabelIconDataUrls } from "@/lib/pdf-label-assets"
 import { drawA4Label, drawSmallLabel, type EnvioLabel } from "@/lib/pdf-label-draw"
 import { warnDev, errorDev } from "@/lib/logger"
@@ -274,21 +274,19 @@ export default function SubirEnvioPage() {
 
         const qrData = `${tracking}-${Date.now()}-${i}`
 
-        // CP: si el de la columna es inválido (Caso A), intentar usar el que devuelve Google; si es válido (Caso B), mantenerlo.
-        // Si Google no reconoce la dirección o falla la API, se sube el envío igual (con dirección sin geolocalizar/CP vacío).
+        // CP: siempre intentar geocodificar; si Google devuelve un CP, usarlo (así gana cuando el de la columna es incorrecto, ej. 1411 vs 1022).
+        // Si Google no reconoce la dirección o falla, usar el CP de la columna (o vacío). El envío se sube igual.
         let codigoPostalLimpio = codigoPostal ? codigoPostal.replace(/\D/g, "") : ""
-        if (!isCodigoPostalValido(codigoPostalLimpio)) {
-          try {
-            const cpGoogle = await geocodeAndGetPostalCode(direccionCompleta)
-            if (cpGoogle) {
-              codigoPostalLimpio = cpGoogle
-              direccionCompleta = direccion
-              direccionCompleta += `, CP: ${cpGoogle}`
-              if (localidad) direccionCompleta += `, ${localidad}`
-            }
-          } catch {
-            // API falló o dirección no reconocida: seguir con CP vacío e igual subir el envío
+        try {
+          const cpGoogle = await geocodeAndGetPostalCode(direccionCompleta)
+          if (cpGoogle) {
+            codigoPostalLimpio = cpGoogle
+            direccionCompleta = direccion
+            direccionCompleta += `, CP: ${cpGoogle}`
+            if (localidad) direccionCompleta += `, ${localidad}`
           }
+        } catch {
+          // API falló: mantener CP de columna
         }
 
         // Determinar zona de entrega basándose en el código postal
