@@ -490,18 +490,49 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         return
       }
 
-      // Sin coordenadas guardadas = sin geolocalización (ej. subido por Excel con dirección incorrecta).
-      // No geocodificar la dirección para mostrar un pin: Google puede devolver cualquier lugar y confundir.
-      // Mostrar mapa centrado en Bs As sin pin; el chofer geolocalizará desde la app.
-      setGeolocalizacionEncontrada(false)
-      const map = new google.maps.Map(mapRef.current!, {
-        zoom: 10,
-        center: { lat: -34.6037, lng: -58.3816 },
-        mapTypeControl: true,
-        streetViewControl: true,
-        fullscreenControl: true,
+      // Sin coordenadas guardadas: si además no tiene CP, tratamos como "sin geolocalización" (dirección dudosa)
+      // y no geocodificamos para no mostrar un pin en cualquier lado. Si tiene CP, geocodificamos para mostrar el pin.
+      const sinCP = !envio.codigoPostal || String(envio.codigoPostal).trim() === ""
+      if (sinCP) {
+        setGeolocalizacionEncontrada(false)
+        const map = new google.maps.Map(mapRef.current!, {
+          zoom: 10,
+          center: { lat: -34.6037, lng: -58.3816 },
+          mapTypeControl: true,
+          streetViewControl: true,
+          fullscreenControl: true,
+        })
+        mapInstanceRef.current = map
+        return
+      }
+
+      const geocoder = new google.maps.Geocoder()
+      const addressParts = [
+        envio.direccion,
+        envio.localidad,
+        envio.codigoPostal,
+        "Argentina",
+      ]
+        .map((p) => (p || "").toString().trim())
+        .filter(Boolean)
+      const address = addressParts.join(", ")
+
+      geocoder.geocode({ address }, (results, status) => {
+        if (status === "OK" && results && results[0]) {
+          const location = results[0].geometry.location
+          setMapWithLocation(location.lat(), location.lng(), address)
+        } else {
+          setGeolocalizacionEncontrada(false)
+          const map = new google.maps.Map(mapRef.current!, {
+            zoom: 10,
+            center: { lat: -34.6037, lng: -58.3816 },
+            mapTypeControl: true,
+            streetViewControl: true,
+            fullscreenControl: true,
+          })
+          mapInstanceRef.current = map
+        }
       })
-      mapInstanceRef.current = map
     }
 
     return () => {
