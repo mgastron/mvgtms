@@ -14,12 +14,18 @@ import { geocodeAndGetPostalCode } from "@/lib/geocode-cp"
 import { getLabelIconDataUrls } from "@/lib/pdf-label-assets"
 import { drawA4Label, drawSmallLabel, type EnvioLabel } from "@/lib/pdf-label-draw"
 import { warnDev, errorDev } from "@/lib/logger"
+import { Montserrat } from "next/font/google"
 
 interface Cliente {
   id: number
   codigo: string
   nombreFantasia: string
 }
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+})
 
 export default function SubirEnvioPage() {
   const router = useRouter()
@@ -459,35 +465,35 @@ export default function SubirEnvioPage() {
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
       <ModernHeader />
-      <main className="px-4 pb-6 pt-4">
+      <main className={`px-4 pb-6 pt-4 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
           <div className="mb-5 flex items-center justify-between">
-            <h1 className="text-[48px] font-semibold tracking-tight text-[#1570ef]">Subida de envíos</h1>
+            <h1 className="text-[42px] font-semibold tracking-tight text-[#1570ef]">Subida de envíos</h1>
             <Button
               onClick={handleDescargarModelo}
-              className="h-12 rounded-xl bg-white px-6 text-[20px] font-semibold text-[#1570ef] shadow-sm border border-[#e6eaf4] hover:bg-[#f7faff]"
+              className="h-12 rounded-xl bg-white px-6 text-[18px] font-semibold text-[#1570ef] shadow-sm border border-[#e6eaf4] hover:bg-[#f7faff]"
             >
               <Download className="mr-2 h-5 w-5" />
               Descargar modelo
             </Button>
           </div>
 
-          <div className="max-w-[860px] rounded-2xl border border-[#e6eaf4] bg-white p-7 shadow-sm">
-            <div className="space-y-5">
+          <div className="max-w-[760px] rounded-2xl border border-[#e6eaf4] bg-white p-6 shadow-sm">
+            <div className="space-y-4.5">
               <div className="space-y-2">
-                <label className="block text-[20px] font-medium text-[#4d5571]">Cliente</label>
+                <label className="block text-[16px] font-medium text-[#4d5571]">Cliente</label>
                 {userProfile === "Cliente" ? (
                   <Input
                     value={clientes.find(c => c.codigo === formData.cliente)?.nombreFantasia || ""}
                     disabled
-                    className="h-12 text-[18px] text-[#525b76]"
+                    className="h-10 text-[15px] text-[#525b76]"
                   />
                 ) : (
                   <Select
                     value={formData.cliente}
                     onValueChange={(value) => handleInputChange("cliente", value)}
                   >
-                    <SelectTrigger className="h-12 text-[18px] text-[#525b76]">
+                    <SelectTrigger className="h-10 text-[15px] text-[#525b76]">
                       <SelectValue placeholder="Seleccioná cliente" />
                     </SelectTrigger>
                     <SelectContent>
@@ -502,12 +508,12 @@ export default function SubirEnvioPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[20px] font-medium text-[#4d5571]">Etiqueta</label>
+                <label className="block text-[16px] font-medium text-[#4d5571]">Etiqueta</label>
                 <Select
                   value={formData.etiqueta}
                   onValueChange={(value) => handleInputChange("etiqueta", value)}
                 >
-                  <SelectTrigger className="h-12 text-[18px] text-[#525b76]">
+                  <SelectTrigger className="h-10 text-[15px] text-[#525b76]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -519,11 +525,11 @@ export default function SubirEnvioPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[20px] font-medium text-[#4d5571]">Modelo nuevo</label>
-                <div className="rounded-xl border border-dashed border-[#d6dced] bg-white p-5">
+                <label className="block text-[16px] font-medium text-[#4d5571]">Modelo nuevo</label>
+                <div className="rounded-xl border border-dashed border-[#d6dced] bg-white p-4">
                   <label className="flex cursor-pointer flex-col items-center justify-center gap-2">
-                    <UploadIcon className="h-6 w-6 text-[#626d91]" />
-                    <span className="text-[20px] font-semibold text-[#3f4d88] underline underline-offset-2">
+                    <UploadIcon className="h-5 w-5 text-[#626d91]" />
+                    <span className="text-[16px] font-semibold text-[#3f4d88] underline underline-offset-2">
                       Adjuntar archivo
                     </span>
                     <input
@@ -534,7 +540,7 @@ export default function SubirEnvioPage() {
                     />
                   </label>
                   {selectedFile && (
-                    <p className="mt-3 text-center text-[16px] text-[#626d91]">
+                    <p className="mt-3 text-center text-[14px] text-[#626d91]">
                       {selectedFile.name}
                     </p>
                   )}
@@ -543,7 +549,7 @@ export default function SubirEnvioPage() {
 
               <Button
                 onClick={handleSubirModelo}
-                className="h-12 w-full rounded-xl bg-[#eef4ff] text-[20px] font-semibold text-[#1570ef] hover:bg-[#e3edff] disabled:opacity-50"
+                className="h-10 w-full rounded-xl bg-[#eef4ff] text-[16px] font-semibold text-[#1570ef] hover:bg-[#e3edff] disabled:opacity-50"
                 disabled={!selectedFile}
               >
                 Subir modelo
