@@ -71,33 +71,33 @@ export default function LoginPage() {
     <div className={`relative min-h-screen overflow-hidden bg-gradient-to-r from-[#1e86ff] via-[#2a67ff] to-[#2f46f5] ${montserrat.className}`}>
       <div className="pointer-events-none absolute inset-0">
         <img
-          src="/logos/nexo-iso.png"
+          src="/logos/nexo-iso-white.png"
           alt=""
-          className="absolute left-[10%] top-[24%] h-[42px] w-[42px] opacity-20 brightness-0 invert"
+          className="absolute left-[10%] top-[24%] h-[42px] w-[42px] opacity-18"
           aria-hidden
         />
         <img
-          src="/logos/nexo-iso.png"
+          src="/logos/nexo-iso-white.png"
           alt=""
-          className="absolute right-[8%] top-[7%] h-[112px] w-[112px] opacity-16 brightness-0 invert"
+          className="absolute right-[8%] top-[7%] h-[112px] w-[112px] opacity-14"
           aria-hidden
         />
         <img
-          src="/logos/nexo-iso.png"
+          src="/logos/nexo-iso-white.png"
           alt=""
-          className="absolute right-[17%] bottom-[17%] h-[118px] w-[118px] opacity-14 brightness-0 invert"
+          className="absolute right-[17%] bottom-[17%] h-[118px] w-[118px] opacity-12"
           aria-hidden
         />
         <img
-          src="/logos/nexo-iso.png"
+          src="/logos/nexo-iso-white.png"
           alt=""
-          className="absolute left-[2%] bottom-[4%] h-[98px] w-[98px] opacity-14 brightness-0 invert"
+          className="absolute left-[2%] bottom-[4%] h-[98px] w-[98px] opacity-12"
           aria-hidden
         />
         <img
-          src="/logos/nexo-iso.png"
+          src="/logos/nexo-iso-white.png"
           alt=""
-          className="absolute right-[3%] bottom-[7%] h-[50px] w-[50px] opacity-16 brightness-0 invert"
+          className="absolute right-[3%] bottom-[7%] h-[50px] w-[50px] opacity-14"
           aria-hidden
         />
       </div>
@@ -105,11 +105,11 @@ export default function LoginPage() {
       <div className="relative mx-auto flex min-h-screen w-full max-w-[1360px] items-center px-8 py-10 md:px-14 lg:px-20">
         <div className="w-full max-w-[640px] text-white">
           <img
-            src="/logos/nexo-logo.png"
+            src="/logos/nexo-logo-white.png"
             alt="nexo"
-            className="h-auto w-[120px] brightness-0 invert md:w-[132px]"
+            className="h-auto w-[120px] md:w-[132px]"
           />
-          <h1 className="mt-24 max-w-[700px] text-[52px] font-semibold leading-[1.08] tracking-[-0.03em] md:text-[56px]">
+          <h1 className="mt-24 max-w-[760px] text-[50px] font-semibold leading-[1.08] tracking-[-0.03em] md:text-[54px]">
             Optimizá tus entregas
             <br />
             de punta a punta
