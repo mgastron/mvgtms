@@ -12,6 +12,12 @@ import QRCode from "qrcode"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { getLabelIconDataUrls } from "@/lib/pdf-label-assets"
 import { warnDev, errorDev } from "@/lib/logger"
+import { Montserrat } from "next/font/google"
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+})
 
 interface EnvioNoflex {
   id: number
@@ -938,36 +944,36 @@ export default function ReimprimirNoflexPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50" suppressHydrationWarning>
+    <div className={`min-h-screen bg-[#f7f8fc] ${montserrat.className}`} suppressHydrationWarning>
       <ModernHeader />
-      <main className="p-4">
-        <div className="mx-auto max-w-7xl">
+      <main className="px-3 pb-4 pt-3">
+        <div className="mx-auto w-full max-w-[1700px]">
+          <div className="mb-4 flex items-center justify-between">
+            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">
+              Reimpresión de etiquetas no flex
+            </h1>
+            <Button
+              onClick={() => loadEnvios()}
+              disabled={isLoading}
+              className="h-11 rounded-xl bg-white px-5 text-[16px] font-semibold text-[#1570ef] shadow-sm border border-[#e6eaf4] hover:bg-[#f7faff]"
+            >
+              {isLoading ? "Cargando..." : "Actualizar"}
+            </Button>
+          </div>
 
-          {/* Main Card */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-              <h1 className="text-xl font-bold text-[#6B46FF]">REIMPRESIÓN DE ETIQUETAS NOFLEX</h1>
-              <Button
-                onClick={loadEnvios}
-                disabled={isLoading}
-                className="flex items-center gap-2"
-              >
-                {isLoading ? "Cargando..." : "Actualizar"}
-              </Button>
-            </div>
+          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm space-y-4">
+            <h2 className="text-[32px] font-semibold text-[#4f46ce]">Filtros</h2>
 
-            {/* Filters */}
-            <div className="p-4 space-y-4 border-b border-gray-200">
+            <div className="space-y-4">
               {/* Row 1 */}
               <div className="grid grid-cols-4 gap-3">
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">Tipo de fecha</label>
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Tipo de fecha</label>
                   <Select
                     value={filters.tipoFecha}
                     onValueChange={(value) => handleFilterChange("tipoFecha", value)}
                   >
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-10 text-[14px] font-normal text-[#525b76]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -978,13 +984,13 @@ export default function ReimprimirNoflexPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">Pendiente de imprimir</label>
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Pendientes de imprimir</label>
                   <Select
                     value={filters.pendienteImprimir}
                     onValueChange={(value) => handleFilterChange("pendienteImprimir", value)}
                   >
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-10 text-[14px] font-normal text-[#525b76]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -995,36 +1001,36 @@ export default function ReimprimirNoflexPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">Fecha desde</label>
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Fecha desde</label>
                   <Input
                     type="date"
                     value={filters.fechaDesde}
                     onChange={(e) => handleFilterChange("fechaDesde", e.target.value)}
-                    className="h-8 text-sm"
+                    className="h-10 text-[14px] font-normal text-[#525b76]"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">Fecha hasta</label>
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Fecha hasta</label>
                   <Input
                     type="date"
                     value={filters.fechaHasta}
                     onChange={(e) => handleFilterChange("fechaHasta", e.target.value)}
-                    className="h-8 text-sm"
+                    className="h-10 text-[14px] font-normal text-[#525b76]"
                   />
                 </div>
               </div>
 
               {/* Row 2 */}
               <div className="grid grid-cols-4 gap-3">
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">Origen</label>
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Origen</label>
                   <Select
                     value={filters.origen}
                     onValueChange={(value) => handleFilterChange("origen", value)}
                   >
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-10 text-[14px] font-normal text-[#525b76]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1038,46 +1044,46 @@ export default function ReimprimirNoflexPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">Nombre fantasía</label>
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Nombre de fantasía</label>
                   <Input
                     value={filters.nombreFantasia}
                     onChange={(e) => handleFilterChange("nombreFantasia", e.target.value)}
-                    placeholder="Nombre fantasía"
-                    className="h-8 text-sm"
+                    placeholder="Nombre de fantasía"
+                    className="h-10 text-[14px] font-normal text-[#525b76]"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">Destino dirección</label>
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Destino dirección</label>
                   <Input
                     value={filters.destinoDireccion}
                     onChange={(e) => handleFilterChange("destinoDireccion", e.target.value)}
                     placeholder="Destino dirección"
-                    className="h-8 text-sm"
+                    className="h-10 text-[14px] font-normal text-[#525b76]"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">Nombre destinatario</label>
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Nombre destino</label>
                   <Input
                     value={filters.nombreDestinatario}
                     onChange={(e) => handleFilterChange("nombreDestinatario", e.target.value)}
-                    placeholder="Nombre destinatario"
-                    className="h-8 text-sm"
+                    placeholder="Nombre destino"
+                    className="h-10 text-[14px] font-normal text-[#525b76]"
                   />
                 </div>
               </div>
 
               {/* Row 3 */}
               <div className="grid grid-cols-4 gap-3">
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">Zonas de entrega</label>
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Zona de entrega</label>
                   <Select
                     value={filters.zonasEntrega}
                     onValueChange={(value) => handleFilterChange("zonasEntrega", value)}
                   >
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-10 text-[14px] font-normal text-[#525b76]">
                       <SelectValue placeholder="Todas las zonas" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1090,51 +1096,52 @@ export default function ReimprimirNoflexPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-1 col-span-3">
-                  <label className="block text-xs font-medium text-gray-700">Trackings</label>
+                <div className="space-y-2 col-span-3">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Tracking</label>
                   <textarea
                     value={filters.trackings}
                     onChange={(e) => handleFilterChange("trackings", e.target.value)}
-                    placeholder="Lista de Trackings separados por comas (Ejemplo: 100,101,102)"
-                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B46FF] focus:border-transparent resize-none"
+                    placeholder="Lista de trackings separados por comas (ej.: 100, 101, 102)"
+                    className="min-h-[40px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-[14px] text-[#525b76] ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     rows={2}
                   />
                 </div>
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                <Button
-                  onClick={loadEnvios}
-                  disabled={isLoading}
-                  className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white h-8 px-4"
-                >
-                  FILTRAR
-                </Button>
-                <Button
-                  onClick={handleClearFilters}
-                  variant="outline"
-                  className="border-orange-500 text-orange-500 hover:bg-orange-50 h-8 px-4"
-                >
-                  LIMPIAR
-                </Button>
-              </div>
             </div>
 
-            {/* Table */}
-            <div className="p-4">
-              <div className="overflow-x-auto">
+            <div className="flex items-center justify-end gap-3 pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClearFilters}
+                className="h-11 rounded-xl border-[#e6eaf4] px-10 text-[14px]"
+              >
+                Borrar
+              </Button>
+              <Button
+                type="button"
+                onClick={() => loadEnvios()}
+                disabled={isLoading}
+                className="h-11 rounded-xl bg-[#f2efff] px-10 text-[14px] font-semibold text-[#4f46ce] hover:bg-[#ece8ff]"
+              >
+                Aplicar
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-[#e6eaf4] bg-white overflow-hidden">
+            <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">Fecha</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">Tracking</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">Cliente</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">Dirección</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">Nombre destinatario</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">Teléfono</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">Impreso</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">Imprimir</th>
+                    <tr className="bg-white border-b border-[#edf0f7]">
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Fecha</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Tracking</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Cliente</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Dirección</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Nombre destinatario</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Teléfono</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Impreso</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Imprimir</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1154,19 +1161,21 @@ export default function ReimprimirNoflexPage() {
                         )
                       }
 
-                      return paginatedEnvios.map((envio) => (
+                      return paginatedEnvios.map((envio, rowIdx) => (
                         <tr
                           key={envio.id}
-                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                          className={`border-b border-[#f0f3f9] transition-colors ${
+                            rowIdx % 2 === 0 ? "bg-white" : "bg-[#fafbfd]"
+                          } hover:bg-[#f4f7ff]`}
                         >
-                          <td className="px-3 py-2 text-sm text-gray-900">{formatFecha(envio.fecha)}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900">{envio.tracking}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900">{envio.cliente}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900">{envio.direccion}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900">{envio.nombreDestinatario}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900">{envio.telefono}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900">{envio.impreso}</td>
-                          <td className="px-3 py-2">
+                          <td className="px-2 py-2.5 text-sm text-gray-800">{formatFecha(envio.fecha)}</td>
+                          <td className="px-2 py-2.5 text-sm font-mono text-gray-700">{envio.tracking}</td>
+                          <td className="px-2 py-2.5 text-sm font-medium text-gray-900">{envio.cliente}</td>
+                          <td className="px-2 py-2.5 text-sm text-gray-700">{envio.direccion}</td>
+                          <td className="px-2 py-2.5 text-sm text-gray-800">{envio.nombreDestinatario}</td>
+                          <td className="px-2 py-2.5 text-sm text-gray-700">{envio.telefono}</td>
+                          <td className="px-2 py-2.5 text-sm text-gray-700">{envio.impreso}</td>
+                          <td className="px-2 py-2.5">
                             <Checkbox
                               checked={selectedEnvios.has(envio.id)}
                               onCheckedChange={() => handleToggleSelect(envio.id)}
@@ -1181,15 +1190,17 @@ export default function ReimprimirNoflexPage() {
 
               {/* Pagination */}
               {filteredEnvios.length > 0 && (
-                <div className="mt-4 flex items-center justify-between">
+                <div className="flex flex-col gap-3 border-t border-[#edf0f7] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-sm font-medium text-gray-700">
                     Total de registros: <span className="text-[#6B46FF] font-bold">{filteredEnvios.length}</span>
                     {" | "}
-                    Mostrando: <span className="text-[#6B46FF] font-bold">
-                      {Math.min(currentPage * itemsPerPage + 1, filteredEnvios.length)} - {Math.min((currentPage + 1) * itemsPerPage, filteredEnvios.length)}
+                    Mostrando:{" "}
+                    <span className="text-[#6B46FF] font-bold">
+                      {Math.min(currentPage * itemsPerPage + 1, filteredEnvios.length)} -{" "}
+                      {Math.min((currentPage + 1) * itemsPerPage, filteredEnvios.length)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -1240,7 +1251,11 @@ export default function ReimprimirNoflexPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage((prev) => Math.min(Math.ceil(filteredEnvios.length / itemsPerPage) - 1, prev + 1))}
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(Math.ceil(filteredEnvios.length / itemsPerPage) - 1, prev + 1)
+                        )
+                      }
                       disabled={currentPage >= Math.ceil(filteredEnvios.length / itemsPerPage) - 1}
                       className="h-8"
                     >
@@ -1278,35 +1293,34 @@ export default function ReimprimirNoflexPage() {
             </div>
 
             {/* Footer with selection count and print buttons */}
-            <div className="px-4 py-3 border-t border-gray-200 flex justify-between items-center">
+            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[#e6eaf4] bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-gray-600">
                 Seleccionaste {selectedEnvios.size} de {filteredEnvios.length} Paquetes
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   onClick={() => handleReimprimirA4(Array.from(selectedEnvios))}
-                  className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white h-8 px-4"
+                  className="h-10 rounded-xl bg-[#f2efff] px-4 text-sm font-semibold text-[#4f46ce] hover:bg-[#ece8ff]"
                   disabled={selectedEnvios.size === 0}
                 >
-                  REIMPRIMIR (A4)
+                  Reimprimir (A4)
                 </Button>
                 <Button
                   onClick={() => handleReimprimir(Array.from(selectedEnvios), "10x15")}
-                  className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white h-8 px-4"
+                  className="h-10 rounded-xl bg-[#f2efff] px-4 text-sm font-semibold text-[#4f46ce] hover:bg-[#ece8ff]"
                   disabled={selectedEnvios.size === 0}
                 >
-                  REIMPRIMIR (10X15)
+                  Reimprimir (10x15)
                 </Button>
                 <Button
                   onClick={() => handleReimprimir(Array.from(selectedEnvios), "10x10")}
-                  className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white h-8 px-4"
+                  className="h-10 rounded-xl bg-[#f2efff] px-4 text-sm font-semibold text-[#4f46ce] hover:bg-[#ece8ff]"
                   disabled={selectedEnvios.size === 0}
                 >
-                  REIMPRIMIR (10X10)
+                  Reimprimir (10x10)
                 </Button>
               </div>
             </div>
-          </div>
         </div>
       </main>
     </div>
