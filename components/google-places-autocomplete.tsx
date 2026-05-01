@@ -82,12 +82,27 @@ function extractLocalidadAndCP(addressComponents: any[]): { localidad: string; c
 let scriptLoading = false
 let scriptLoaded = false
 
+const GMP_NEXO_STYLE_ID = "gmp-place-autocomplete-nexo-overrides"
+
 export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutocompleteProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const autocompleteRef = useRef<any>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [isScriptLoaded, setIsScriptLoaded] = useState(false)
   const [showWidget, setShowWidget] = useState(true)
+
+  useEffect(() => {
+    if (typeof document === "undefined" || document.getElementById(GMP_NEXO_STYLE_ID)) return
+    const el = document.createElement("style")
+    el.id = GMP_NEXO_STYLE_ID
+    el.textContent = `
+      gmp-place-autocomplete {
+        color-scheme: light !important;
+        color: #1f2433 !important;
+      }
+    `
+    document.head.appendChild(el)
+  }, [])
 
   // Cargar script para la API nueva (PlaceAutocompleteElement) — sin libraries=places, con loading=async
   useEffect(() => {
@@ -182,6 +197,11 @@ export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutoco
         placeAutocomplete.style.borderRadius = "12px"
         placeAutocomplete.style.outline = "none"
         placeAutocomplete.style.background = "#ffffff"
+        // Evita modo oscuro del componente (texto claro sobre fondo blanco = ilegible)
+        placeAutocomplete.style.colorScheme = "light"
+        placeAutocomplete.style.color = "#1f2433"
+        placeAutocomplete.style.setProperty("--gmp-mat-color-on-surface", "#1f2433")
+        placeAutocomplete.style.setProperty("--gmp-mat-color-on-surface-variant", "#525b76")
 
         placeAutocomplete.addEventListener("gmp-select", async (event: any) => {
           const placePrediction = event.placePrediction
@@ -235,7 +255,7 @@ export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutoco
           onChange={(e) => onChange(e.target.value)}
           onFocus={handleFocus}
           placeholder="Buscar dirección (ej. Demaria 4470, CABA)..."
-          className="h-10 w-full rounded-xl border border-[#e6eaf4] bg-white px-3 text-[14px] text-[#525b76] shadow-sm outline-none placeholder:text-[#8890a8] focus:border-[#1570ef] focus:ring-2 focus:ring-[#1570ef]/20"
+          className="h-10 w-full rounded-xl border border-[#e6eaf4] bg-white px-3 text-[14px] font-medium text-[#1f2433] shadow-sm outline-none placeholder:text-[#8890a8] focus:border-[#1570ef] focus:ring-2 focus:ring-[#1570ef]/20"
           autoComplete="off"
         />
       )}
