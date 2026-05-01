@@ -478,7 +478,7 @@ export default function SubirEnvioPage() {
             </Button>
           </div>
 
-          <div className="max-w-[560px] rounded-2xl border border-[#e6eaf4] bg-white p-6 shadow-sm min-h-[500px]">
+          <div className="ml-2 max-w-[560px] rounded-2xl border border-[#e6eaf4] bg-white p-6 shadow-sm min-h-[500px]">
             <div className="space-y-5">
               <div className="space-y-2">
                 <label className="block text-[14px] font-medium text-[#4d5571]">Cliente</label>
