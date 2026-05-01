@@ -961,19 +961,19 @@ export default function ReimprimirNoflexPage() {
             </Button>
           </div>
 
-          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm space-y-4">
-            <h2 className="text-[32px] font-semibold text-[#4f46ce]">Filtros</h2>
+          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-4 shadow-sm space-y-2">
+            <h2 className="text-[22px] font-semibold leading-tight text-[#4f46ce]">Filtros</h2>
 
-            <div className="space-y-4">
+            <div className="space-y-2">
               {/* Row 1 */}
-              <div className="grid grid-cols-4 gap-3">
-                <div className="space-y-2">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Tipo de fecha</label>
+              <div className="grid grid-cols-4 gap-2">
+                <div className="space-y-1">
+                  <label className="block text-[12px] font-medium text-[#4d5571]">Tipo de fecha</label>
                   <Select
                     value={filters.tipoFecha}
                     onValueChange={(value) => handleFilterChange("tipoFecha", value)}
                   >
-                    <SelectTrigger className="h-10 text-[14px] font-normal text-[#525b76]">
+                    <SelectTrigger className="h-9 text-[13px] font-normal text-[#525b76]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -984,13 +984,13 @@ export default function ReimprimirNoflexPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Pendientes de imprimir</label>
+                <div className="space-y-1">
+                  <label className="block text-[12px] font-medium text-[#4d5571]">Pendientes de imprimir</label>
                   <Select
                     value={filters.pendienteImprimir}
                     onValueChange={(value) => handleFilterChange("pendienteImprimir", value)}
                   >
-                    <SelectTrigger className="h-10 text-[14px] font-normal text-[#525b76]">
+                    <SelectTrigger className="h-9 text-[13px] font-normal text-[#525b76]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1001,36 +1001,36 @@ export default function ReimprimirNoflexPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Fecha desde</label>
+                <div className="space-y-1">
+                  <label className="block text-[12px] font-medium text-[#4d5571]">Fecha desde</label>
                   <Input
                     type="date"
                     value={filters.fechaDesde}
                     onChange={(e) => handleFilterChange("fechaDesde", e.target.value)}
-                    className="h-10 text-[14px] font-normal text-[#525b76]"
+                    className="h-9 text-[13px] font-normal text-[#525b76]"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Fecha hasta</label>
+                <div className="space-y-1">
+                  <label className="block text-[12px] font-medium text-[#4d5571]">Fecha hasta</label>
                   <Input
                     type="date"
                     value={filters.fechaHasta}
                     onChange={(e) => handleFilterChange("fechaHasta", e.target.value)}
-                    className="h-10 text-[14px] font-normal text-[#525b76]"
+                    className="h-9 text-[13px] font-normal text-[#525b76]"
                   />
                 </div>
               </div>
 
               {/* Row 2 */}
-              <div className="grid grid-cols-4 gap-3">
-                <div className="space-y-2">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Origen</label>
+              <div className="grid grid-cols-4 gap-2">
+                <div className="space-y-1">
+                  <label className="block text-[12px] font-medium text-[#4d5571]">Origen</label>
                   <Select
                     value={filters.origen}
                     onValueChange={(value) => handleFilterChange("origen", value)}
                   >
-                    <SelectTrigger className="h-10 text-[14px] font-normal text-[#525b76]">
+                    <SelectTrigger className="h-9 text-[13px] font-normal text-[#525b76]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1044,46 +1044,46 @@ export default function ReimprimirNoflexPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Nombre de fantasía</label>
+                <div className="space-y-1">
+                  <label className="block text-[12px] font-medium text-[#4d5571]">Nombre de fantasía</label>
                   <Input
                     value={filters.nombreFantasia}
                     onChange={(e) => handleFilterChange("nombreFantasia", e.target.value)}
                     placeholder="Nombre de fantasía"
-                    className="h-10 text-[14px] font-normal text-[#525b76]"
+                    className="h-9 text-[13px] font-normal text-[#525b76]"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Destino dirección</label>
+                <div className="space-y-1">
+                  <label className="block text-[12px] font-medium text-[#4d5571]">Destino dirección</label>
                   <Input
                     value={filters.destinoDireccion}
                     onChange={(e) => handleFilterChange("destinoDireccion", e.target.value)}
                     placeholder="Destino dirección"
-                    className="h-10 text-[14px] font-normal text-[#525b76]"
+                    className="h-9 text-[13px] font-normal text-[#525b76]"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Nombre destino</label>
+                <div className="space-y-1">
+                  <label className="block text-[12px] font-medium text-[#4d5571]">Nombre destino</label>
                   <Input
                     value={filters.nombreDestinatario}
                     onChange={(e) => handleFilterChange("nombreDestinatario", e.target.value)}
                     placeholder="Nombre destino"
-                    className="h-10 text-[14px] font-normal text-[#525b76]"
+                    className="h-9 text-[13px] font-normal text-[#525b76]"
                   />
                 </div>
               </div>
 
               {/* Row 3 */}
-              <div className="grid grid-cols-4 gap-3">
-                <div className="space-y-2">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Zona de entrega</label>
+              <div className="grid grid-cols-4 gap-2">
+                <div className="space-y-1">
+                  <label className="block text-[12px] font-medium text-[#4d5571]">Zona de entrega</label>
                   <Select
                     value={filters.zonasEntrega}
                     onValueChange={(value) => handleFilterChange("zonasEntrega", value)}
                   >
-                    <SelectTrigger className="h-10 text-[14px] font-normal text-[#525b76]">
+                    <SelectTrigger className="h-9 text-[13px] font-normal text-[#525b76]">
                       <SelectValue placeholder="Todas las zonas" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1096,25 +1096,25 @@ export default function ReimprimirNoflexPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2 col-span-3">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Tracking</label>
+                <div className="space-y-1 col-span-2">
+                  <label className="block text-[12px] font-medium text-[#4d5571]">Tracking</label>
                   <textarea
                     value={filters.trackings}
                     onChange={(e) => handleFilterChange("trackings", e.target.value)}
                     placeholder="Lista de trackings separados por comas (ej.: 100, 101, 102)"
-                    className="min-h-[40px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-[14px] text-[#525b76] ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    rows={2}
+                    className="h-9 min-h-0 w-full resize-none rounded-md border border-input bg-background px-2.5 py-1.5 text-[13px] leading-tight text-[#525b76] ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    rows={1}
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-1">
+            <div className="flex items-center justify-end gap-2 pt-0.5">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleClearFilters}
-                className="h-11 rounded-xl border-[#e6eaf4] px-10 text-[14px]"
+                className="h-9 rounded-lg border-[#e6eaf4] px-6 text-[13px]"
               >
                 Borrar
               </Button>
@@ -1122,7 +1122,7 @@ export default function ReimprimirNoflexPage() {
                 type="button"
                 onClick={() => loadEnvios()}
                 disabled={isLoading}
-                className="h-11 rounded-xl bg-[#f2efff] px-10 text-[14px] font-semibold text-[#4f46ce] hover:bg-[#ece8ff]"
+                className="h-9 rounded-lg bg-[#f2efff] px-6 text-[13px] font-semibold text-[#4f46ce] hover:bg-[#ece8ff]"
               >
                 Aplicar
               </Button>
