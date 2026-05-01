@@ -819,7 +819,7 @@ export default function EnviosPage() {
           </div>
 
             {/* Filters Section */}
-          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm space-y-4 font-sans">
+          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm space-y-4 font-['Montserrat']">
             <h2 className="text-[32px] font-semibold text-[#4f46ce]">Filtros</h2>
               {/* Filtros básicos */}
               <div className="grid grid-cols-6 gap-3">
@@ -919,9 +919,9 @@ export default function EnviosPage() {
 
               {/* Filtros avanzados (mostrar/ocultar) */}
               {showAdvancedFilters && (
-                <div className="space-y-3 pt-3 border-t border-gray-200">
+                <div className="space-y-3 border-gray-200">
                   <div className="grid grid-cols-6 gap-3">
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <label className="block text-[14px] font-semibold text-[#5f6680]">ID Venta / ID pack</label>
                       <Input
                         value={filters.idVenta}
@@ -930,8 +930,7 @@ export default function EnviosPage() {
                         className="h-11 text-[14px]"
                       />
                     </div>
-                  </div>
-                  <div className="grid grid-cols-6 gap-3">
+
                     <div className="space-y-1">
                       <label className="block text-[14px] font-semibold text-[#5f6680]">Logística inversa</label>
                       <Select
@@ -1029,16 +1028,35 @@ export default function EnviosPage() {
                   </div>
 
                   <div className="grid grid-cols-6 gap-3">
-                    {userProfile !== "Cliente" && (
+                    <div className="space-y-1">
+                      <label className="block text-[14px] font-semibold text-[#5f6680]">Asignado</label>
+                      <Select
+                        value={filters.asignado}
+                        onValueChange={(value) => handleFilterChange("asignado", value)}
+                      >
+                        <SelectTrigger className="h-11 text-[14px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos</SelectItem>
+                          <SelectItem value="si">Si</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {userProfile !== "Cliente" ? (
                       <div className="space-y-1">
                         <label className="block text-[14px] font-semibold text-[#5f6680]">Nombre fantasía</label>
                         <Input
                           value={filters.nombreFantasia}
                           onChange={(e) => handleFilterChange("nombreFantasia", e.target.value)}
-                          placeholder="seleccioná el nombre fantasía"
+                          placeholder="Seleccioná el nombre fantasía"
                           className="h-11 text-[14px]"
                         />
                       </div>
+                    ) : (
+                      <div />
                     )}
 
                     <div className="space-y-1">
