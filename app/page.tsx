@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { EyeOff } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { getApiBaseUrl } from "@/lib/api-config"
@@ -61,67 +62,72 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f4f6] p-4 md:p-8">
-      <div className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-6xl overflow-hidden rounded-3xl shadow-2xl md:min-h-[680px] md:p-0">
-        <div className="relative hidden w-[62%] flex-col justify-between bg-gradient-to-br from-[#1760ff] via-[#1f63ff] to-[#2e4dff] px-10 py-10 text-white md:flex">
-          <div className="text-4xl font-semibold tracking-tight">nexo</div>
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-r from-[#1b86ff] via-[#2567ff] to-[#2f4bff]">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[8%] top-[11%] text-[58px] font-light text-white/22">×</div>
+        <div className="absolute right-[11%] top-[5%] text-[120px] font-light text-white/18">×</div>
+        <div className="absolute right-[18%] bottom-[17%] text-[128px] font-light text-white/16">×</div>
+        <div className="absolute left-[6%] bottom-[8%] text-[110px] font-light text-white/16">×</div>
+        <div className="absolute right-[6%] bottom-[8%] text-[56px] font-light text-white/18">×</div>
+      </div>
 
-          <div className="max-w-md">
-            <h1 className="text-5xl font-semibold leading-tight">
-              Optimizá tus entregas de punta a punta
-            </h1>
-            <p className="mt-6 text-lg text-blue-100">
-              Creá etiquetas, organizá entregas y seguí tus pedidos desde un solo lugar.
-            </p>
+      <div className="relative mx-auto flex min-h-screen w-full max-w-[1280px] items-center px-8 py-10 md:px-14 lg:px-16">
+        <div className="w-full max-w-[620px] text-white">
+          <div className="text-[48px] font-medium leading-none tracking-[-0.04em] md:text-[52px]">
+            nexo
           </div>
-
-          <div className="pointer-events-none absolute inset-0 opacity-15">
-            <div className="absolute left-16 top-24 text-6xl">×</div>
-            <div className="absolute right-20 top-16 text-8xl">×</div>
-            <div className="absolute right-32 bottom-24 text-7xl">×</div>
-            <div className="absolute left-32 bottom-20 text-5xl">×</div>
-          </div>
+          <h1 className="mt-24 max-w-[620px] text-[58px] font-semibold leading-[1.08] tracking-[-0.03em] md:text-[62px]">
+            Optimizá tus entregas de punta a punta
+          </h1>
+          <p className="mt-7 max-w-[560px] text-[38px] font-medium leading-[1.2] text-[#dbe7ff] md:text-[40px]">
+            Creá etiquetas, organizá entregas y seguí tus pedidos desde un solo lugar.
+          </p>
         </div>
 
-        <div className="flex w-full items-center justify-center bg-white px-6 py-8 md:w-[38%] md:px-10">
-          <div className="w-full max-w-sm space-y-5">
-            <div className="space-y-1">
-              <h2 className="text-2xl font-semibold text-[#2f4ecb]">Registrate</h2>
+        <div className="absolute right-8 top-1/2 w-full max-w-[360px] -translate-y-1/2 rounded-[12px] bg-white p-8 shadow-[0_14px_40px_rgba(14,29,120,0.28)] md:right-14 lg:right-16">
+          <h2 className="mb-5 text-center text-[34px] font-semibold text-[#2f66cc]">Registrate</h2>
+
+          {error && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
             </div>
+          )}
 
-            {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            <div>
+              <label className="mb-1 block text-[17px] font-semibold text-[#596275]">Usuario</label>
               <Input
                 type="text"
-                placeholder="Ingresá tu usuario"
+                placeholder="ingresá tu usuario"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="h-11 border-[#d8deee] text-[#1f2937] placeholder:text-[#9aa3b2] focus-visible:ring-[#2f4ecb]"
+                className="h-11 rounded-[4px] border-[#e5e9f3] bg-white px-3 text-[15px] text-[#2b3448] placeholder:text-[#b2bbcd] focus-visible:ring-[#2f66cc]"
                 required
               />
+            </div>
 
-              <Input
-                type="password"
-                placeholder="Ingresá tu contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11 border-[#d8deee] text-[#1f2937] placeholder:text-[#9aa3b2] focus-visible:ring-[#2f4ecb]"
-                required
-              />
+            <div>
+              <label className="mb-1 block text-[17px] font-semibold text-[#596275]">Contraseña</label>
+              <div className="relative">
+                <Input
+                  type="password"
+                  placeholder="ingresá tu contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-11 rounded-[4px] border-[#e5e9f3] bg-white px-3 pr-10 text-[15px] text-[#2b3448] placeholder:text-[#b2bbcd] focus-visible:ring-[#2f66cc]"
+                  required
+                />
+                <EyeOff className="pointer-events-none absolute right-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[#b4bdd0]" />
+              </div>
+            </div>
 
-              <Button
-                type="submit"
-                className="h-11 w-full rounded-lg bg-[#e6ebfb] text-[#2f4ecb] font-semibold hover:bg-[#dbe3fa]"
-              >
-                ingresar
-              </Button>
-            </form>
-          </div>
+            <Button
+              type="submit"
+              className="mt-3 h-11 w-full rounded-[6px] bg-[#e9eefb] text-[18px] font-semibold text-[#2f66cc] hover:bg-[#dfe8fb]"
+            >
+              ingresar
+            </Button>
+          </form>
         </div>
       </div>
     </div>
