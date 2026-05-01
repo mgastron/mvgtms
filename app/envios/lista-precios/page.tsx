@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DollarSign } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
+import { Montserrat } from "next/font/google"
 
 interface Cliente {
   id: number
@@ -33,6 +34,11 @@ interface ListaPrecio {
   zonas?: Zona[]
   listaPrecioSeleccionada?: string
 }
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+})
 
 export default function ListaPreciosEnvioPage() {
   const router = useRouter()
@@ -323,26 +329,22 @@ export default function ListaPreciosEnvioPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className={`min-h-screen bg-[#f7f8fc] ${montserrat.className}`}>
       <ModernHeader />
-      <main className="flex-1 overflow-auto">
-        {/* Main Content */}
-        <div className="p-6 flex justify-center">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 max-w-2xl w-full">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold text-[#6B46FF]">LISTA DE PRECIOS</h1>
-            </div>
+      <main className="px-4 pb-6 pt-4">
+        <div className="mx-auto w-full max-w-[1700px]">
+          <h1 className="mb-5 text-[34px] font-semibold tracking-tight text-[#1570ef]">Lista de precios</h1>
 
-            {/* Form */}
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-gray-700">Cliente</label>
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[560px_1fr]">
+            <div className="ml-2 rounded-2xl border border-[#e6eaf4] bg-white p-6 shadow-sm min-h-[500px]">
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Cliente</label>
                 {userProfile === "Cliente" ? (
                   <Input
                     value={clienteNombre || ""}
                     disabled
-                    className="h-9 text-sm border-gray-300 bg-gray-50"
+                    className="h-10 text-[14px] text-[#525b76]"
                     placeholder={clienteNombre ? "" : "Cargando..."}
                   />
                 ) : (
@@ -350,8 +352,8 @@ export default function ListaPreciosEnvioPage() {
                     value={formData.cliente}
                     onValueChange={(value) => handleInputChange("cliente", value)}
                   >
-                    <SelectTrigger className="h-9 text-sm border-gray-300 bg-white">
-                      <SelectValue placeholder="Seleccionar" />
+                    <SelectTrigger className="h-10 text-[14px] text-[#525b76]">
+                      <SelectValue placeholder="Seleccionar cliente" />
                     </SelectTrigger>
                     <SelectContent>
                       {clientes.map((cliente) => (
@@ -364,33 +366,33 @@ export default function ListaPreciosEnvioPage() {
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-gray-700">CP</label>
+              <div className="space-y-2">
+                <label className="block text-[14px] font-medium text-[#4d5571]">Código Postal</label>
                 <Input
                   type="text"
                   value={formData.cp}
                   onChange={(e) => handleInputChange("cp", e.target.value)}
-                  className="h-9 text-sm border-gray-300 bg-white"
-                  placeholder="Código Postal"
+                  className="h-10 text-[14px] text-[#525b76]"
+                  placeholder="Ingresá el código postal"
                 />
               </div>
 
-              <div className="pt-4">
+              <div className="pt-1">
                 <Button
                   onClick={handleCalcular}
-                  className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white h-10 text-sm font-semibold shadow-md hover:shadow-lg transition-all w-full"
+                  className="h-10 w-full rounded-xl bg-[#eef4ff] text-[14px] font-semibold text-[#1570ef] hover:bg-[#e3edff]"
                 >
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  CALCULAR
+                  Calcular
                 </Button>
               </div>
 
               {/* Resultado del cálculo */}
               {resultadoCalculo && (
-                <div className="mt-4 pt-4 border-t border-green-300">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p className="text-lg font-semibold text-green-700 text-center">
-                      Precio: <span className="font-bold text-green-600">{resultadoCalculo.precio}</span> - Zona: <span className="font-bold text-green-600">{resultadoCalculo.zona}</span>
+                <div className="mt-2 border-t border-[#edf0f7] pt-5">
+                  <div className="rounded-lg p-3 text-center">
+                    <p className="text-[28px] font-semibold text-[#4f46ce]">
+                      Precio: <span className="font-bold">{resultadoCalculo.precio}</span> - Zona:{" "}
+                      <span className="font-bold">{resultadoCalculo.zona}</span>
                     </p>
                   </div>
                 </div>
@@ -398,75 +400,67 @@ export default function ListaPreciosEnvioPage() {
 
               {/* Error si el CP no está en la lista */}
               {errorCP && (
-                <div className="mt-4 pt-4 border-t border-red-300">
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <p className="text-lg font-semibold text-red-700 text-center">
+                <div className="mt-2 border-t border-[#edf0f7] pt-5">
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                    <p className="text-[14px] font-semibold text-red-700 text-center">
                       {errorCP}
                     </p>
                   </div>
                 </div>
               )}
-            </div>
+              {!listaPrecio && (formData.cliente || userProfile === "Cliente") && (
+                <div className="mt-2 border-t border-[#edf0f7] pt-5">
+                  <p className="text-[14px] text-gray-500 text-center py-2">
+                    El cliente seleccionado no tiene una lista de precios asignada.
+                  </p>
+                </div>
+              )}
 
-            {/* Tabla de Precios */}
-            {listaPrecio && zonas.length > 0 && (
-              <div className="mt-6 border-t border-gray-200 pt-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Precios por Zona</h2>
+              {listaPrecio && !listaPrecio.zonaPropia && (!zonas || zonas.length === 0) && (
+                <div className="mt-2 border-t border-[#edf0f7] pt-5">
+                  <p className="text-[14px] text-gray-500 text-center py-2">
+                    Esta lista de precios no tiene zonas propias configuradas.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+            <div>
+              <h2 className="mb-3 text-[40px] font-semibold tracking-tight text-[#4f46ce]">Precio por zona</h2>
+              <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
-                      <tr className="bg-gradient-to-r from-[#6B46FF] to-purple-600 text-white">
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider border border-gray-300">
-                          Codigo de zona
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider border border-gray-300">
-                          Nombre zona
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider border border-gray-300">
-                          Precio costo
-                        </th>
+                      <tr className="border-b border-[#edf0f7] bg-white">
+                        <th className="px-4 py-3 text-left text-[13px] font-semibold text-[#4d5571]">Código de zona</th>
+                        <th className="px-4 py-3 text-left text-[13px] font-semibold text-[#4d5571]">Nombre de zona</th>
+                        <th className="px-4 py-3 text-left text-[13px] font-semibold text-[#4d5571]">Precio costo</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {zonas.map((zona, index) => (
-                        <tr
-                          key={zona.id || index}
-                          className={`hover:bg-purple-50 transition-colors ${
-                            index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                          }`}
-                        >
-                          <td className="px-4 py-3 text-sm text-gray-900 border border-gray-200 font-medium">
-                            {zona.codigo}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900 border border-gray-200">
-                            {zona.nombre}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900 border border-gray-200 font-semibold">
-                            {zona.valor ? `$ ${parseFloat(zona.valor).toLocaleString("es-AR")}` : "-"}
+                      {zonas.length > 0 ? (
+                        zonas.map((zona, index) => (
+                          <tr key={zona.id || index} className="border-b border-[#f0f3f9] last:border-0">
+                            <td className="px-4 py-3 text-[14px] text-[#525b76]">{zona.codigo}</td>
+                            <td className="px-4 py-3 text-[14px] text-[#525b76]">{zona.nombre}</td>
+                            <td className="px-4 py-3 text-[14px] font-medium text-[#525b76]">
+                              {zona.valor ? `$${parseFloat(zona.valor).toLocaleString("es-AR")}` : "-"}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={3} className="px-4 py-8 text-center text-[14px] text-[#8b93ad]">
+                            Seleccioná un cliente para ver precios por zona.
                           </td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>
               </div>
-            )}
-
-            {listaPrecio && !listaPrecio.zonaPropia && (!zonas || zonas.length === 0) && (
-              <div className="mt-6 border-t border-gray-200 pt-6">
-                <p className="text-sm text-gray-500 text-center py-4">
-                  Esta lista de precios no tiene zonas propias configuradas.
-                </p>
-              </div>
-            )}
-
-            {!listaPrecio && (formData.cliente || userProfile === "Cliente") && (
-              <div className="mt-6 border-t border-gray-200 pt-6">
-                <p className="text-sm text-gray-500 text-center py-4">
-                  El cliente seleccionado no tiene una lista de precios asignada.
-                </p>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       </main>
