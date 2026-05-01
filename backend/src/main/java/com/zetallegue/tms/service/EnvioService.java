@@ -160,6 +160,7 @@ public class EnvioService {
         }
         
         Envio envio = toEntity(envioDTO);
+        asegurarIdMvgParaFlex(envio);
         
         // Generar token único para tracking público si no existe (usar idMvg o tracking para unicidad)
         if (envio.getTrackingToken() == null || envio.getTrackingToken().trim().isEmpty()) {
@@ -784,6 +785,7 @@ public class EnvioService {
         envio.setFechaColecta(ahora);
         envio.setFechaUltimoMovimiento(ahora);
         envio.setColectado(true);
+        asegurarIdMvgParaFlex(envio);
         
         envio = envioRepository.save(envio);
         
@@ -859,6 +861,7 @@ public class EnvioService {
         LocalDateTime ahora = LocalDateTime.now();
         envio.setFechaColecta(ahora);
         envio.setFechaUltimoMovimiento(ahora);
+        asegurarIdMvgParaFlex(envio);
         
         envio = envioRepository.save(envio);
         
@@ -890,7 +893,26 @@ public class EnvioService {
         if (envioDTO.getLocalidad() != null) envio.setLocalidad(envioDTO.getLocalidad());
         if (envioDTO.getCodigoPostal() != null) envio.setCodigoPostal(envioDTO.getCodigoPostal());
         if (envioDTO.getObservaciones() != null) envio.setObservaciones(envioDTO.getObservaciones());
+        // Para Flex, asegurar que ID_MVG no sea igual al tracking
+        asegurarIdMvgParaFlex(envio);
         return envio;
+    }
+
+    /**
+     * Regla de negocio Flex: ID_MVG debe ser un código único de MVG y no copiar el tracking de ML.
+     */
+    private void asegurarIdMvgParaFlex(Envio envio) {
+        if (envio == null || !"Flex".equals(envio.getOrigen())) return;
+        String tracking = envio.getTracking() != null ? envio.getTracking().trim() : "";
+        String idMvg = envio.getIdMvg() != null ? envio.getIdMvg().trim() : "";
+        boolean faltaIdMvg = idMvg.isEmpty();
+        boolean igualATracking = !tracking.isEmpty() && idMvg.equalsIgnoreCase(tracking);
+        if (faltaIdMvg || igualATracking) {
+            String semilla = !tracking.isEmpty() ? "FLEX-" + tracking : "FLEX-" + System.currentTimeMillis();
+            String nuevoIdMvg = generarTrackingUnico(semilla);
+            envio.setIdMvg(nuevoIdMvg);
+            log.info("ID_MVG regenerado para Flex (tracking={}): {}", tracking, nuevoIdMvg);
+        }
     }
 
     @Transactional
