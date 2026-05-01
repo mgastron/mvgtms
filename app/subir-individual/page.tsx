@@ -539,23 +539,14 @@ export default function SubirIndividualPage() {
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
       <ModernHeader />
-      <main className={`px-4 pb-8 pt-4 ${montserrat.className}`}>
+      <main className={`px-4 pb-5 pt-3 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
-          <div className="mb-6">
-            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Subir individual</h1>
-            <p className="mt-1.5 max-w-[640px] text-[15px] leading-relaxed text-[#5d6578]">
-              Cargá un envío directo con dirección en mapa, generá la etiqueta y descargá el PDF en un solo paso.
-            </p>
-          </div>
+          <h1 className="mb-4 text-[34px] font-semibold tracking-tight text-[#1570ef]">Subir individual</h1>
 
-          <div className="ml-2 w-full max-w-[960px] rounded-2xl border border-[#e6eaf4] bg-white p-6 shadow-[0_4px_28px_-6px_rgba(20,89,233,0.12)] sm:p-8">
-            <form onSubmit={handleSubmit} className="space-y-0">
-              <section className="space-y-4">
-                <h2 className="border-b border-[#e6eaf4] pb-2 text-[15px] font-semibold tracking-wide text-[#1459e9]">
-                  Envío y tracking
-                </h2>
-                <div className="grid gap-4 pt-1 sm:grid-cols-2">
-                <div className="space-y-2">
+          <div className="ml-2 w-full max-w-[960px] rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
                   <label className="block text-[14px] font-medium text-[#4d5571]">
                     Cliente{userProfile === "Cliente" ? " *" : ""}
                   </label>
@@ -590,7 +581,7 @@ export default function SubirIndividualPage() {
                     </Select>
                   )}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="block text-[14px] font-medium text-[#4d5571]">Tracking *</label>
                   <Input
                     value={formData.tracking}
@@ -600,15 +591,10 @@ export default function SubirIndividualPage() {
                     className={inputFieldClass}
                   />
                 </div>
-                </div>
-              </section>
+              </div>
 
-              <section className="mt-8 space-y-4 border-t border-[#eef1f8] pt-8">
-                <h2 className="border-b border-[#e6eaf4] pb-2 text-[15px] font-semibold tracking-wide text-[#1459e9]">
-                  Destinatario
-                </h2>
-                <div className="grid gap-4 pt-1 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-2">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="space-y-1.5">
                   <label className="block text-[14px] font-medium text-[#4d5571]">Destinatario nombre *</label>
                   <Input
                     value={formData.destinatarioNombre}
@@ -618,7 +604,7 @@ export default function SubirIndividualPage() {
                     className={inputFieldClass}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="block text-[14px] font-medium text-[#4d5571]">Destinatario teléfono *</label>
                   <Input
                     value={formData.destinatarioTelefono}
@@ -628,7 +614,7 @@ export default function SubirIndividualPage() {
                     className={inputFieldClass}
                   />
                 </div>
-                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
                   <label className="block text-[14px] font-medium text-[#4d5571]">Destinatario email</label>
                   <Input
                     type="email"
@@ -638,48 +624,35 @@ export default function SubirIndividualPage() {
                     className={inputFieldClass}
                   />
                 </div>
-                </div>
-              </section>
+              </div>
 
-              <section className="mt-8 space-y-4 border-t border-[#eef1f8] pt-8">
-                <h2 className="border-b border-[#e6eaf4] pb-2 text-[15px] font-semibold tracking-wide text-[#1459e9]">
-                  Dirección de entrega
-                </h2>
-                <p className="text-[13px] leading-snug text-[#8890a8]">
-                  Empezá a escribir la calle y número; elegí una sugerencia para completar localidad y código postal.
-                </p>
-                <div className="rounded-xl border border-[#e6eaf4] bg-gradient-to-b from-[#fafcff] to-white p-4 shadow-sm sm:p-5">
-                  <label className="mb-2 block text-[14px] font-medium text-[#4d5571]">Dirección completa *</label>
-                  <GooglePlacesAutocomplete
-                    value={formData.direccion}
-                    onChange={(value, localidad, codigoPostal) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        direccion: value,
-                        localidad: localidad || prev.localidad,
-                        codigoPostal: codigoPostal || prev.codigoPostal,
-                      }))
-                    }}
-                  />
-                </div>
-              </section>
+              <div className="space-y-1.5">
+                <label className="block text-[14px] font-medium text-[#4d5571]">Dirección completa *</label>
+                <GooglePlacesAutocomplete
+                  value={formData.direccion}
+                  onChange={(value, localidad, codigoPostal) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      direccion: value,
+                      localidad: localidad || prev.localidad,
+                      codigoPostal: codigoPostal || prev.codigoPostal,
+                    }))
+                  }}
+                />
+              </div>
 
-              <section className="mt-8 space-y-4 border-t border-[#eef1f8] pt-8">
-                <h2 className="border-b border-[#e6eaf4] pb-2 text-[15px] font-semibold tracking-wide text-[#1459e9]">
-                  Cobro y observaciones
-                </h2>
-                <div className="grid gap-4 pt-1 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
                   <label className="block text-[14px] font-medium text-[#4d5571]">Observaciones</label>
                   <textarea
                     value={formData.observaciones}
                     onChange={(e) => handleInputChange("observaciones", e.target.value)}
-                    className="min-h-[88px] w-full resize-none rounded-xl border border-[#e6eaf4] bg-white px-3 py-2.5 text-[14px] font-medium text-[#1f2433] shadow-sm outline-none placeholder:font-normal placeholder:text-[#8890a8] focus:border-[#1570ef] focus:ring-2 focus:ring-[#1570ef]/20"
-                    rows={3}
+                    className="min-h-[68px] w-full resize-none rounded-xl border border-[#e6eaf4] bg-white px-3 py-2 text-[14px] font-medium text-[#1f2433] shadow-sm outline-none placeholder:font-normal placeholder:text-[#8890a8] focus:border-[#1570ef] focus:ring-2 focus:ring-[#1570ef]/20"
+                    rows={2}
                     placeholder="Observaciones"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="block text-[14px] font-medium text-[#4d5571]">Total a cobrar</label>
                   <Input
                     type="number"
@@ -689,7 +662,7 @@ export default function SubirIndividualPage() {
                     className={inputFieldClass}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="block text-[14px] font-medium text-[#4d5571]">Cambio / Retiro</label>
                   <Select
                     value={formData.cambioRetiro === "" ? "__none__" : formData.cambioRetiro}
@@ -705,23 +678,22 @@ export default function SubirIndividualPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                </div>
-              </section>
+              </div>
 
-              <div className="mt-8 flex flex-col gap-4 border-t border-[#e6eaf4] pt-6 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-[13px] text-[#8890a8]">Los campos con (*) son obligatorios.</p>
-                <div className="flex flex-wrap gap-3 sm:justify-end">
+              <div className="flex flex-col gap-3 border-t border-[#e6eaf4] pt-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[12px] text-[#8890a8]">Los campos con (*) son obligatorios.</p>
+                <div className="flex flex-wrap gap-2 sm:justify-end">
                   <Button
                     type="button"
                     onClick={handleClear}
-                    className="h-11 rounded-xl border border-[#e6eaf4] bg-white px-6 text-[14px] font-semibold text-[#1570ef] shadow-sm transition-colors hover:border-[#c8dafb] hover:bg-[#f7faff]"
+                    className="h-10 rounded-xl border border-[#e6eaf4] bg-white px-5 text-[14px] font-semibold text-[#1570ef] shadow-sm hover:bg-[#f7faff]"
                   >
                     Limpiar
                   </Button>
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="h-11 min-w-[140px] rounded-xl bg-[#1459e9] px-7 text-[14px] font-semibold text-white shadow-md transition-colors hover:bg-[#114bce] disabled:pointer-events-none disabled:opacity-60"
+                    className="h-10 min-w-[128px] rounded-xl bg-[#1459e9] px-6 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce] disabled:pointer-events-none disabled:opacity-60"
                   >
                     {isSubmitting ? "Subiendo…" : "Subir envío"}
                   </Button>
