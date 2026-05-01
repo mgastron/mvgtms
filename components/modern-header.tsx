@@ -133,7 +133,7 @@ export function ModernHeader() {
   return (
     <>
       <header className="sticky top-0 z-50 w-full bg-[#f7f8fc]">
-        <div className="mx-auto w-full max-w-[1700px] px-3 pt-3">
+        <div className={`mx-auto w-full max-w-[1700px] px-3 pt-3 ${montserrat.className}`}>
           <div className="flex h-[72px] items-center justify-between rounded-2xl bg-[#1459e9] px-6">
             <button onClick={() => router.push("/envios")} className="hover:opacity-90 transition-opacity">
               <img src="/logos/nexo-logo-white.png" alt="nexo" className="h-auto w-[102px]" />
@@ -147,7 +147,10 @@ export function ModernHeader() {
                     <button
                       key={item.label}
                       onClick={() => handleMainNavClick(item)}
-                      className={cn("rounded-lg px-5 py-2 text-[17px] font-medium transition-colors", isActive ? "text-white" : "text-white/70 hover:text-white")}
+                      className={cn(
+                        "rounded-lg px-5 py-2 text-[17px] transition-colors",
+                        isActive ? "font-semibold text-white" : "font-medium text-white/75 hover:text-white"
+                      )}
                     >
                       {item.label}
                     </button>
@@ -173,7 +176,7 @@ export function ModernHeader() {
           </div>
 
           {userProfile !== "Chofer" && activeMainMenu?.hasSubmenu && (
-            <div className={`mt-3 rounded-full border border-[#e6eaf4] bg-white px-2 py-1.5 shadow-sm ${montserrat.className}`}>
+            <div className="mt-3 rounded-full border border-[#e6eaf4] bg-white px-2 py-1.5 shadow-sm">
               <div className="flex w-full items-center justify-between gap-1 overflow-x-auto">
                 {activeMainMenu.submenu?.map((subItem) => {
                   const isSubActive = activeItem === subItem.label
@@ -182,8 +185,10 @@ export function ModernHeader() {
                       key={subItem.label}
                       onClick={() => handleSubmenuClick(subItem.path)}
                       className={cn(
-                        "whitespace-nowrap rounded-full px-4 py-2 text-[15px] font-medium transition-colors text-center",
-                        isSubActive ? "bg-[#f2efff] text-[#4f46ce]" : "text-[#5d6578] hover:bg-[#f5f7fb]"
+                        "whitespace-nowrap rounded-full px-4 py-2 text-[15px] transition-colors text-center",
+                        isSubActive
+                          ? "bg-[#dbeafe] font-semibold text-[#1459e9]"
+                          : "font-medium text-[#5d6578] hover:bg-[#eff6ff] hover:text-[#1459e9]"
                       )}
                       style={{ flex: "1 1 0" }}
                     >
@@ -216,7 +221,7 @@ export function ModernHeader() {
                         onClick={() => handleSubmenuClick(sub.path)}
                         className={cn(
                           "w-full rounded-lg px-3 py-2 text-left text-sm",
-                          activeItem === sub.label ? "bg-[#f2efff] text-[#4f46ce]" : "text-gray-600 hover:bg-gray-50"
+                          activeItem === sub.label ? "bg-[#dbeafe] font-semibold text-[#1459e9]" : "text-gray-600 hover:bg-[#eff6ff]"
                         )}
                       >
                         {sub.label}
