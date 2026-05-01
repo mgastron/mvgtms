@@ -4,7 +4,7 @@ import { useState } from "react"
 import { ModernHeader } from "@/components/modern-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, AlertCircle } from "lucide-react"
+import { Search, AlertCircle, ExternalLink, Package } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { errorDev } from "@/lib/logger"
 import { Montserrat } from "next/font/google"
@@ -73,50 +73,89 @@ export default function BuscadorPedidosPage() {
       <ModernHeader />
       <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
-          <h1 className="mb-4 text-[34px] font-semibold tracking-tight text-[#1570ef]">Buscador de pedidos</h1>
+          <div className="mb-5">
+            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Buscador de pedidos</h1>
+            <p className="mt-1 max-w-xl text-[15px] leading-relaxed text-[#5d6578]">
+              Mismo dato que en operaciones: abrís el seguimiento público al instante.
+            </p>
+          </div>
 
-          <div className="ml-2 w-full max-w-[560px] rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
-            <form onSubmit={handleSearch} className="space-y-3">
-              <div className="space-y-2">
-                <label htmlFor="buscador-tracking" className="block text-[14px] font-medium text-[#4d5571]">
-                  ID_MVG o tracking
-                </label>
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8890a8]" aria-hidden />
-                  <Input
-                    id="buscador-tracking"
-                    type="text"
-                    placeholder="Ingresá ID_MVG o tracking…"
-                    value={tracking}
-                    onChange={(e) => setTracking(e.target.value)}
-                    disabled={loading}
-                    className="h-10 rounded-xl border border-[#e6eaf4] bg-white pl-10 pr-3 text-[14px] font-medium text-[#1f2433] shadow-sm placeholder:font-normal placeholder:text-[#8890a8] focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"
-                  />
+          <div className="ml-2 grid w-full max-w-[900px] gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(220px,280px)]">
+            <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-[0_10px_40px_-14px_rgba(20,89,233,0.2)]">
+              <div className="h-1 bg-gradient-to-r from-[#1459e9] via-[#2f7ae8] to-[#5ba3ff]" aria-hidden />
+              <div className="p-5 sm:p-6">
+                <form onSubmit={handleSearch} className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="buscador-tracking" className="block text-[14px] font-medium text-[#4d5571]">
+                      ID_MVG o tracking
+                    </label>
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8890a8]" aria-hidden />
+                      <Input
+                        id="buscador-tracking"
+                        type="text"
+                        placeholder="Ingresá ID_MVG o tracking…"
+                        value={tracking}
+                        onChange={(e) => setTracking(e.target.value)}
+                        disabled={loading}
+                        className="h-11 rounded-xl border border-[#e6eaf4] bg-white pl-10 pr-3 text-[15px] font-medium text-[#1f2433] shadow-sm placeholder:font-normal placeholder:text-[#8890a8] focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/25 focus-visible:ring-offset-0"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={loading || !tracking.trim()}
+                    className="h-11 w-full rounded-xl bg-[#1459e9] px-6 text-[14px] font-semibold text-white shadow-md transition-shadow hover:bg-[#114bce] hover:shadow-lg disabled:pointer-events-none disabled:opacity-50 sm:w-auto sm:min-w-[140px]"
+                  >
+                    {loading ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span
+                          className="h-4 w-4 shrink-0 rounded-full border-2 border-white border-t-transparent animate-spin"
+                          aria-hidden
+                        />
+                        Buscando…
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2">
+                        <Search className="h-4 w-4" aria-hidden />
+                        Buscar
+                      </span>
+                    )}
+                  </Button>
+                </form>
+
+                <div className="mt-5 space-y-3 border-t border-[#eef1f8] pt-5">
+                  <p className="flex gap-3 text-[13px] leading-snug text-[#5d6578]">
+                    <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-[#1570ef]" aria-hidden />
+                    <span>
+                      Si hay coincidencia, <span className="font-semibold text-[#4d5571]">el seguimiento se abre en una pestaña nueva</span> para no perder esta pantalla.
+                    </span>
+                  </p>
+                  <p className="flex gap-3 text-[13px] leading-snug text-[#5d6578]">
+                    <Package className="mt-0.5 h-4 w-4 shrink-0 text-[#1570ef]" aria-hidden />
+                    <span>Podés pegar el valor tal como sale en la etiqueta o en la grilla de Envíos.</span>
+                  </p>
                 </div>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <Button
-                  type="submit"
-                  disabled={loading || !tracking.trim()}
-                  className="h-10 w-full rounded-xl bg-[#1459e9] px-6 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce] disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
-                >
-                  {loading ? (
-                    <span className="inline-flex items-center gap-2">
-                      <span
-                        className="h-4 w-4 shrink-0 rounded-full border-2 border-white border-t-transparent animate-spin"
-                        aria-hidden
-                      />
-                      Buscando…
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-2">
-                      <Search className="h-4 w-4" aria-hidden />
-                      Buscar
-                    </span>
-                  )}
-                </Button>
-              </div>
-            </form>
+            </div>
+
+            <aside className="flex flex-col rounded-2xl border border-[#e6eaf4] bg-gradient-to-b from-[#fbfdff] via-white to-[#eef4ff] p-5 shadow-sm lg:min-h-[200px]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#1459e9]">Referencia</p>
+              <p className="mt-2 text-[15px] font-semibold text-[#1f2433]">¿Dónde copio el número?</p>
+              <ul className="mt-3 flex-1 space-y-2.5 text-[13px] leading-relaxed text-[#5d6578]">
+                <li className="flex gap-2.5">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1459e9]" aria-hidden />
+                  Etiqueta o documentación del paquete.
+                </li>
+                <li className="flex gap-2.5">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1459e9]" aria-hidden />
+                  Listado principal de Envíos (columna tracking / ID).
+                </li>
+              </ul>
+              <p className="mt-5 rounded-xl border border-[#e6eaf4] bg-white/90 px-3 py-2.5 text-[12px] leading-snug text-[#8890a8]">
+                Tip: copiá y pegá el texto completo para evitar errores de tipeo.
+              </p>
+            </aside>
           </div>
         </div>
       </main>
