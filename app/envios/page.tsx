@@ -819,7 +819,7 @@ export default function EnviosPage() {
           </div>
 
             {/* Filters Section */}
-          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm space-y-4">
+          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm space-y-4 font-sans">
             <h2 className="text-[32px] font-semibold text-[#4f46ce]">Filtros</h2>
               {/* Filtros básicos */}
               <div className="grid grid-cols-6 gap-3">
@@ -933,12 +933,12 @@ export default function EnviosPage() {
                   </div>
                   <div className="grid grid-cols-6 gap-3">
                     <div className="space-y-1">
-                      <label className="block text-xs font-medium text-gray-700">Logistica Inversa</label>
+                      <label className="block text-[14px] font-semibold text-[#5f6680]">Logística inversa</label>
                       <Select
                         value={filters.logisticaInversa}
                         onValueChange={(value) => handleFilterChange("logisticaInversa", value)}
                       >
-                        <SelectTrigger className="h-8 text-sm">
+                        <SelectTrigger className="h-11 text-[14px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -950,12 +950,12 @@ export default function EnviosPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-xs font-medium text-gray-700">Domicilio</label>
+                      <label className="block text-[14px] font-semibold text-[#5f6680]">Domicilio</label>
                       <Select
                         value={filters.domicilio}
                         onValueChange={(value) => handleFilterChange("domicilio", value)}
                       >
-                        <SelectTrigger className="h-8 text-sm">
+                        <SelectTrigger className="h-11 text-[14px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -967,22 +967,22 @@ export default function EnviosPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-xs font-medium text-gray-700">Zonas de entrega</label>
+                      <label className="block text-[14px] font-semibold text-[#5f6680]">Zonas de entrega</label>
                       <Input
                         value={filters.zonasEntrega}
                         onChange={(e) => handleFilterChange("zonasEntrega", e.target.value)}
-                        placeholder="Zonas de entrega"
-                        className="h-8 text-sm"
+                        placeholder="Seleccioná la zona de entrega"
+                        className="h-11 text-[14px]"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-xs font-medium text-gray-700">Envio Turbo</label>
+                      <label className="block text-[14px] font-semibold text-[#5f6680]">Envío turbo</label>
                       <Select
                         value={filters.envioTurbo}
                         onValueChange={(value) => handleFilterChange("envioTurbo", value)}
                       >
-                        <SelectTrigger className="h-8 text-sm">
+                        <SelectTrigger className="h-11 text-[14px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -994,12 +994,12 @@ export default function EnviosPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-xs font-medium text-gray-700">Fotos</label>
+                      <label className="block text-[14px] font-semibold text-[#5f6680]">Foto</label>
                       <Select
                         value={filters.fotos}
                         onValueChange={(value) => handleFilterChange("fotos", value)}
                       >
-                        <SelectTrigger className="h-8 text-sm">
+                        <SelectTrigger className="h-11 text-[14px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1011,12 +1011,12 @@ export default function EnviosPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-xs font-medium text-gray-700">Asignado</label>
+                      <label className="block text-[14px] font-semibold text-[#5f6680]">Asignado</label>
                       <Select
                         value={filters.asignado}
                         onValueChange={(value) => handleFilterChange("asignado", value)}
                       >
-                        <SelectTrigger className="h-8 text-sm">
+                        <SelectTrigger className="h-11 text-[14px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1031,43 +1031,43 @@ export default function EnviosPage() {
                   <div className="grid grid-cols-6 gap-3">
                     {userProfile !== "Cliente" && (
                       <div className="space-y-1">
-                        <label className="block text-xs font-medium text-gray-700">Nombre fantasia</label>
+                        <label className="block text-[14px] font-semibold text-[#5f6680]">Nombre fantasía</label>
                         <Input
                           value={filters.nombreFantasia}
                           onChange={(e) => handleFilterChange("nombreFantasia", e.target.value)}
-                          placeholder="Nombre fantasia"
-                          className="h-8 text-sm"
+                          placeholder="seleccioná el nombre fantasía"
+                          className="h-11 text-[14px]"
                         />
                       </div>
                     )}
 
                     <div className="space-y-1">
-                      <label className="block text-xs font-medium text-gray-700">Destino Nombre</label>
+                      <label className="block text-[14px] font-semibold text-[#5f6680]">Destino nombre</label>
                       <Input
                         value={filters.destinoNombre}
                         onChange={(e) => handleFilterChange("destinoNombre", e.target.value)}
-                        placeholder="Destino Nombre"
-                        className="h-8 text-sm"
+                        placeholder="Escribí el nombre del destino"
+                        className="h-11 text-[14px]"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-xs font-medium text-gray-700">Destino dirección</label>
+                      <label className="block text-[14px] font-semibold text-[#5f6680]">Destino dirección</label>
                       <Input
                         value={filters.destinoDireccion}
                         onChange={(e) => handleFilterChange("destinoDireccion", e.target.value)}
-                        placeholder="Destino dirección"
-                        className="h-8 text-sm"
+                        placeholder="Escribí la dirección del destino"
+                        className="h-11 text-[14px]"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-xs font-medium text-gray-700">Cobranzas</label>
+                      <label className="block text-[14px] font-semibold text-[#5f6680]">Cobranzas</label>
                       <Select
                         value={filters.cobranzas}
                         onValueChange={(value) => handleFilterChange("cobranzas", value)}
                       >
-                        <SelectTrigger className="h-8 text-sm">
+                        <SelectTrigger className="h-11 text-[14px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
