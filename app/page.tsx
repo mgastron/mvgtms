@@ -102,27 +102,27 @@ export default function LoginPage() {
         />
       </div>
 
-      <div className="relative mx-auto min-h-screen w-full max-w-[1360px] px-8 py-10 md:px-14 lg:px-20">
-        <div className="absolute left-8 top-10 w-full max-w-[700px] text-white md:left-14 md:top-12 lg:left-20 lg:top-12">
+      <div className="relative min-h-screen w-full">
+        <div className="absolute left-[4.5%] top-[6.5%] w-full max-w-[660px] text-white">
           <img
             src="/logos/nexo-logo-white.png"
             alt="nexo"
-            className="h-auto w-[126px] md:w-[138px]"
+            className="h-auto w-[132px]"
           />
-          <h1 className="mt-20 max-w-[740px] text-[58px] font-semibold leading-[1.08] tracking-[-0.03em] md:text-[62px]">
+          <h1 className="mt-24 max-w-[680px] text-[58px] font-semibold leading-[1.08] tracking-[-0.03em]">
             Optimizá tus entregas
             <br />
             de punta a punta
           </h1>
-          <p className="mt-6 max-w-[610px] text-[23px] font-medium leading-[1.35] text-[#dbe7ff] md:text-[25px]">
+          <p className="mt-6 max-w-[620px] text-[22px] font-medium leading-[1.35] text-[#dbe7ff]">
             Creá etiquetas, organizá entregas y
             <br />
             seguí tus pedidos desde un solo lugar.
           </p>
         </div>
 
-        <div className="absolute right-10 top-1/2 w-full max-w-[400px] -translate-y-1/2 rounded-[12px] bg-white p-8 shadow-[0_16px_42px_rgba(14,29,120,0.34)] md:right-14 lg:right-16">
-          <h2 className="mb-5 text-center text-[56px] font-semibold text-[#2f66cc]">Registrate</h2>
+        <div className="absolute right-[9%] top-1/2 w-full max-w-[360px] -translate-y-1/2 rounded-[12px] bg-white p-7 shadow-[0_16px_42px_rgba(14,29,120,0.34)]">
+          <h2 className="mb-4 text-center text-[44px] font-semibold text-[#2f66cc]">Registrate</h2>
 
           {error && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -130,28 +130,28 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
-              <label className="mb-1.5 block text-[18px] font-semibold text-[#596275]">Usuario</label>
+              <label className="mb-1.5 block text-[16px] font-semibold text-[#596275]">Usuario</label>
               <Input
                 type="text"
                 placeholder="ingresá tu usuario"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="h-12 rounded-[4px] border-[#e5e9f3] bg-[#eef2fa] px-3 text-[15px] text-[#2b3448] placeholder:text-[#b2bbcd] focus-visible:ring-[#2f66cc]"
+                className="h-[46px] rounded-[4px] border-[#e5e9f3] bg-[#eef2fa] px-3 text-[14px] text-[#2b3448] placeholder:text-[#b2bbcd] focus-visible:ring-[#2f66cc]"
                 required
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[18px] font-semibold text-[#596275]">Contraseña</label>
+              <label className="mb-1.5 block text-[16px] font-semibold text-[#596275]">Contraseña</label>
               <div className="relative">
                 <Input
                   type="password"
                   placeholder="ingresá tu contraseña"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 rounded-[4px] border-[#e5e9f3] bg-[#eef2fa] px-3 pr-10 text-[15px] text-[#2b3448] placeholder:text-[#b2bbcd] focus-visible:ring-[#2f66cc]"
+                  className="h-[46px] rounded-[4px] border-[#e5e9f3] bg-[#eef2fa] px-3 pr-10 text-[14px] text-[#2b3448] placeholder:text-[#b2bbcd] focus-visible:ring-[#2f66cc]"
                   required
                 />
                 <EyeOff className="pointer-events-none absolute right-3 top-1/2 h-[15px] w-[15px] -translate-y-1/2 text-[#b4bdd0]" />
@@ -160,7 +160,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="mt-4 h-12 w-full rounded-[6px] bg-[#e9eefb] text-[22px] font-semibold text-[#2f66cc] hover:bg-[#dfe8fb]"
+              className="mt-4 h-[46px] w-full rounded-[6px] bg-[#e9eefb] text-[20px] font-semibold text-[#2f66cc] hover:bg-[#dfe8fb]"
             >
               Ingresar
             </Button>
