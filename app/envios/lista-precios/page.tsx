@@ -335,7 +335,7 @@ export default function ListaPreciosEnvioPage() {
         <div className="mx-auto w-full max-w-[1700px]">
           <h1 className="mb-5 text-[34px] font-semibold tracking-tight text-[#1570ef]">Lista de precios</h1>
 
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[560px_1fr]">
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[560px_760px]">
             <div className="ml-2 rounded-2xl border border-[#e6eaf4] bg-white p-6 shadow-sm min-h-[500px]">
               <div className="space-y-5">
                 <div className="space-y-2">
@@ -390,7 +390,7 @@ export default function ListaPreciosEnvioPage() {
               {resultadoCalculo && (
                 <div className="mt-2 border-t border-[#edf0f7] pt-5">
                   <div className="rounded-lg p-3 text-center">
-                    <p className="text-[28px] font-semibold text-[#4f46ce]">
+                    <p className="text-[18px] font-semibold text-[#4f46ce]">
                       Precio: <span className="font-bold">{resultadoCalculo.precio}</span> - Zona:{" "}
                       <span className="font-bold">{resultadoCalculo.zona}</span>
                     </p>
@@ -426,8 +426,8 @@ export default function ListaPreciosEnvioPage() {
             </div>
           </div>
 
-            <div>
-              <h2 className="mb-3 text-[40px] font-semibold tracking-tight text-[#4f46ce]">Precio por zona</h2>
+            <div className="max-w-[760px]">
+              <h2 className="mb-3 text-[28px] font-semibold tracking-tight text-[#4f46ce]">Precio por zona</h2>
               <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
@@ -442,9 +442,9 @@ export default function ListaPreciosEnvioPage() {
                       {zonas.length > 0 ? (
                         zonas.map((zona, index) => (
                           <tr key={zona.id || index} className="border-b border-[#f0f3f9] last:border-0">
-                            <td className="px-4 py-3 text-[14px] text-[#525b76]">{zona.codigo}</td>
-                            <td className="px-4 py-3 text-[14px] text-[#525b76]">{zona.nombre}</td>
-                            <td className="px-4 py-3 text-[14px] font-medium text-[#525b76]">
+                            <td className="px-4 py-2.5 text-[13px] text-[#525b76]">{zona.codigo}</td>
+                            <td className="px-4 py-2.5 text-[13px] text-[#525b76]">{zona.nombre}</td>
+                            <td className="px-4 py-2.5 text-[13px] font-medium text-[#525b76]">
                               {zona.valor ? `$${parseFloat(zona.valor).toLocaleString("es-AR")}` : "-"}
                             </td>
                           </tr>
