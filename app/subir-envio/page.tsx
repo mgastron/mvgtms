@@ -457,136 +457,97 @@ export default function SubirEnvioPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-[#f7f8fc]">
       <ModernHeader />
-      <main className="p-4">
-        <div className="mx-auto max-w-7xl">
+      <main className="px-4 pb-6 pt-4">
+        <div className="mx-auto w-full max-w-[1700px]">
+          <div className="mb-5 flex items-center justify-between">
+            <h1 className="text-[48px] font-semibold tracking-tight text-[#1570ef]">Subida de envíos</h1>
+            <Button
+              onClick={handleDescargarModelo}
+              className="h-12 rounded-xl bg-white px-6 text-[20px] font-semibold text-[#1570ef] shadow-sm border border-[#e6eaf4] hover:bg-[#f7faff]"
+            >
+              <Download className="mr-2 h-5 w-5" />
+              Descargar modelo
+            </Button>
+          </div>
 
-          {/* Main Card */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h1 className="text-2xl font-bold text-[#6B46FF]">SUBIDA ENVIOS NO FLEX</h1>
-            </div>
+          <div className="max-w-[860px] rounded-2xl border border-[#e6eaf4] bg-white p-7 shadow-sm">
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <label className="block text-[20px] font-medium text-[#4d5571]">Cliente</label>
+                {userProfile === "Cliente" ? (
+                  <Input
+                    value={clientes.find(c => c.codigo === formData.cliente)?.nombreFantasia || ""}
+                    disabled
+                    className="h-12 text-[18px] text-[#525b76]"
+                  />
+                ) : (
+                  <Select
+                    value={formData.cliente}
+                    onValueChange={(value) => handleInputChange("cliente", value)}
+                  >
+                    <SelectTrigger className="h-12 text-[18px] text-[#525b76]">
+                      <SelectValue placeholder="Seleccioná cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientes.map((cliente) => (
+                        <SelectItem key={cliente.id} value={cliente.codigo}>
+                          {cliente.codigo} - {cliente.nombreFantasia}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
 
-            {/* Content */}
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-6">
-                {/* Recuadro 1: Descargar Modelo */}
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-200 shadow-md p-6 flex flex-col">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="h-10 w-10 rounded-lg bg-green-500 flex items-center justify-center">
-                      <Download className="h-5 w-5 text-white" />
-                    </div>
-                    <h2 className="text-xl font-bold text-gray-800">Descargar Modelo</h2>
-                  </div>
-                  
-                  <div className="flex-grow flex flex-col">
-                    <div className="mt-auto space-y-4">
-                      <div className="bg-red-50 border-l-4 border-red-400 rounded-lg p-4">
-                        <div className="flex items-start gap-2">
-                          <div className="text-red-500 font-bold text-lg">⚠</div>
-                          <p className="text-sm text-red-800 font-medium">
-                            ¡Atención! Solo completar datos. No cambiar estructura, formato, ni diseño del archivo.
-                          </p>
-                        </div>
-                      </div>
+              <div className="space-y-2">
+                <label className="block text-[20px] font-medium text-[#4d5571]">Etiqueta</label>
+                <Select
+                  value={formData.etiqueta}
+                  onValueChange={(value) => handleInputChange("etiqueta", value)}
+                >
+                  <SelectTrigger className="h-12 text-[18px] text-[#525b76]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A4">A4</SelectItem>
+                    <SelectItem value="10x15">10x15</SelectItem>
+                    <SelectItem value="10x10">10x10</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                      <Button
-                        onClick={handleDescargarModelo}
-                        className="w-full h-12 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold shadow-lg transition-all duration-200 transform hover:scale-[1.02]"
-                      >
-                        <Download className="h-5 w-5 mr-2" />
-                        DESCARGAR MODELO
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Recuadro 2: Subir Modelo */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 shadow-md p-6 flex flex-col">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="h-10 w-10 rounded-lg bg-blue-500 flex items-center justify-center">
-                      <UploadIcon className="h-5 w-5 text-white" />
-                    </div>
-                    <h2 className="text-xl font-bold text-gray-800">Subir Modelo</h2>
-                  </div>
-                  
-                  <div className="space-y-4 flex-grow flex flex-col">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">Cliente</label>
-                      {userProfile === "Cliente" ? (
-                        <Input
-                          value={clientes.find(c => c.codigo === formData.cliente)?.nombreFantasia || ""}
-                          disabled
-                          className="h-11 bg-white border-gray-300"
-                        />
-                      ) : (
-                        <Select
-                          value={formData.cliente}
-                          onValueChange={(value) => handleInputChange("cliente", value)}
-                        >
-                          <SelectTrigger className="h-11 bg-white border-gray-300">
-                            <SelectValue placeholder="Seleccionar cliente" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {clientes.map((cliente) => (
-                              <SelectItem key={cliente.id} value={cliente.codigo}>
-                                {cliente.codigo} - {cliente.nombreFantasia}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">Etiqueta</label>
-                      <Select
-                        value={formData.etiqueta}
-                        onValueChange={(value) => handleInputChange("etiqueta", value)}
-                      >
-                        <SelectTrigger className="h-11 bg-white border-gray-300">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="A4">A4</SelectItem>
-                          <SelectItem value="10x15">10x15</SelectItem>
-                          <SelectItem value="10x10">10x10</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">Modelo nuevo</label>
-                      <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 bg-white hover:border-blue-400 transition-colors cursor-pointer">
-                        <input
-                          type="file"
-                          onChange={handleFileChange}
-                          accept=".xlsx,.xls,.csv"
-                          className="w-full cursor-pointer"
-                        />
-                        {selectedFile && (
-                          <p className="mt-2 text-sm text-gray-600 font-medium">
-                            Archivo seleccionado: {selectedFile.name}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mt-auto">
-                      <Button
-                        onClick={handleSubirModelo}
-                        className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                        disabled={!selectedFile}
-                      >
-                        <UploadIcon className="h-5 w-5 mr-2" />
-                        SUBIR MODELO
-                      </Button>
-                    </div>
-                  </div>
+              <div className="space-y-2">
+                <label className="block text-[20px] font-medium text-[#4d5571]">Modelo nuevo</label>
+                <div className="rounded-xl border border-dashed border-[#d6dced] bg-white p-5">
+                  <label className="flex cursor-pointer flex-col items-center justify-center gap-2">
+                    <UploadIcon className="h-6 w-6 text-[#626d91]" />
+                    <span className="text-[20px] font-semibold text-[#3f4d88] underline underline-offset-2">
+                      Adjuntar archivo
+                    </span>
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      accept=".xlsx,.xls,.csv"
+                      className="hidden"
+                    />
+                  </label>
+                  {selectedFile && (
+                    <p className="mt-3 text-center text-[16px] text-[#626d91]">
+                      {selectedFile.name}
+                    </p>
+                  )}
                 </div>
               </div>
+
+              <Button
+                onClick={handleSubirModelo}
+                className="h-12 w-full rounded-xl bg-[#eef4ff] text-[20px] font-semibold text-[#1570ef] hover:bg-[#e3edff] disabled:opacity-50"
+                disabled={!selectedFile}
+              >
+                Subir modelo
+              </Button>
             </div>
           </div>
         </div>
