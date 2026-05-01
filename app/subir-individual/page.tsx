@@ -11,6 +11,12 @@ import jsPDF from "jspdf"
 import QRCode from "qrcode"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev, errorDev } from "@/lib/logger"
+import { Montserrat } from "next/font/google"
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+})
 
 interface Cliente {
   id: number
@@ -527,32 +533,28 @@ export default function SubirIndividualPage() {
     })
   }
 
+  const inputFieldClass =
+    "h-10 rounded-xl border border-[#e6eaf4] bg-white text-[14px] text-[#525b76] shadow-sm focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-[#f7f8fc]">
       <ModernHeader />
-      <main className="p-4">
-        <div className="mx-auto max-w-5xl">
+      <main className={`px-4 pb-6 pt-4 ${montserrat.className}`}>
+        <div className="mx-auto w-full max-w-[1700px]">
+          <h1 className="mb-5 text-[34px] font-semibold tracking-tight text-[#1570ef]">Subir individual</h1>
 
-          {/* Form Card */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-200">
-              <h1 className="text-xl font-bold text-[#6B46FF]">INGRESO DE ENVIOS</h1>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="p-4 space-y-3">
-              {/* Primera fila: Cliente y Tracking */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">
-                    Cliente {userProfile === "Cliente" ? "*" : ""}
+          <div className="ml-2 w-full max-w-[960px] rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">
+                    Cliente{userProfile === "Cliente" ? " *" : ""}
                   </label>
                   {userProfile === "Cliente" ? (
                     <Input
                       value={formData.cliente}
                       disabled
-                      className="bg-gray-100 h-8 text-sm"
+                      className={`${inputFieldClass} bg-[#f5f7fb] text-[#525b76]`}
                     />
                   ) : (
                     <Select
@@ -566,7 +568,7 @@ export default function SubirIndividualPage() {
                         }))
                       }}
                     >
-                      <SelectTrigger className="h-8 text-sm">
+                      <SelectTrigger className="h-10 text-[14px] text-[#525b76]">
                         <SelectValue placeholder="Seleccionar cliente" />
                       </SelectTrigger>
                       <SelectContent>
@@ -579,65 +581,53 @@ export default function SubirIndividualPage() {
                     </Select>
                   )}
                 </div>
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">
-                    Tracking *
-                  </label>
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Tracking *</label>
                   <Input
                     value={formData.tracking}
                     onChange={(e) => handleInputChange("tracking", e.target.value)}
                     required
-                    placeholder="Ingrese el tracking"
-                    className="h-8 text-sm"
+                    placeholder="Ingresá el tracking"
+                    className={inputFieldClass}
                   />
                 </div>
               </div>
 
-              {/* Segunda fila: Destinatario */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">
-                    Destinatario nombre *
-                  </label>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Destinatario nombre *</label>
                   <Input
                     value={formData.destinatarioNombre}
                     onChange={(e) => handleInputChange("destinatarioNombre", e.target.value)}
                     required
                     placeholder="Nombre del destinatario"
-                    className="h-8 text-sm"
+                    className={inputFieldClass}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">
-                    Destinatario teléfono *
-                  </label>
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Destinatario teléfono *</label>
                   <Input
                     value={formData.destinatarioTelefono}
                     onChange={(e) => handleInputChange("destinatarioTelefono", e.target.value)}
                     required
                     placeholder="Teléfono del destinatario"
-                    className="h-8 text-sm"
+                    className={inputFieldClass}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">
-                    Destinatario email
-                  </label>
+                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Destinatario email</label>
                   <Input
                     type="email"
                     value={formData.destinatarioEmail}
                     onChange={(e) => handleInputChange("destinatarioEmail", e.target.value)}
                     placeholder="Email del destinatario"
-                    className="h-8 text-sm"
+                    className={inputFieldClass}
                   />
                 </div>
               </div>
 
-              {/* Tercera fila: Dirección */}
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-gray-700">
-                  Dirección completa *
-                </label>
+              <div className="space-y-2">
+                <label className="block text-[14px] font-medium text-[#4d5571]">Dirección completa *</label>
                 <GooglePlacesAutocomplete
                   value={formData.direccion}
                   onChange={(value, localidad, codigoPostal) => {
@@ -651,41 +641,34 @@ export default function SubirIndividualPage() {
                 />
               </div>
 
-              {/* Cuarta fila: Observaciones, Total a cobrar, Cambio/Retiro */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">
-                    Observaciones
-                  </label>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Observaciones</label>
                   <textarea
                     value={formData.observaciones}
                     onChange={(e) => handleInputChange("observaciones", e.target.value)}
-                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B46FF] focus:border-transparent resize-none"
-                    rows={2}
+                    className="min-h-[88px] w-full resize-none rounded-xl border border-[#e6eaf4] bg-white px-3 py-2.5 text-[14px] text-[#525b76] shadow-sm outline-none placeholder:text-[#8890a8] focus:border-[#1570ef] focus:ring-2 focus:ring-[#1570ef]/20"
+                    rows={3}
                     placeholder="Observaciones"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">
-                    Total a cobrar
-                  </label>
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Total a cobrar</label>
                   <Input
                     type="number"
                     value={formData.totalACobrar}
                     onChange={(e) => handleInputChange("totalACobrar", e.target.value)}
                     placeholder="0.00"
-                    className="h-8 text-sm"
+                    className={inputFieldClass}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">
-                    Cambio / Retiro
-                  </label>
+                <div className="space-y-2">
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Cambio / Retiro</label>
                   <Select
                     value={formData.cambioRetiro === "" ? "__none__" : formData.cambioRetiro}
                     onValueChange={(v) => handleInputChange("cambioRetiro", v === "__none__" ? "" : v)}
                   >
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-10 text-[14px] text-[#525b76]">
                       <SelectValue placeholder="Seleccionar" />
                     </SelectTrigger>
                     <SelectContent>
@@ -697,25 +680,22 @@ export default function SubirIndividualPage() {
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                <p className="text-xs text-gray-500">
-                  Los campos con (*) son obligatorios
-                </p>
-                <div className="flex gap-2">
+              <div className="flex flex-col gap-4 border-t border-[#e6eaf4] pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[13px] text-[#8890a8]">Los campos con (*) son obligatorios.</p>
+                <div className="flex flex-wrap gap-2 sm:justify-end">
                   <Button
                     type="button"
                     onClick={handleClear}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white h-8 px-4 text-sm"
+                    className="h-10 rounded-xl border border-[#e6eaf4] bg-white px-5 text-[14px] font-semibold text-[#1570ef] shadow-sm hover:bg-[#f7faff]"
                   >
-                    LIMPIAR
+                    Limpiar
                   </Button>
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="bg-green-500 hover:bg-green-600 text-white h-8 px-4 text-sm disabled:opacity-60 disabled:pointer-events-none"
+                    className="h-10 min-w-[120px] rounded-xl bg-[#eef4ff] px-6 text-[14px] font-semibold text-[#1570ef] shadow-sm hover:bg-[#e3edff] disabled:pointer-events-none disabled:opacity-60"
                   >
-                    {isSubmitting ? "Subiendo..." : "SUBIR"}
+                    {isSubmitting ? "Subiendo…" : "Subir"}
                   </Button>
                 </div>
               </div>

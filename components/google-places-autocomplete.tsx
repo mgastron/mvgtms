@@ -175,12 +175,13 @@ export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutoco
         placeAutocomplete.includedPrimaryTypes = ["street_address"]
 
         placeAutocomplete.style.width = "100%"
-        placeAutocomplete.style.height = "32px"
+        placeAutocomplete.style.height = "40px"
         placeAutocomplete.style.fontSize = "14px"
-        placeAutocomplete.style.padding = "6px 12px"
-        placeAutocomplete.style.border = "1px solid #d1d5db"
-        placeAutocomplete.style.borderRadius = "8px"
+        placeAutocomplete.style.padding = "8px 12px"
+        placeAutocomplete.style.border = "2px solid #1570ef"
+        placeAutocomplete.style.borderRadius = "12px"
         placeAutocomplete.style.outline = "none"
+        placeAutocomplete.style.background = "#ffffff"
 
         placeAutocomplete.addEventListener("gmp-select", async (event: any) => {
           const placePrediction = event.placePrediction
@@ -234,12 +235,12 @@ export function GooglePlacesAutocomplete({ value, onChange }: GooglePlacesAutoco
           onChange={(e) => onChange(e.target.value)}
           onFocus={handleFocus}
           placeholder="Buscar dirección (ej. Demaria 4470, CABA)..."
-          className="w-full h-8 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6B46FF] focus:border-transparent"
+          className="h-10 w-full rounded-xl border border-[#e6eaf4] bg-white px-3 text-[14px] text-[#525b76] shadow-sm outline-none placeholder:text-[#8890a8] focus:border-[#1570ef] focus:ring-2 focus:ring-[#1570ef]/20"
           autoComplete="off"
         />
       )}
       {isScriptLoaded && showWidget && !value && (
-        <div ref={containerRef} className="w-full min-h-[32px]" />
+        <div ref={containerRef} className="min-h-10 w-full" />
       )}
     </div>
   )
