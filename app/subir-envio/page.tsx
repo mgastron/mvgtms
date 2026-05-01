@@ -478,8 +478,8 @@ export default function SubirEnvioPage() {
             </Button>
           </div>
 
-          <div className="max-w-[680px] rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
-            <div className="space-y-4">
+          <div className="max-w-[560px] rounded-2xl border border-[#e6eaf4] bg-white p-6 shadow-sm min-h-[500px]">
+            <div className="space-y-5">
               <div className="space-y-2">
                 <label className="block text-[14px] font-medium text-[#4d5571]">Cliente</label>
                 {userProfile === "Cliente" ? (
@@ -526,7 +526,7 @@ export default function SubirEnvioPage() {
 
               <div className="space-y-2">
                 <label className="block text-[14px] font-medium text-[#4d5571]">Modelo nuevo</label>
-                <div className="rounded-xl border border-dashed border-[#d6dced] bg-white p-3.5">
+                <div className="rounded-xl border border-dashed border-[#d6dced] bg-white p-5">
                   <label className="flex cursor-pointer flex-col items-center justify-center gap-2">
                     <UploadIcon className="h-5 w-5 text-[#626d91]" />
                     <span className="text-[14px] font-semibold text-[#3f4d88] underline underline-offset-2">
