@@ -803,34 +803,33 @@ export default function EnviosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-[#f7f8fc]">
       <ModernHeader />
-      <main className="p-4">
-        <div className="mx-auto w-full max-w-[1700px] px-3">
-
-          {/* Main Card */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-            {/* Header */}
-            <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-[#6B46FF]/5 via-white to-white flex justify-between items-center">
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-[#6B46FF] to-purple-600 bg-clip-text text-transparent">
-                  ENVIOS
-                </h1>
-                <p className="text-sm text-gray-500 mt-1">Gestiona y rastrea todos tus envíos</p>
-              </div>
-            </div>
+      <main className="px-3 pb-4 pt-3">
+        <div className="mx-auto w-full max-w-[1700px]">
+          <div className="mb-4 flex items-center justify-between">
+            <h1 className="text-[48px] font-bold text-[#1570ef]">Envíos</h1>
+            <Button
+              onClick={handleDescargarExcel}
+              className="h-12 rounded-xl bg-[#eef4ff] px-6 text-[15px] font-semibold text-[#1570ef] hover:bg-[#e3edff]"
+            >
+              <Download className="mr-2 h-5 w-5" />
+              Descargar tabla
+            </Button>
+          </div>
 
             {/* Filters Section */}
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-br from-gray-50/50 to-white space-y-4">
+          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm space-y-4">
+            <h2 className="text-[32px] font-semibold text-[#4f46ce]">Filtros</h2>
               {/* Filtros básicos */}
               <div className="grid grid-cols-6 gap-3">
                 <div className="space-y-1">
-                  <label className="block text-xs font-medium text-gray-700">Tipo de fecha</label>
+                  <label className="block text-[14px] font-semibold text-[#5f6680]">Tipo de fecha</label>
                   <Select
                     value={filters.tipoFecha}
                     onValueChange={(value) => handleFilterChange("tipoFecha", value)}
                   >
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-11 text-[14px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -846,32 +845,32 @@ export default function EnviosPage() {
                 </div>
 
                 <div className="space-y-1" suppressHydrationWarning>
-                  <label className="block text-xs font-medium text-gray-700">Fecha desde</label>
+                  <label className="block text-[14px] font-semibold text-[#5f6680]">Fecha desde</label>
                   <Input
                     type="date"
                     value={filters.fechaDesde}
                     onChange={(e) => handleFilterChange("fechaDesde", e.target.value)}
-                    className="h-8 text-sm"
+                    className="h-11 text-[14px]"
                   />
                 </div>
 
                 <div className="space-y-1" suppressHydrationWarning>
-                  <label className="block text-xs font-medium text-gray-700">Fecha hasta</label>
+                  <label className="block text-[14px] font-semibold text-[#5f6680]">Fecha hasta</label>
                   <Input
                     type="date"
                     value={filters.fechaHasta}
                     onChange={(e) => handleFilterChange("fechaHasta", e.target.value)}
-                    className="h-8 text-sm"
+                    className="h-11 text-[14px]"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700">Estados del envio</label>
+                  <label className="block text-[14px] font-semibold text-[#5f6680]">Estados del envío</label>
                   <Select
                     value={filters.estado}
                     onValueChange={(value) => handleFilterChange("estado", value)}
                   >
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-11 text-[14px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -888,12 +887,12 @@ export default function EnviosPage() {
                 </div>
 
                 <div className="space-y-1.5" suppressHydrationWarning>
-                  <label className="block text-xs font-semibold text-gray-700">Origen</label>
+                  <label className="block text-[14px] font-semibold text-[#5f6680]">Origen</label>
                   <Select
                     value={filters.origen}
                     onValueChange={(value) => handleFilterChange("origen", value)}
                   >
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-11 text-[14px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -908,24 +907,24 @@ export default function EnviosPage() {
                 </div>
 
                 <div className="space-y-1.5" suppressHydrationWarning>
-                  <label className="block text-xs font-semibold text-gray-700">Tracking_number</label>
+                  <label className="block text-[14px] font-semibold text-[#5f6680]">N° de Tracking</label>
                   <Input
                     value={filters.tracking}
                     onChange={(e) => handleFilterChange("tracking", e.target.value)}
-                    placeholder="Tracking"
-                    className="h-8 text-sm"
+                    placeholder="Ingresá el N° de tracking"
+                    className="h-11 text-[14px]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-6 gap-3">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700">ID venta / ID pack</label>
+                  <label className="block text-[14px] font-semibold text-[#5f6680]">ID Venta / ID pack</label>
                   <Input
                     value={filters.idVenta}
                     onChange={(e) => handleFilterChange("idVenta", e.target.value)}
                     placeholder="ID venta / ID pack"
-                    className="h-8 text-sm"
+                    className="h-11 text-[14px]"
                   />
                 </div>
               </div>
@@ -1083,72 +1082,51 @@ export default function EnviosPage() {
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex gap-2 items-center">
-                <Button
-                  className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white h-8 px-4"
-                >
-                  FILTRAR
-                </Button>
-                <Button
-                  onClick={handleDescargarExcel}
-                  className="bg-green-600 hover:bg-green-700 text-white h-8 px-4"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  DESCARGAR
-                </Button>
-                <Button
-                  onClick={handleClearFilters}
-                  className="bg-orange-500 hover:bg-orange-600 text-white h-8 px-4"
-                >
-                  LIMPIAR FILTROS
-                </Button>
-                <Button
-                  onClick={() => handleFilterChange("estado", "Eliminados")}
-                  className="bg-red-600 hover:bg-red-700 text-white h-8 px-4"
-                >
-                  ELIMINADOS
-                </Button>
-                <Button
-                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                  variant="outline"
-                  className="h-8 px-3 border-[#6B46FF] text-[#6B46FF] hover:bg-[#6B46FF] hover:text-white"
-                >
-                  {showAdvancedFilters ? (
-                    <>
-                      <ChevronUp className="h-4 w-4 mr-1" />
-                      Menos filtros
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-4 w-4 mr-1" />
-                      Más filtros
-                    </>
-                  )}
-                </Button>
+            <div className="flex items-center justify-between pt-1">
+              <Button
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                variant="ghost"
+                className="h-10 px-2 text-[16px] font-semibold text-[#4f46ce] hover:bg-transparent hover:text-[#4338ca]"
+              >
+                {showAdvancedFilters ? (
+                  <>
+                    Ver menos
+                    <ChevronUp className="ml-1 h-4 w-4" />
+                  </>
+                ) : (
+                  <>
+                    Ver más
+                    <ChevronDown className="ml-1 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+              <div className="flex gap-3">
+                <Button onClick={handleClearFilters} variant="outline" className="h-11 px-10 text-[14px] rounded-xl">Borrar</Button>
+                <Button onClick={() => loadEnvios(0, itemsPerPage)} className="h-11 px-10 text-[14px] rounded-xl bg-[#f2efff] text-[#4f46ce] hover:bg-[#ece8ff]">Aplicar</Button>
               </div>
             </div>
+          </div>
 
             {/* Table */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200/50 overflow-hidden">
+          <div className="mt-4 rounded-xl border border-[#e6eaf4] bg-white overflow-hidden">
               <div className="overflow-x-auto" suppressHydrationWarning>
                 <table className="w-full border-collapse table-fixed" style={{ tableLayout: 'fixed', minWidth: '1220px' }}>
                   <thead>
-                    <tr className="bg-gradient-to-r from-gray-50 via-gray-50 to-gray-100 border-b-2 border-gray-200">
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '44px' }}>QR</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '110px' }}>Nombre fantasia</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '105px' }}>IDML</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '60px' }}>ORIGEN</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '120px' }}>Tracking</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '120px' }}>ID_MVG</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '120px' }}>Fecha venta</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '125px' }}>Fecha Zeta Llegue</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '130px' }}>Destino nombre</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '70px' }}>Destino cp</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '90px' }}>Zona Entrega</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '110px' }}>Zona Costo</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '110px' }}>Chofer</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-tight" style={{ width: '110px' }}>Estado</th>
+                    <tr className="bg-white border-b border-[#edf0f7]">
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '44px' }}>QR</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Nombre de fantasia</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '105px' }}>IDML</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '60px' }}>Origen</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Tracking</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>ID_MVG</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Fecha de venta</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '125px' }}>Fecha de llegada</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '130px' }}>Destino nombre</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '70px' }}>CP</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '90px' }}>Zona</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Zona Costo</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Chofer</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Estado</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1324,7 +1302,6 @@ export default function EnviosPage() {
               </div>
             </div>
           </div>
-        </div>
 
         {/* Envio Detail Modal (no se muestra al Chofer: solo ve la tabla y puede cambiar estados) */}
         {userProfile !== "Chofer" && (

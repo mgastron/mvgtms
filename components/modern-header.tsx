@@ -1,30 +1,29 @@
 "use client"
 
-import { Truck, FileText, Package, Wrench, Users, DollarSign, Route, ChevronDown, Upload, Printer, FileUp, FileCheck, Search, Menu, X, Layers, FileBarChart } from "lucide-react"
+import { Truck, Wrench, Users, DollarSign, Route, Upload, Printer, FileUp, FileCheck, Search, Menu, X, Layers, FileBarChart } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { UserProfile } from "@/components/user-profile"
-import { MvgLogo } from "@/components/MvgLogo"
 
 const allMenuItems = [
-  { 
-    icon: Truck, 
-    label: "Envíos", 
+  {
+    icon: Truck,
+    label: "Envíos",
     hasSubmenu: true,
     submenu: [
-      { icon: Upload, label: "Subir envio", path: "/subir-envio" },
       { icon: Truck, label: "Envios", path: "/envios" },
-      { icon: DollarSign, label: "Lista de Precios", path: "/envios/lista-precios" },
-      { icon: Printer, label: "Reimprimir NoFlex", path: "/reimprimir-noflex" },
+      { icon: Upload, label: "Subir envíos", path: "/subir-envio" },
+      { icon: DollarSign, label: "Lista de precios", path: "/envios/lista-precios" },
+      { icon: Printer, label: "Reimprimir no flex", path: "/reimprimir-noflex" },
       { icon: FileUp, label: "Subir individual", path: "/subir-individual" },
       { icon: FileUp, label: "Subir Flex Manual", path: "/subir-flex-manual" },
-      { icon: Search, label: "Buscador de Pedidos", path: "/sistema/buscador-pedidos" },
-    ]
+      { icon: Search, label: "Buscador de pedidos", path: "/sistema/buscador-pedidos" },
+    ],
   },
-  { 
-    icon: Wrench, 
-    label: "Sistema", 
+  {
+    icon: Wrench,
+    label: "Sistema",
     hasSubmenu: true,
     submenu: [
       { icon: Users, label: "Usuarios", path: "/usuarios" },
@@ -32,57 +31,40 @@ const allMenuItems = [
       { icon: FileBarChart, label: "Informes", path: "/sistema/informes" },
       { icon: DollarSign, label: "Lista Precios", path: "/lista-precios" },
       { icon: FileCheck, label: "Estado Órdenes", path: "/sistema/estado-ordenes" },
-    ]
+    ],
   },
-  { 
-    icon: Users, 
-    label: "Clientes", 
+  {
+    icon: Users,
+    label: "Clientes",
     hasSubmenu: false,
-    path: "/clientes"
+    path: "/clientes",
   },
-  { 
-    icon: Route, 
-    label: "Ruteate", 
+  {
+    icon: Route,
+    label: "Ruteate",
     hasSubmenu: true,
     submenu: [
       { icon: Route, label: "Geochoferes", path: "/ruteate/geochoferes" },
       { icon: FileCheck, label: "Cierre", path: "/ruteate/cierre" },
-    ]
+    ],
   },
 ]
 
 export function ModernHeader() {
   const router = useRouter()
   const pathname = usePathname()
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userProfile, setUserProfile] = useState<string | null>(null)
-  
+
   useEffect(() => {
     const profile = sessionStorage.getItem("userProfile")
     setUserProfile(profile)
   }, [])
-  
-  // Para perfil Cliente: solo ítems de Envíos, mostrados directos en la barra (sin desplegable)
-  const enviosFlatItems = allMenuItems
-    .find((i) => i.label === "Envíos")
-    ?.submenu?.map((sub) => ({ icon: sub.icon, label: sub.label, path: sub.path, hasSubmenu: false as const })) ?? []
 
-  // Opciones que el Coordinador no debe ver
-  const coordinadorOcultarSubmenuLabels = ["Lista de Precios", "Lista Precios", "Estado Órdenes"]
+  const coordinadorOcultarSubmenuLabels = ["Lista de precios", "Lista Precios", "Estado Órdenes"]
 
-  // Filtrar elementos del menú según el perfil del usuario
   const getFilteredMenuItems = () => {
-    if (userProfile === "Cliente") {
-      return enviosFlatItems
-    }
-
-    // Chofer y Cliente no ven Ruteate; el resto (Administrativo, etc.) sí
-    if (userProfile === "Chofer") {
-      return allMenuItems.filter((item) => item.label !== "Ruteate")
-    }
-
-    // Coordinador: mismo menú que admin pero sin Lista Precios, Estado Órdenes ni Envios/Lista de Precios
+    if (userProfile === "Chofer") return allMenuItems.filter((item) => item.label !== "Ruteate")
     if (userProfile === "Coordinador") {
       return allMenuItems.map((item) => {
         if (!item.hasSubmenu || !item.submenu) return item
@@ -92,258 +74,152 @@ export function ModernHeader() {
         }
       })
     }
-
     return allMenuItems
   }
 
   const menuItems = getFilteredMenuItems()
-  
-  // Determinar el item activo basado en la ruta actual
+
   const getActiveItem = () => {
     if (pathname?.includes("/usuarios")) return "Usuarios"
     if (pathname?.includes("/sistema/grupos")) return "Grupos"
     if (pathname?.includes("/sistema/informes")) return "Informes"
     if (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) return "Lista Precios"
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
-    if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de Pedidos"
+    if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de pedidos"
     if (pathname?.includes("/clientes")) return "Clientes"
-    if (pathname?.includes("/reimprimir-noflex")) return "Reimprimir NoFlex"
+    if (pathname?.includes("/reimprimir-noflex")) return "Reimprimir no flex"
     if (pathname?.includes("/subir-individual")) return "Subir individual"
-    if (pathname?.includes("/subir-envio")) return "Subir envio"
+    if (pathname?.includes("/subir-envio")) return "Subir envíos"
     if (pathname?.includes("/subir-flex-manual")) return "Subir Flex Manual"
-    if (pathname?.includes("/envios/lista-precios")) return "Lista de Precios"
+    if (pathname?.includes("/envios/lista-precios")) return "Lista de precios"
     if (pathname?.includes("/envios")) return "Envios"
     if (pathname?.includes("/ruteate/geochoferes")) return "Geochoferes"
     if (pathname?.includes("/ruteate/cierre")) return "Cierre"
     return null
   }
-  
-  const activeItem = getActiveItem()
-  
-  // Determinar qué menú principal está activo
+
   const getActiveMainItem = () => {
-    // Verificar rutas de Envíos primero (incluye buscador de pedidos)
     if (pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir") || pathname?.includes("/envios") || pathname?.includes("/sistema/buscador-pedidos")) return "Envíos"
-    // Verificar rutas de Sistema (excluyendo buscador-pedidos que está en Envíos)
     if (pathname?.includes("/usuarios") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes") || (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) || pathname?.includes("/sistema/estado-ordenes")) return "Sistema"
     if (pathname?.includes("/clientes")) return "Clientes"
     if (pathname?.includes("/ruteate")) return "Ruteate"
     return null
   }
-  
+
+  const activeItem = getActiveItem()
   const activeMainItem = getActiveMainItem()
-  
-  const handleItemClick = (item: typeof allMenuItems[0]) => {
-    if (item.hasSubmenu) {
-      setOpenDropdown(openDropdown === item.label ? null : item.label)
-    } else if (item.path) {
-      router.push(item.path)
-      setMobileMenuOpen(false)
+  const activeMainMenu = menuItems.find((item) => item.label === activeMainItem)
+
+  const handleMainNavClick = (item: typeof allMenuItems[0]) => {
+    if (!item.hasSubmenu) {
+      if (item.path) router.push(item.path)
+      return
     }
+    const firstPath = item.submenu?.[0]?.path
+    if (firstPath) router.push(firstPath)
   }
-  
+
   const handleSubmenuClick = (path: string) => {
     router.push(path)
-    setOpenDropdown(null)
     setMobileMenuOpen(false)
   }
-  
-  // Cerrar dropdowns al hacer click fuera
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement
-      if (!target.closest('.dropdown-container')) {
-        setOpenDropdown(null)
-      }
-    }
-    
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-gray-200/50 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/90 shadow-sm shadow-gray-200/50" suppressHydrationWarning>
-        <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center justify-between">
-            {/* Logo MVG */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => router.push("/envios")}
-                className="flex items-center gap-3 hover:opacity-90 transition-opacity"
-              >
-                <MvgLogo size="md" />
-                <div className="hidden sm:block">
-                  <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-cyan-500 to-teal-500 bg-clip-text text-transparent tracking-tight">
-                    MVG
-                  </span>
-                </div>
-              </button>
-            </div>
+      <header className="sticky top-0 z-50 w-full bg-[#f7f8fc]">
+        <div className="mx-auto w-full max-w-[1700px] px-3 pt-3">
+          <div className="flex h-[72px] items-center justify-between rounded-2xl bg-[#1459e9] px-6">
+            <button onClick={() => router.push("/envios")} className="hover:opacity-90 transition-opacity">
+              <img src="/logos/nexo-logo-white.png" alt="nexo" className="h-auto w-[102px]" />
+            </button>
 
-            {/* Desktop Navigation (oculta para Chofer: solo logo + usuario) */}
             {userProfile !== "Chofer" && (
-            <nav className="hidden md:flex items-center gap-1">
-              {menuItems.map((item) => {
-                const Icon = item.icon
-                const isActive = item.hasSubmenu ? activeMainItem === item.label : activeItem === item.label
-                const isOpen = openDropdown === item.label
-                
-                return (
-                  <div key={item.label} className="relative dropdown-container">
+              <nav className="hidden md:flex items-center gap-2">
+                {menuItems.map((item) => {
+                  const isActive = item.hasSubmenu ? activeMainItem === item.label : activeItem === item.label
+                  return (
                     <button
-                      onClick={() => handleItemClick(item)}
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                        isActive
-                          ? "bg-gradient-to-r from-indigo-50 via-cyan-50 to-teal-50 text-indigo-700 shadow-sm border border-indigo-100"
-                          : "text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:text-gray-900"
-                      )}
+                      key={item.label}
+                      onClick={() => handleMainNavClick(item)}
+                      className={cn("rounded-lg px-5 py-2 text-[15px] font-medium transition-colors", isActive ? "text-white" : "text-white/70 hover:text-white")}
                     >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                      {item.hasSubmenu && (
-                        <ChevronDown className={cn(
-                          "h-4 w-4 transition-transform duration-200",
-                          isOpen && "rotate-180"
-                        )} />
-                      )}
+                      {item.label}
                     </button>
-                    
-                    {/* Dropdown Menu */}
-                    {item.hasSubmenu && isOpen && (
-                      <div className="absolute top-full left-0 mt-2 w-56 rounded-xl bg-white shadow-xl border border-gray-200 py-2 z-50 transition-all duration-200">
-                        {item.submenu?.map((subItem) => {
-                          const SubIcon = subItem.icon
-                          const isSubActive = activeItem === subItem.label
-                          
-                          return (
-                            <button
-                              key={subItem.label}
-                              onClick={() => handleSubmenuClick(subItem.path)}
-                              className={cn(
-                                "w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors",
-                                isSubActive
-                                  ? "bg-gradient-to-r from-indigo-50 via-cyan-50 to-teal-50 text-indigo-700 font-medium border-l-2 border-indigo-500"
-                                  : "text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-cyan-50"
-                              )}
-                            >
-                              <SubIcon className="h-4 w-4" />
-                              <span>{subItem.label}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </nav>
+                  )
+                })}
+              </nav>
             )}
 
-            {/* Chofer: solo enlace a Mis envíos + perfil */}
-            {userProfile === "Chofer" && (
-              <button
-                onClick={() => router.push("/envios")}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                  pathname?.includes("/envios") && !pathname?.includes("/lista-precios")
-                    ? "bg-gradient-to-r from-indigo-50 to-cyan-50 text-indigo-700 border border-indigo-100"
-                    : "text-gray-700 hover:bg-gray-100"
-                )}
-              >
-                <Truck className="h-4 w-4" />
-                <span>Mis envíos</span>
-              </button>
-            )}
-
-            {/* User Profile & Mobile Menu Button */}
             <div className="flex items-center gap-4">
-              <div className={userProfile === "Chofer" ? "block" : "hidden md:block"}>
+              <div className={cn(
+                userProfile === "Chofer" ? "block" : "hidden md:block",
+                "text-white [&_button]:!text-white [&_button]:hover:!bg-white/10 [&_button_svg]:!text-white"
+              )}>
                 <UserProfile />
               </div>
-              
-              {/* Mobile Menu Button (oculto para Chofer) */}
+
               {userProfile !== "Chofer" && (
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                {mobileMenuOpen ? (
-                  <X className="h-6 w-6 text-gray-700" />
-                ) : (
-                  <Menu className="h-6 w-6 text-gray-700" />
-                )}
-              </button>
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors text-white"
+                >
+                  {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </button>
               )}
             </div>
           </div>
+
+          {userProfile !== "Chofer" && activeMainMenu?.hasSubmenu && (
+            <div className="mt-3 rounded-full border border-[#e6eaf4] bg-white px-2 py-1.5 shadow-sm">
+              <div className="flex items-center gap-1 overflow-x-auto">
+                {activeMainMenu.submenu?.map((subItem) => {
+                  const isSubActive = activeItem === subItem.label
+                  return (
+                    <button
+                      key={subItem.label}
+                      onClick={() => handleSubmenuClick(subItem.path)}
+                      className={cn("whitespace-nowrap rounded-full px-5 py-2 text-[15px] font-medium transition-colors", isSubActive ? "bg-[#f2efff] text-[#4f46ce]" : "text-[#5d6578] hover:bg-[#f5f7fb]")}
+                    >
+                      {subItem.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Mobile Menu (no se abre para Chofer) */}
-      {mobileMenuOpen && userProfile !== "Chofer" && (
-        <div className="md:hidden fixed inset-0 z-40 bg-white pt-16">
-          <div className="border-b border-gray-200 px-4 py-4 space-y-1 max-h-[calc(100vh-4rem)] overflow-y-auto">
-            {menuItems.map((item) => {
-              const Icon = item.icon
-              const isActive = item.hasSubmenu ? activeMainItem === item.label : activeItem === item.label
-              const isOpen = openDropdown === item.label
-              
-              return (
-                <div key={item.label}>
-                  <button
-                    onClick={() => handleItemClick(item)}
-                    className={cn(
-                      "w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-gradient-to-r from-indigo-50 via-cyan-50 to-teal-50 text-indigo-700"
-                        : "text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-cyan-50"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                    </div>
-                    {item.hasSubmenu && (
-                      <ChevronDown className={cn(
-                        "h-4 w-4 transition-transform duration-200",
-                        isOpen && "rotate-180"
-                      )} />
-                    )}
-                  </button>
-                  
-                  {/* Mobile Submenu */}
-                  {item.hasSubmenu && isOpen && (
-                    <div className="mt-1 ml-4 space-y-1 border-l-2 border-indigo-200 pl-4">
-                      {item.submenu?.map((subItem) => {
-                        const SubIcon = subItem.icon
-                        const isSubActive = activeItem === subItem.label
-                        
-                        return (
-                          <button
-                            key={subItem.label}
-                            onClick={() => handleSubmenuClick(subItem.path)}
-                            className={cn(
-                              "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors",
-                              isSubActive
-                                ? "bg-gradient-to-r from-indigo-50 via-cyan-50 to-teal-50 text-indigo-700 font-medium border-l-2 border-indigo-500"
-                                : "text-gray-600 hover:bg-gradient-to-r hover:from-gray-50 hover:to-cyan-50"
-                            )}
-                          >
-                            <SubIcon className="h-4 w-4" />
-                            <span>{subItem.label}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-            
-            {/* Mobile User Profile */}
-            <div className="pt-4 border-t border-gray-200 mt-4">
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-40 bg-white pt-20 px-4">
+          <div className="space-y-2 max-h-[calc(100vh-6rem)] overflow-y-auto">
+            {menuItems.map((item) => (
+              <div key={item.label} className="rounded-xl border border-gray-200 p-3">
+                <button
+                  onClick={() => handleMainNavClick(item)}
+                  className={cn("w-full text-left text-sm font-semibold", activeMainItem === item.label ? "text-[#1459e9]" : "text-gray-700")}
+                >
+                  {item.label}
+                </button>
+                {item.hasSubmenu && item.submenu && (
+                  <div className="mt-2 space-y-1">
+                    {item.submenu.map((sub) => (
+                      <button
+                        key={sub.label}
+                        onClick={() => handleSubmenuClick(sub.path)}
+                        className={cn(
+                          "w-full rounded-lg px-3 py-2 text-left text-sm",
+                          activeItem === sub.label ? "bg-[#f2efff] text-[#4f46ce]" : "text-gray-600 hover:bg-gray-50"
+                        )}
+                      >
+                        {sub.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+            <div className="pt-2 border-t border-gray-200">
               <UserProfile />
             </div>
           </div>
@@ -352,4 +228,3 @@ export function ModernHeader() {
     </>
   )
 }
-
