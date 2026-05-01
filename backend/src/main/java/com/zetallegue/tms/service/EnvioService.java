@@ -59,9 +59,25 @@ public class EnvioService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     
     /** Busca por tracking o por ID_MVG (el código que usa el buscador de pedidos). */
+    @Transactional
     public java.util.Optional<Envio> findByTracking(String tracking) {
         List<Envio> envios = envioRepository.findByTrackingOrIdMvgAndEliminadoFalse(tracking);
-        return envios.isEmpty() ? java.util.Optional.empty() : java.util.Optional.of(envios.get(0));
+        if (envios.isEmpty()) {
+            return java.util.Optional.empty();
+        }
+        Envio envio = envios.get(0);
+        if (envio.getTrackingToken() == null || envio.getTrackingToken().trim().isEmpty()) {
+            String base = (envio.getIdMvg() != null && !envio.getIdMvg().trim().isEmpty())
+                    ? envio.getIdMvg()
+                    : (envio.getTracking() != null && !envio.getTracking().trim().isEmpty()
+                        ? envio.getTracking()
+                        : String.valueOf(envio.getId()));
+            String trackingToken = generarTrackingToken(base, envio.getId());
+            envio.setTrackingToken(trackingToken);
+            envio = envioRepository.save(envio);
+            log.info("Tracking token regenerado para envío {}: {}", envio.getId(), trackingToken);
+        }
+        return java.util.Optional.of(envio);
     }
 
     @Transactional(readOnly = true)
@@ -330,7 +346,7 @@ public class EnvioService {
         if (envioDTO.getEmail() != null) envio.setEmail(envioDTO.getEmail());
         if (envioDTO.getImpreso() != null) envio.setImpreso(envioDTO.getImpreso());
         if (envioDTO.getObservaciones() != null) envio.setObservaciones(envioDTO.getObservaciones());
-        if (envioDTO.getTotalACobrar() != null) envio.setTotalACobrar(envioDTO.getTotalACobrar());
+        if (envioDTO.getTotalACobrar() != null) envio.setTotalACobrar(normalizarTotalACobrar(envioDTO.getTotalACobrar()));
         if (envioDTO.getCambioRetiro() != null) envio.setCambioRetiro(envioDTO.getCambioRetiro());
         if (envioDTO.getLocalidad() != null) envio.setLocalidad(envioDTO.getLocalidad());
         if (envioDTO.getCodigoPostal() != null) envio.setCodigoPostal(envioDTO.getCodigoPostal());
@@ -368,6 +384,13 @@ public class EnvioService {
         
         LocalDateTime ahora = LocalDateTime.now();
         String estadoAnterior = envio.getEstado();
+
+        // No permitir pasar a "En camino al destinatario" sin haber pasado por "Retirado"
+        if ("En camino al destinatario".equals(estado) && "A retirar".equals(estadoAnterior)) {
+            throw new RuntimeException("No se puede pasar a 'En camino al destinatario' desde 'A retirar'. " +
+                    "El envío debe marcarse primero como 'Retirado' (colectado).");
+        }
+
         envio.setEstado(estado);
         envio.setFechaUltimoMovimiento(ahora);
         
@@ -379,7 +402,7 @@ public class EnvioService {
             if (dniRecibio != null) envio.setDniRecibio(dniRecibio);
         }
         
-        // Actualizar fecha específica según el estado
+        // Actualizar fecha específica y flags según el estado
         switch (estado) {
             case "Entregado":
                 envio.setFechaEntregado(ahora);
@@ -387,7 +410,10 @@ public class EnvioService {
             case "Cancelado":
                 envio.setFechaCancelado(ahora);
                 break;
-            // Agregar más casos según sea necesario
+            case "Retirado":
+                envio.setFechaColecta(ahora);
+                envio.setColectado(true);
+                break;
         }
         
         envio = envioRepository.save(envio);
@@ -463,28 +489,69 @@ public class EnvioService {
         if (qrData == null || qrData.trim().isEmpty()) {
             return null;
         }
+        String input = qrData.trim();
         
         // Normalizar el QR si es JSON (para que coincida independientemente de espacios/orden)
-        String qrNormalizado = normalizarQR(qrData);
+        String qrNormalizado = normalizarQR(input);
         
-        // Primero buscar en la base de datos por qrData exacto
+        // 1) Buscar por qrData exacto (lo que llevan las etiquetas impresas)
         Envio envio = envioRepository.findByQrDataParaColectar(qrNormalizado);
         if (envio != null) {
             return toDTO(envio);
         }
-        
-        // También buscar por qrData original (por si acaso)
-        if (!qrNormalizado.equals(qrData)) {
-            envio = envioRepository.findByQrDataParaColectar(qrData);
+        if (!qrNormalizado.equals(input)) {
+            envio = envioRepository.findByQrDataParaColectar(input);
             if (envio != null) {
                 return toDTO(envio);
             }
         }
         
-        // Si no se encuentra, intentar buscar por mlShipmentId si es un QR Flex
+        // 2) Si el QR es la URL del tracking público (ej. https://.../tracking/TOKEN), extraer token y buscar por trackingToken
+        if (input.contains("/tracking/")) {
+            String token = input.substring(input.indexOf("/tracking/") + "/tracking/".length()).split("[?#]")[0].trim();
+            if (!token.isEmpty()) {
+                List<Envio> porToken = envioRepository.findByTrackingTokenAndEliminadoFalse(token);
+                if (!porToken.isEmpty()) {
+                    log.info("Envío encontrado por trackingToken (desde URL): {}", token);
+                    return toDTO(porToken.get(0));
+                }
+            }
+        }
+        
+        // 3) Buscar por trackingToken (por si escanearon solo el token o vino token= en query string)
+        List<Envio> porToken = envioRepository.findByTrackingTokenAndEliminadoFalse(input);
+        if (!porToken.isEmpty()) {
+            log.info("Envío encontrado por trackingToken: {}", input);
+            return toDTO(porToken.get(0));
+        }
+        
+        // 4) Buscar por idMvg o tracking (mismo valor que usa el buscador de pedidos)
+        List<Envio> porTrackingOIdMvg = envioRepository.findByTrackingOrIdMvgAndEliminadoFalse(input);
+        if (!porTrackingOIdMvg.isEmpty()) {
+            log.info("Envío encontrado por tracking/idMvg: {}", input);
+            return toDTO(porTrackingOIdMvg.get(0));
+        }
+        
+        // 4b) Si el QR impreso era "tracking-id" (cuando qrData estaba vacío), buscar por id
+        int lastDash = input.lastIndexOf('-');
+        if (lastDash > 0 && lastDash < input.length() - 1) {
+            String posibleId = input.substring(lastDash + 1);
+            if (posibleId.matches("\\d+")) {
+                try {
+                    Long id = Long.parseLong(posibleId);
+                    java.util.Optional<Envio> porId = envioRepository.findById(id);
+                    if (porId.isPresent() && !Boolean.TRUE.equals(porId.get().getEliminado())) {
+                        log.info("Envío encontrado por id (formato tracking-id): {}", id);
+                        return toDTO(porId.get());
+                    }
+                } catch (NumberFormatException ignored) { }
+            }
+        }
+        
+        // 5) Si no se encuentra, intentar buscar por mlShipmentId si es un QR Flex
         try {
             // Extraer ID del shipment del QR
-            String shipmentId = mercadoLibreService.extraerShipmentIdDelQR(qrData);
+            String shipmentId = mercadoLibreService.extraerShipmentIdDelQR(input);
             
             // Buscar por mlShipmentId (más confiable que buscar por qrData que puede variar)
             java.util.Optional<Envio> envioPorShipmentId = envioRepository.findByMlShipmentId(shipmentId);
@@ -864,16 +931,13 @@ public class EnvioService {
         boolean esFlex = "Flex".equals(envio.getOrigen());
         
         // Si es "PENDIENTES DEPÓSITO", NO cambiar el estado (mantener el estado actual)
-        // Si NO es "PENDIENTES DEPÓSITO" y NO es Flex:
-        //   - Si viene de PENDIENTES DEPÓSITO y está en "A retirar", cambiar a "En camino al destinatario"
-        //   - Si el estado es "Retirado", cambiarlo a "En camino al destinatario"
-        //   - Si ya está en "En camino al destinatario", mantenerlo
+        // Si NO es "PENDIENTES DEPÓSITO" y NO es Flex: solo pasar a "En camino al destinatario" desde "Retirado".
+        // No se permite pasar de "A retirar" a "En camino" sin haber marcado antes como Retirado (colectado).
         if (!esPendientesDeposito && !esFlex) {
-            if ("Retirado".equals(envio.getEstado()) || 
-                (vieneDePendientesDeposito && "A retirar".equals(envio.getEstado()))) {
+            if ("Retirado".equals(envio.getEstado())) {
                 envio.setEstado("En camino al destinatario");
             }
-            // Si ya está en "En camino al destinatario", mantener el estado
+            // Si está en "A retirar" solo se asigna el chofer; el estado sigue "A retirar" hasta que se marque Retirado
         }
         // Si es "PENDIENTES DEPÓSITO" o Flex, mantener el estado actual
         
@@ -943,6 +1007,19 @@ public class EnvioService {
 
     @Transactional
     public List<EnvioDTO> crearEnviosMasivos(List<EnvioDTO> enviosDTO) {
+        // Para cada envío Directo con tracking: generar ID_MVG único (alfanumérico), igual que en crearEnvio
+        for (int i = 0; i < enviosDTO.size(); i++) {
+            EnvioDTO dto = enviosDTO.get(i);
+            if ("Directo".equals(dto.getOrigen()) && dto.getTracking() != null && !dto.getTracking().trim().isEmpty()) {
+                String semilla = dto.getTracking() + "-" + i;
+                String idMvg = generarTrackingUnico(semilla);
+                dto.setIdMvg(idMvg);
+                if (dto.getQrData() == null || dto.getQrData().equals(dto.getTracking())) {
+                    dto.setQrData(idMvg);
+                }
+                log.info("ID_MVG generado para envío Directo masivo [{}] - Semilla: {}, ID_MVG: {}", i, dto.getTracking(), idMvg);
+            }
+        }
         // Calcular costo de envío para envíos directos antes de guardar
         for (EnvioDTO envioDTO : enviosDTO) {
             if ("Directo".equals(envioDTO.getOrigen()) && envioDTO.getCliente() != null && !envioDTO.getCliente().trim().isEmpty()) {
@@ -1292,7 +1369,21 @@ public class EnvioService {
         dto.setDeadline(envio.getDeadline());
         dto.setMlShipmentId(envio.getMlShipmentId());
         dto.setTrackingToken(envio.getTrackingToken());
+        dto.setLatDestino(envio.getLatDestino());
+        dto.setLngDestino(envio.getLngDestino());
         return dto;
+    }
+
+    /** Total a cobrar no puede ser negativo: si el valor parsea como número negativo, se guarda "0". */
+    private static String normalizarTotalACobrar(String val) {
+        if (val == null || val.trim().isEmpty()) return val;
+        try {
+            double n = Double.parseDouble(val.trim().replace(",", "."));
+            if (n < 0) return "0";
+            return val.trim();
+        } catch (NumberFormatException e) {
+            return val.trim();
+        }
     }
 
     private Envio toEntity(EnvioDTO dto) {
@@ -1317,7 +1408,7 @@ public class EnvioService {
         envio.setEmail(dto.getEmail());
         envio.setImpreso(dto.getImpreso() != null ? dto.getImpreso() : "NO");
         envio.setObservaciones(dto.getObservaciones());
-        envio.setTotalACobrar(dto.getTotalACobrar());
+        envio.setTotalACobrar(normalizarTotalACobrar(dto.getTotalACobrar()));
         envio.setCambioRetiro(dto.getCambioRetiro());
         envio.setLocalidad(dto.getLocalidad());
         envio.setCodigoPostal(dto.getCodigoPostal());
@@ -1341,7 +1432,100 @@ public class EnvioService {
         envio.setDeadline(dto.getDeadline());
         envio.setMlShipmentId(dto.getMlShipmentId());
         envio.setTrackingToken(dto.getTrackingToken());
+        envio.setLatDestino(dto.getLatDestino());
+        envio.setLngDestino(dto.getLngDestino());
         return envio;
+    }
+
+    /** Actualiza la geolocalización del destino de un envío (desde la app del chofer). Si se pasa direccion, actualiza también CP, zona y costo. */
+    @Transactional
+    public EnvioDTO actualizarGeolocalizacion(Long envioId, Double lat, Double lng, String direccion) {
+        Envio envio = envioRepository.findById(envioId)
+                .orElseThrow(() -> new RuntimeException("Envío no encontrado con id: " + envioId));
+        envio.setLatDestino(lat);
+        envio.setLngDestino(lng);
+        if (direccion != null && !direccion.trim().isEmpty()) {
+            envio.setDireccion(direccion.trim());
+            String cpExtraido = extraerCodigoPostalDeDireccion(direccion);
+            if (cpExtraido != null && !cpExtraido.isEmpty()) {
+                envio.setCodigoPostal(cpExtraido);
+                envio.setZonaEntrega(determinarZonaEntregaEnvio(cpExtraido));
+                try {
+                    com.zetallegue.tms.model.Cliente cliente = resolverClienteDesdeEnvio(envio);
+                    if (cliente != null && cliente.getListaPreciosId() != null) {
+                        double costo = calcularCostoEnvioDesdeListaPrecios(cpExtraido, cliente.getListaPreciosId());
+                        if (costo > 0) {
+                            envio.setCostoEnvio(String.format("%.2f", costo));
+                            log.info("Geolocalización: costo de envío actualizado ${} para envío {}", String.format("%.2f", costo), envioId);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("No se pudo actualizar costo al geolocalizar envío {}: {}", envioId, e.getMessage());
+                }
+                log.info("Geolocalización actualizada para envío {}: lat={}, lng={}, CP={}, zona={}", envioId, lat, lng, cpExtraido, envio.getZonaEntrega());
+            }
+        }
+        envio = envioRepository.save(envio);
+        log.info("Geolocalización actualizada para envío {}: lat={}, lng={}", envioId, lat, lng);
+        return toDTO(envio);
+    }
+
+    /** Extrae código postal de una dirección formateada (ej. "Av. Callao 252, C1022AAP Cdad. Autónoma de Buenos Aires"). */
+    private String extraerCodigoPostalDeDireccion(String direccion) {
+        if (direccion == null || direccion.trim().isEmpty()) return null;
+        java.util.regex.Pattern p = java.util.regex.Pattern.compile("(?:C|B)?(\\d{4,8})[A-Z]*");
+        java.util.regex.Matcher m = p.matcher(direccion);
+        if (m.find()) {
+            String digits = m.group(1);
+            return digits.length() >= 4 ? digits : null;
+        }
+        java.util.regex.Pattern p2 = java.util.regex.Pattern.compile("\\b(1[0-9]{3}|[2-9][0-9]{3})\\b");
+        java.util.regex.Matcher m2 = p2.matcher(direccion);
+        return m2.find() ? m2.group(1) : null;
+    }
+
+    /** Determina la zona de entrega por CP (CABA / Zona 1 / 2 / 3 / Sin Zona). */
+    private String determinarZonaEntregaEnvio(String codigoPostal) {
+        if (codigoPostal == null || codigoPostal.trim().isEmpty()) return "Sin Zona";
+        String cpLimpio = codigoPostal.replaceAll("\\D", "");
+        if (cpLimpio.isEmpty()) return "Sin Zona";
+        int cpNumero;
+        try {
+            cpNumero = Integer.parseInt(cpLimpio);
+        } catch (NumberFormatException e) {
+            return "Sin Zona";
+        }
+        if (cpNumero >= 1000 && cpNumero <= 1599) return "CABA";
+        if (CP_ZONA_1_ENVIO.contains(cpLimpio)) return "Zona 1";
+        if (CP_ZONA_2_ENVIO.contains(cpLimpio)) return "Zona 2";
+        if (CP_ZONA_3_ENVIO.contains(cpLimpio)) return "Zona 3";
+        return "Sin Zona";
+    }
+
+    private static final java.util.Set<String> CP_ZONA_1_ENVIO = new java.util.HashSet<>(java.util.Arrays.asList(
+            "1602","1603","1604","1605","1606","1607","1609","1636","1637","1638","1640","1641","1642","1643","1644","1645","1646","1649","1650","1651","1652","1653","1655","1657","1672","1674","1675","1676","1678","1682","1683","1684","1685","1686","1687","1688","1692","1702","1703","1704","1706","1707","1708","1712","1713","1714","1715","1751","1752","1753","1754","1766","1773","1821","1822","1823","1824","1825","1826","1827","1828","1829","1831","1832","1833","1834","1835","1836","1868","1869","1870","1871","1872","1873","1874","1875"
+    ));
+    private static final java.util.Set<String> CP_ZONA_2_ENVIO = new java.util.HashSet<>(java.util.Arrays.asList(
+            "1608","1610","1611","1612","1613","1614","1615","1616","1617","1618","1621","1624","1648","1659","1660","1661","1662","1663","1664","1665","1666","1667","1670","1671","1716","1718","1722","1723","1724","1736","1738","1740","1742","1743","1744","1745","1746","1755","1757","1758","1759","1761","1763","1764","1765","1768","1770","1771","1772","1774","1776","1778","1785","1786","1801","1802","1803","1804","1805","1806","1807","1812","1837","1838","1839","1840","1841","1842","1843","1844","1845","1846","1847","1848","1849","1851","1852","1853","1854","1855","1856","1859","1860","1861","1863","1867","1876","1877","1878","1879","1880","1881","1882","1883","1884","1885","1886","1887","1888","1889","1890","1891","1893"
+    ));
+    private static final java.util.Set<String> CP_ZONA_3_ENVIO = new java.util.HashSet<>(java.util.Arrays.asList(
+            "1601","1619","1620","1622","1623","1625","1626","1627","1628","1629","1630","1631","1632","1633","1634","1635","1639","1647","1669","1727","1748","1749","1808","1814","1815","1816","1858","1862","1864","1865","1894","1895","1896","1897","1898","1900","1901","1902","1903","1904","1905","1906","1907","1908","1909","1910","1912","1914","1916","1923","1924","1925","1926","1927","1929","1931","1984","2800","2801","2802","2804","2805","2806","2808","2814","2816","6608","6700","6701","6702","6703","6706","6708","6712"
+    ));
+
+    /** Resuelve el Cliente desde el nombre guardado en el envío (formato "código - nombre" o nombre). */
+    private com.zetallegue.tms.model.Cliente resolverClienteDesdeEnvio(Envio envio) {
+        String clienteStr = envio.getCliente();
+        if (clienteStr == null || clienteStr.trim().isEmpty()) return null;
+        if (clienteStr.contains(" - ")) {
+            String codigo = clienteStr.split(" - ")[0].trim();
+            return clienteRepository.findByCodigo(codigo).orElse(null);
+        }
+        String nombre = clienteStr.trim();
+        return clienteRepository.findAll().stream()
+                .filter(c -> (c.getNombreFantasia() != null && c.getNombreFantasia().equalsIgnoreCase(nombre)) ||
+                             (c.getRazonSocial() != null && c.getRazonSocial().equalsIgnoreCase(nombre)))
+                .findFirst()
+                .orElse(null);
     }
     
     @Transactional(readOnly = true)

@@ -155,9 +155,26 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
 
     const generateQR = async () => {
       try {
-        // El link público apunta a una página de tracking con el trackingToken
-        // Si no hay trackingToken, usar el qrData como fallback (para envíos antiguos)
-        const token = envio.trackingToken || envio.qrData || `${envio.tracking}-${envio.id}`
+        // El link público debe usar SIEMPRE trackingToken.
+        // Si no vino en el envío, pedirlo al backend (que lo genera si falta).
+        let token = envio.trackingToken
+        if (!token) {
+          const lookup = (envio.idMvg || envio.tracking || "").trim()
+          if (lookup) {
+            const apiBaseUrl = getApiBaseUrl()
+            const resp = await fetch(`${apiBaseUrl}/envios/buscar-por-tracking/${encodeURIComponent(lookup)}`)
+            if (resp.ok) {
+              const data = await resp.json()
+              token = data?.trackingToken || ""
+            }
+          }
+        }
+        if (!token) {
+          // No generar links inválidos; dejar vacío hasta que backend tenga token.
+          setPublicLink("")
+          setQrImageUrl("")
+          return
+        }
         // Usar la URL base actual (window.location.origin) para que funcione en localhost y producción
         const baseUrl = typeof window !== "undefined" ? window.location.origin : ""
         const link = `${baseUrl}/tracking/${token}`
