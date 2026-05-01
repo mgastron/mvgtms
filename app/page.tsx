@@ -103,26 +103,26 @@ export default function LoginPage() {
       </div>
 
       <div className="relative mx-auto min-h-screen w-full max-w-[1360px] px-8 py-10 md:px-14 lg:px-20">
-        <div className="absolute left-8 top-12 w-full max-w-[680px] text-white md:left-14 md:top-14 lg:left-20 lg:top-14">
+        <div className="absolute left-8 top-10 w-full max-w-[700px] text-white md:left-14 md:top-12 lg:left-20 lg:top-12">
           <img
             src="/logos/nexo-logo-white.png"
             alt="nexo"
-            className="h-auto w-[108px] md:w-[120px]"
+            className="h-auto w-[126px] md:w-[138px]"
           />
-          <h1 className="mt-24 max-w-[720px] text-[56px] font-semibold leading-[1.08] tracking-[-0.03em] md:text-[60px]">
+          <h1 className="mt-20 max-w-[740px] text-[58px] font-semibold leading-[1.08] tracking-[-0.03em] md:text-[62px]">
             Optimizá tus entregas
             <br />
             de punta a punta
           </h1>
-          <p className="mt-7 max-w-[590px] text-[22px] font-medium leading-[1.38] text-[#dbe7ff] md:text-[24px]">
+          <p className="mt-6 max-w-[610px] text-[23px] font-medium leading-[1.35] text-[#dbe7ff] md:text-[25px]">
             Creá etiquetas, organizá entregas y
             <br />
             seguí tus pedidos desde un solo lugar.
           </p>
         </div>
 
-        <div className="absolute right-10 top-1/2 w-full max-w-[376px] -translate-y-1/2 rounded-[12px] bg-white p-8 shadow-[0_16px_42px_rgba(14,29,120,0.34)] md:right-14 lg:right-16">
-          <h2 className="mb-5 text-center text-[48px] font-semibold text-[#2f66cc]">Registrate</h2>
+        <div className="absolute right-10 top-1/2 w-full max-w-[400px] -translate-y-1/2 rounded-[12px] bg-white p-8 shadow-[0_16px_42px_rgba(14,29,120,0.34)] md:right-14 lg:right-16">
+          <h2 className="mb-5 text-center text-[56px] font-semibold text-[#2f66cc]">Registrate</h2>
 
           {error && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -162,7 +162,7 @@ export default function LoginPage() {
               type="submit"
               className="mt-4 h-12 w-full rounded-[6px] bg-[#e9eefb] text-[22px] font-semibold text-[#2f66cc] hover:bg-[#dfe8fb]"
             >
-              ingresar
+              Ingresar
             </Button>
           </form>
         </div>
