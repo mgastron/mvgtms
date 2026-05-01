@@ -426,7 +426,7 @@ export default function ListaPreciosEnvioPage() {
             </div>
           </div>
 
-            <div className="max-w-[760px]">
+            <div className="max-w-[760px] lg:ml-6">
               <h2 className="mb-3 text-[28px] font-semibold tracking-tight text-[#4f46ce]">Precio por zona</h2>
               <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-sm">
                 <div className="overflow-x-auto">
