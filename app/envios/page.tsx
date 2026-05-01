@@ -13,6 +13,7 @@ import * as XLSX from "xlsx"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { logDev, warnDev, errorDev } from "@/lib/logger"
 import { toast } from "sonner"
+import { Montserrat } from "next/font/google"
 
 interface Envio {
   id: number
@@ -63,6 +64,11 @@ const estadosEnvio = [
   "Rechazado por el comprador",
   "reprogramado por comprador",
 ]
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+})
 
 export default function EnviosPage() {
   const router = useRouter()
@@ -819,17 +825,17 @@ export default function EnviosPage() {
           </div>
 
             {/* Filters Section */}
-          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm space-y-4 font-['Montserrat']">
+          <div className={`rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm space-y-4 ${montserrat.className}`}>
             <h2 className="text-[32px] font-semibold text-[#4f46ce]">Filtros</h2>
               {/* Filtros básicos */}
               <div className="grid grid-cols-6 gap-3">
                 <div className="space-y-1">
-                  <label className="block text-[14px] font-semibold text-[#5f6680]">Tipo de fecha</label>
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Tipo de fecha</label>
                   <Select
                     value={filters.tipoFecha}
                     onValueChange={(value) => handleFilterChange("tipoFecha", value)}
                   >
-                    <SelectTrigger className="h-11 text-[14px]">
+                    <SelectTrigger className="h-11 text-[14px] font-normal text-[#525b76]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -845,32 +851,32 @@ export default function EnviosPage() {
                 </div>
 
                 <div className="space-y-1" suppressHydrationWarning>
-                  <label className="block text-[14px] font-semibold text-[#5f6680]">Fecha desde</label>
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Fecha desde</label>
                   <Input
                     type="date"
                     value={filters.fechaDesde}
                     onChange={(e) => handleFilterChange("fechaDesde", e.target.value)}
-                    className="h-11 text-[14px]"
+                    className="h-11 text-[14px] font-normal text-[#525b76]"
                   />
                 </div>
 
                 <div className="space-y-1" suppressHydrationWarning>
-                  <label className="block text-[14px] font-semibold text-[#5f6680]">Fecha hasta</label>
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Fecha hasta</label>
                   <Input
                     type="date"
                     value={filters.fechaHasta}
                     onChange={(e) => handleFilterChange("fechaHasta", e.target.value)}
-                    className="h-11 text-[14px]"
+                    className="h-11 text-[14px] font-normal text-[#525b76]"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-[14px] font-semibold text-[#5f6680]">Estados del envío</label>
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Estados del envío</label>
                   <Select
                     value={filters.estado}
                     onValueChange={(value) => handleFilterChange("estado", value)}
                   >
-                    <SelectTrigger className="h-11 text-[14px]">
+                    <SelectTrigger className="h-11 text-[14px] font-normal text-[#525b76]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -887,12 +893,12 @@ export default function EnviosPage() {
                 </div>
 
                 <div className="space-y-1.5" suppressHydrationWarning>
-                  <label className="block text-[14px] font-semibold text-[#5f6680]">Origen</label>
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Origen</label>
                   <Select
                     value={filters.origen}
                     onValueChange={(value) => handleFilterChange("origen", value)}
                   >
-                    <SelectTrigger className="h-11 text-[14px]">
+                    <SelectTrigger className="h-11 text-[14px] font-normal text-[#525b76]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -907,12 +913,12 @@ export default function EnviosPage() {
                 </div>
 
                 <div className="space-y-1.5" suppressHydrationWarning>
-                  <label className="block text-[14px] font-semibold text-[#5f6680]">N° de Tracking</label>
+                  <label className="block text-[14px] font-medium text-[#4d5571]">N° de Tracking</label>
                   <Input
                     value={filters.tracking}
                     onChange={(e) => handleFilterChange("tracking", e.target.value)}
                     placeholder="Ingresá el N° de tracking"
-                    className="h-11 text-[14px]"
+                    className="h-11 text-[14px] font-normal text-[#525b76]"
                   />
                 </div>
               </div>
@@ -922,7 +928,7 @@ export default function EnviosPage() {
                 <div className="space-y-3 border-gray-200">
                   <div className="grid grid-cols-6 gap-3">
                     <div className="space-y-1">
-                      <label className="block text-[14px] font-semibold text-[#5f6680]">ID Venta / ID pack</label>
+                      <label className="block text-[14px] font-medium text-[#4d5571]">ID Venta / ID pack</label>
                       <Input
                         value={filters.idVenta}
                         onChange={(e) => handleFilterChange("idVenta", e.target.value)}
@@ -932,7 +938,7 @@ export default function EnviosPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-[14px] font-semibold text-[#5f6680]">Logística inversa</label>
+                      <label className="block text-[14px] font-medium text-[#4d5571]">Logística inversa</label>
                       <Select
                         value={filters.logisticaInversa}
                         onValueChange={(value) => handleFilterChange("logisticaInversa", value)}
@@ -949,7 +955,7 @@ export default function EnviosPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-[14px] font-semibold text-[#5f6680]">Domicilio</label>
+                      <label className="block text-[14px] font-medium text-[#4d5571]">Domicilio</label>
                       <Select
                         value={filters.domicilio}
                         onValueChange={(value) => handleFilterChange("domicilio", value)}
@@ -966,7 +972,7 @@ export default function EnviosPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-[14px] font-semibold text-[#5f6680]">Zonas de entrega</label>
+                      <label className="block text-[14px] font-medium text-[#4d5571]">Zonas de entrega</label>
                       <Input
                         value={filters.zonasEntrega}
                         onChange={(e) => handleFilterChange("zonasEntrega", e.target.value)}
@@ -976,7 +982,7 @@ export default function EnviosPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-[14px] font-semibold text-[#5f6680]">Envío turbo</label>
+                      <label className="block text-[14px] font-medium text-[#4d5571]">Envío turbo</label>
                       <Select
                         value={filters.envioTurbo}
                         onValueChange={(value) => handleFilterChange("envioTurbo", value)}
@@ -993,27 +999,10 @@ export default function EnviosPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-[14px] font-semibold text-[#5f6680]">Foto</label>
+                      <label className="block text-[14px] font-medium text-[#4d5571]">Foto</label>
                       <Select
                         value={filters.fotos}
                         onValueChange={(value) => handleFilterChange("fotos", value)}
-                      >
-                        <SelectTrigger className="h-11 text-[14px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todos">Todos</SelectItem>
-                          <SelectItem value="si">Si</SelectItem>
-                          <SelectItem value="no">No</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="block text-[14px] font-semibold text-[#5f6680]">Asignado</label>
-                      <Select
-                        value={filters.asignado}
-                        onValueChange={(value) => handleFilterChange("asignado", value)}
                       >
                         <SelectTrigger className="h-11 text-[14px]">
                           <SelectValue />
@@ -1029,7 +1018,7 @@ export default function EnviosPage() {
 
                   <div className="grid grid-cols-6 gap-3">
                     <div className="space-y-1">
-                      <label className="block text-[14px] font-semibold text-[#5f6680]">Asignado</label>
+                      <label className="block text-[14px] font-medium text-[#4d5571]">Asignado</label>
                       <Select
                         value={filters.asignado}
                         onValueChange={(value) => handleFilterChange("asignado", value)}
@@ -1047,7 +1036,7 @@ export default function EnviosPage() {
 
                     {userProfile !== "Cliente" ? (
                       <div className="space-y-1">
-                        <label className="block text-[14px] font-semibold text-[#5f6680]">Nombre fantasía</label>
+                        <label className="block text-[14px] font-medium text-[#4d5571]">Nombre fantasía</label>
                         <Input
                           value={filters.nombreFantasia}
                           onChange={(e) => handleFilterChange("nombreFantasia", e.target.value)}
@@ -1060,7 +1049,7 @@ export default function EnviosPage() {
                     )}
 
                     <div className="space-y-1">
-                      <label className="block text-[14px] font-semibold text-[#5f6680]">Destino nombre</label>
+                      <label className="block text-[14px] font-medium text-[#4d5571]">Destino nombre</label>
                       <Input
                         value={filters.destinoNombre}
                         onChange={(e) => handleFilterChange("destinoNombre", e.target.value)}
@@ -1070,7 +1059,7 @@ export default function EnviosPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-[14px] font-semibold text-[#5f6680]">Destino dirección</label>
+                      <label className="block text-[14px] font-medium text-[#4d5571]">Destino dirección</label>
                       <Input
                         value={filters.destinoDireccion}
                         onChange={(e) => handleFilterChange("destinoDireccion", e.target.value)}
@@ -1080,7 +1069,7 @@ export default function EnviosPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-[14px] font-semibold text-[#5f6680]">Cobranzas</label>
+                      <label className="block text-[14px] font-medium text-[#4d5571]">Cobranzas</label>
                       <Select
                         value={filters.cobranzas}
                         onValueChange={(value) => handleFilterChange("cobranzas", value)}
@@ -1095,6 +1084,8 @@ export default function EnviosPage() {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    <div />
                   </div>
                 </div>
               )}
