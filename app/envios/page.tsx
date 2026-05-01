@@ -917,21 +917,20 @@ export default function EnviosPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-6 gap-3">
-                <div className="space-y-1.5">
-                  <label className="block text-[14px] font-semibold text-[#5f6680]">ID Venta / ID pack</label>
-                  <Input
-                    value={filters.idVenta}
-                    onChange={(e) => handleFilterChange("idVenta", e.target.value)}
-                    placeholder="ID venta / ID pack"
-                    className="h-11 text-[14px]"
-                  />
-                </div>
-              </div>
-
               {/* Filtros avanzados (mostrar/ocultar) */}
               {showAdvancedFilters && (
                 <div className="space-y-3 pt-3 border-t border-gray-200">
+                  <div className="grid grid-cols-6 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="block text-[14px] font-semibold text-[#5f6680]">ID Venta / ID pack</label>
+                      <Input
+                        value={filters.idVenta}
+                        onChange={(e) => handleFilterChange("idVenta", e.target.value)}
+                        placeholder="Ingresá ID Venta / ID pack"
+                        className="h-11 text-[14px]"
+                      />
+                    </div>
+                  </div>
                   <div className="grid grid-cols-6 gap-3">
                     <div className="space-y-1">
                       <label className="block text-xs font-medium text-gray-700">Logistica Inversa</label>
