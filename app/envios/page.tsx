@@ -811,10 +811,10 @@ export default function EnviosPage() {
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
       <ModernHeader />
-      <main className="px-3 pb-4 pt-3">
+      <main className={`px-4 pb-6 pt-4 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
-          <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-[42px] font-semibold tracking-tight text-[#1570ef]">Envíos</h1>
+          <div className="mb-5 flex items-center justify-between">
+            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Envíos</h1>
             <Button
               onClick={handleDescargarExcel}
               className="h-12 rounded-xl bg-[#eef4ff] px-6 text-[15px] font-semibold text-[#1570ef] hover:bg-[#e3edff]"
@@ -825,7 +825,7 @@ export default function EnviosPage() {
           </div>
 
             {/* Filters Section */}
-          <div className={`rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm space-y-4 ${montserrat.className}`}>
+          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm space-y-4">
             <h2 className="text-[32px] font-semibold text-[#4f46ce]">Filtros</h2>
               {/* Filtros básicos */}
               <div className="grid grid-cols-6 gap-3">

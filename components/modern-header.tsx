@@ -5,6 +5,12 @@ import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { UserProfile } from "@/components/user-profile"
+import { Montserrat } from "next/font/google"
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+})
 
 const allMenuItems = [
   {
@@ -12,7 +18,7 @@ const allMenuItems = [
     label: "Envíos",
     hasSubmenu: true,
     submenu: [
-      { icon: Truck, label: "Envios", path: "/envios" },
+      { icon: Truck, label: "Envíos", path: "/envios" },
       { icon: Upload, label: "Subir envíos", path: "/subir-envio" },
       { icon: DollarSign, label: "Lista de precios", path: "/envios/lista-precios" },
       { icon: Printer, label: "Reimprimir no flex", path: "/reimprimir-noflex" },
@@ -92,7 +98,7 @@ export function ModernHeader() {
     if (pathname?.includes("/subir-envio")) return "Subir envíos"
     if (pathname?.includes("/subir-flex-manual")) return "Subir Flex Manual"
     if (pathname?.includes("/envios/lista-precios")) return "Lista de precios"
-    if (pathname?.includes("/envios")) return "Envios"
+    if (pathname?.includes("/envios")) return "Envíos"
     if (pathname?.includes("/ruteate/geochoferes")) return "Geochoferes"
     if (pathname?.includes("/ruteate/cierre")) return "Cierre"
     return null
@@ -167,7 +173,7 @@ export function ModernHeader() {
           </div>
 
           {userProfile !== "Chofer" && activeMainMenu?.hasSubmenu && (
-            <div className="mt-3 rounded-full border border-[#e6eaf4] bg-white px-2 py-1.5 shadow-sm">
+            <div className={`mt-3 rounded-full border border-[#e6eaf4] bg-white px-2 py-1.5 shadow-sm ${montserrat.className}`}>
               <div className="flex w-full items-center justify-between gap-1 overflow-x-auto">
                 {activeMainMenu.submenu?.map((subItem) => {
                   const isSubActive = activeItem === subItem.label
