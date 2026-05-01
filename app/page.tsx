@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { EyeOff } from "lucide-react"
-import Image from "next/image"
 import { Montserrat } from "next/font/google"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -71,59 +70,46 @@ export default function LoginPage() {
   return (
     <div className={`relative min-h-screen overflow-hidden bg-gradient-to-r from-[#1e86ff] via-[#2a67ff] to-[#2f46f5] ${montserrat.className}`}>
       <div className="pointer-events-none absolute inset-0">
-        <Image
-          src="/logos/nexo-iso-white.png"
+        <img
+          src="/logos/nexo-iso.png"
           alt=""
-          width={92}
-          height={92}
-          className="absolute left-[10%] top-[24%] h-[42px] w-[42px] opacity-20"
+          className="absolute left-[10%] top-[24%] h-[42px] w-[42px] opacity-20 brightness-0 invert"
           aria-hidden
         />
-        <Image
-          src="/logos/nexo-iso-white.png"
+        <img
+          src="/logos/nexo-iso.png"
           alt=""
-          width={120}
-          height={120}
-          className="absolute right-[8%] top-[7%] h-[112px] w-[112px] opacity-16"
+          className="absolute right-[8%] top-[7%] h-[112px] w-[112px] opacity-16 brightness-0 invert"
           aria-hidden
         />
-        <Image
-          src="/logos/nexo-iso-white.png"
+        <img
+          src="/logos/nexo-iso.png"
           alt=""
-          width={120}
-          height={120}
-          className="absolute right-[17%] bottom-[17%] h-[118px] w-[118px] opacity-14"
+          className="absolute right-[17%] bottom-[17%] h-[118px] w-[118px] opacity-14 brightness-0 invert"
           aria-hidden
         />
-        <Image
-          src="/logos/nexo-iso-white.png"
+        <img
+          src="/logos/nexo-iso.png"
           alt=""
-          width={120}
-          height={120}
-          className="absolute left-[2%] bottom-[4%] h-[98px] w-[98px] opacity-14"
+          className="absolute left-[2%] bottom-[4%] h-[98px] w-[98px] opacity-14 brightness-0 invert"
           aria-hidden
         />
-        <Image
-          src="/logos/nexo-iso-white.png"
+        <img
+          src="/logos/nexo-iso.png"
           alt=""
-          width={56}
-          height={56}
-          className="absolute right-[3%] bottom-[7%] h-[50px] w-[50px] opacity-16"
+          className="absolute right-[3%] bottom-[7%] h-[50px] w-[50px] opacity-16 brightness-0 invert"
           aria-hidden
         />
       </div>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-[1360px] items-center px-8 py-10 md:px-14 lg:px-20">
         <div className="w-full max-w-[640px] text-white">
-          <Image
-            src="/logos/nexo-logo-white.png"
+          <img
+            src="/logos/nexo-logo.png"
             alt="nexo"
-            width={150}
-            height={54}
-            className="h-auto w-[120px] md:w-[132px]"
-            priority
+            className="h-auto w-[120px] brightness-0 invert md:w-[132px]"
           />
-          <h1 className="mt-24 max-w-[620px] text-[56px] font-semibold leading-[1.08] tracking-[-0.03em] md:text-[60px]">
+          <h1 className="mt-24 max-w-[700px] text-[52px] font-semibold leading-[1.08] tracking-[-0.03em] md:text-[56px]">
             Optimizá tus entregas
             <br />
             de punta a punta
