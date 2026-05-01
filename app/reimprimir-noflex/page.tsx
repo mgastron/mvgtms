@@ -1129,19 +1129,35 @@ export default function ReimprimirNoflexPage() {
             </div>
           </div>
 
-          <div className="mt-4 rounded-xl border border-[#e6eaf4] bg-white overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className="mt-4 flex min-h-0 max-h-[min(72vh,calc(100vh-15rem))] flex-col overflow-hidden rounded-xl border border-[#e6eaf4] bg-white">
+            <div className="min-h-0 flex-1 overflow-x-auto overflow-y-auto">
                 <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-white border-b border-[#edf0f7]">
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Fecha</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Tracking</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Cliente</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Dirección</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Nombre destinatario</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Teléfono</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Impreso</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight">Imprimir</th>
+                  <thead className="border-b border-[#edf0f7]">
+                    <tr>
+                      <th className="sticky top-0 z-10 bg-white px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight shadow-[0_1px_0_#edf0f7]">
+                        Fecha
+                      </th>
+                      <th className="sticky top-0 z-10 bg-white px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight shadow-[0_1px_0_#edf0f7]">
+                        Tracking
+                      </th>
+                      <th className="sticky top-0 z-10 bg-white px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight shadow-[0_1px_0_#edf0f7]">
+                        Cliente
+                      </th>
+                      <th className="sticky top-0 z-10 bg-white px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight shadow-[0_1px_0_#edf0f7]">
+                        Dirección
+                      </th>
+                      <th className="sticky top-0 z-10 bg-white px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight shadow-[0_1px_0_#edf0f7]">
+                        Nombre destinatario
+                      </th>
+                      <th className="sticky top-0 z-10 bg-white px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight shadow-[0_1px_0_#edf0f7]">
+                        Teléfono
+                      </th>
+                      <th className="sticky top-0 z-10 bg-white px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight shadow-[0_1px_0_#edf0f7]">
+                        Impreso
+                      </th>
+                      <th className="sticky top-0 z-10 bg-white px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight shadow-[0_1px_0_#edf0f7]">
+                        Imprimir
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1186,11 +1202,11 @@ export default function ReimprimirNoflexPage() {
                     })()}
                   </tbody>
                 </table>
-              </div>
+            </div>
 
               {/* Pagination */}
               {filteredEnvios.length > 0 && (
-                <div className="flex flex-col gap-3 border-t border-[#edf0f7] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="shrink-0 flex flex-col gap-3 border-t border-[#edf0f7] bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-sm font-medium text-gray-700">
                     Total de registros: <span className="text-[#6B46FF] font-bold">{filteredEnvios.length}</span>
                     {" | "}
