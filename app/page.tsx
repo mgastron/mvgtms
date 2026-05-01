@@ -103,13 +103,16 @@ export default function LoginPage() {
       </div>
 
       <div className="relative min-h-screen w-full">
-        <div className="absolute left-[5%] top-[7%] w-full max-w-[660px] text-white">
+        <div className="absolute left-[5%] top-[7%]">
           <img
             src="/logos/nexo-logo-white.png"
             alt="nexo"
             className="h-auto w-[132px]"
           />
-          <h1 className="mt-28 max-w-[680px] text-[58px] font-semibold leading-[1.08] tracking-[-0.03em]">
+        </div>
+
+        <div className="absolute left-[5%] top-1/2 w-full max-w-[660px] -translate-y-1/2 text-white">
+          <h1 className="max-w-[680px] text-[58px] font-semibold leading-[1.08] tracking-[-0.03em]">
             Optimizá tus entregas
             <br />
             de punta a punta
