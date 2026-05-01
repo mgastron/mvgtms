@@ -6,7 +6,6 @@ import { ModernHeader } from "@/components/modern-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DollarSign } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
 import { Montserrat } from "next/font/google"
@@ -324,10 +323,6 @@ export default function ListaPreciosEnvioPage() {
     }
   }
 
-  const handleClose = () => {
-    router.push("/envios")
-  }
-
   return (
     <div className={`min-h-screen bg-[#f7f8fc] ${montserrat.className}`}>
       <ModernHeader />
@@ -335,8 +330,8 @@ export default function ListaPreciosEnvioPage() {
         <div className="mx-auto w-full max-w-[1700px]">
           <h1 className="mb-5 text-[34px] font-semibold tracking-tight text-[#1570ef]">Lista de precios</h1>
 
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[560px_760px]">
-            <div className="ml-2 rounded-2xl border border-[#e6eaf4] bg-white p-6 shadow-sm min-h-[500px]">
+          <div className="flex w-full flex-col items-stretch gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="ml-2 w-full max-w-[560px] shrink-0 rounded-2xl border border-[#e6eaf4] bg-white p-6 shadow-sm min-h-[500px]">
               <div className="space-y-5">
                 <div className="space-y-2">
                   <label className="block text-[14px] font-medium text-[#4d5571]">Cliente</label>
@@ -423,10 +418,10 @@ export default function ListaPreciosEnvioPage() {
                   </p>
                 </div>
               )}
+              </div>
             </div>
-          </div>
 
-            <div className="max-w-[760px] lg:ml-6">
+            <div className="w-full max-w-[760px] shrink-0 lg:w-[760px]">
               <h2 className="mb-3 text-[28px] font-semibold tracking-tight text-[#4f46ce]">Precio por zona</h2>
               <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-sm">
                 <div className="overflow-x-auto">
