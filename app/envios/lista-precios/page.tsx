@@ -331,8 +331,8 @@ export default function ListaPreciosEnvioPage() {
           <h1 className="mb-5 text-[34px] font-semibold tracking-tight text-[#1570ef]">Lista de precios</h1>
 
           <div className="flex w-full flex-col items-stretch gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="ml-2 w-full max-w-[560px] shrink-0 rounded-2xl border border-[#e6eaf4] bg-white p-6 shadow-sm min-h-[500px]">
-              <div className="space-y-5">
+            <div className="ml-2 w-full max-w-[560px] shrink-0 rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="block text-[14px] font-medium text-[#4d5571]">Cliente</label>
                 {userProfile === "Cliente" ? (
