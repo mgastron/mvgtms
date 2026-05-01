@@ -14,7 +14,11 @@ interface UserInfo {
   perfil?: string
 }
 
-export function UserProfile() {
+interface UserProfileProps {
+  variant?: "default" | "headerBlue"
+}
+
+export function UserProfile({ variant = "default" }: UserProfileProps) {
   const router = useRouter()
   const [userInfo, setUserInfo] = useState<UserInfo>({ username: "" })
   const [isOpen, setIsOpen] = useState(false)
@@ -108,13 +112,17 @@ export function UserProfile() {
     <div className="relative" ref={dropdownRef} suppressHydrationWarning>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-200 border border-gray-200"
+        className={
+          variant === "headerBlue"
+            ? "flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-white hover:bg-white/15 transition-all duration-200"
+            : "flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-200 border border-gray-200"
+        }
       >
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-300">
-          <User className="h-4 w-4 text-gray-600" />
+        <div className={variant === "headerBlue" ? "flex h-7 w-7 items-center justify-center rounded-full bg-white" : "flex h-7 w-7 items-center justify-center rounded-full bg-gray-300"}>
+          <User className={variant === "headerBlue" ? "h-4 w-4 text-[#1459e9]" : "h-4 w-4 text-gray-600"} />
         </div>
-        <span className="font-medium text-sm hidden sm:inline">{userInfo.username}</span>
-        <ChevronDown className={`h-3 w-3 text-gray-600 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <span className={variant === "headerBlue" ? "font-medium text-sm hidden sm:inline text-white" : "font-medium text-sm hidden sm:inline"}>{userInfo.username}</span>
+        <ChevronDown className={`${variant === "headerBlue" ? "text-white/90" : "text-gray-600"} h-3 w-3 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (

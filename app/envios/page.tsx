@@ -808,7 +808,7 @@ export default function EnviosPage() {
       <main className="px-3 pb-4 pt-3">
         <div className="mx-auto w-full max-w-[1700px]">
           <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-[48px] font-bold text-[#1570ef]">Envíos</h1>
+            <h1 className="text-[42px] font-semibold tracking-tight text-[#1570ef]">Envíos</h1>
             <Button
               onClick={handleDescargarExcel}
               className="h-12 rounded-xl bg-[#eef4ff] px-6 text-[15px] font-semibold text-[#1570ef] hover:bg-[#e3edff]"

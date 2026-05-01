@@ -151,11 +151,8 @@ export function ModernHeader() {
             )}
 
             <div className="flex items-center gap-4">
-              <div className={cn(
-                userProfile === "Chofer" ? "block" : "hidden md:block",
-                "text-white [&_button]:!text-white [&_button]:!text-[17px] [&_button]:!font-medium [&_button]:hover:!bg-white/10 [&_button_svg]:!text-white [&_button_svg]:!h-5 [&_button_svg]:!w-5 [&_[class*='rounded-full']]:!bg-white [&_[class*='rounded-full']]:!text-[#1459e9]"
-              )}>
-                <UserProfile />
+              <div className={cn(userProfile === "Chofer" ? "block" : "hidden md:block")}>
+                <UserProfile variant="headerBlue" />
               </div>
 
               {userProfile !== "Chofer" && (
@@ -171,14 +168,14 @@ export function ModernHeader() {
 
           {userProfile !== "Chofer" && activeMainMenu?.hasSubmenu && (
             <div className="mt-3 rounded-full border border-[#e6eaf4] bg-white px-2 py-1.5 shadow-sm">
-              <div className="flex items-center justify-center gap-1 overflow-x-auto">
+              <div className="flex items-center justify-center gap-2 overflow-x-auto">
                 {activeMainMenu.submenu?.map((subItem) => {
                   const isSubActive = activeItem === subItem.label
                   return (
                     <button
                       key={subItem.label}
                       onClick={() => handleSubmenuClick(subItem.path)}
-                      className={cn("whitespace-nowrap rounded-full px-5 py-2 text-[16px] font-medium transition-colors", isSubActive ? "bg-[#f2efff] text-[#4f46ce]" : "text-[#5d6578] hover:bg-[#f5f7fb]")}
+                      className={cn("whitespace-nowrap rounded-full px-4 py-2 text-[15px] font-medium transition-colors", isSubActive ? "bg-[#f2efff] text-[#4f46ce]" : "text-[#5d6578] hover:bg-[#f5f7fb]")}
                     >
                       {subItem.label}
                     </button>
