@@ -85,12 +85,6 @@ export default function SubirFlexManualPage() {
     }
   }
 
-  const handleClear = () => {
-    setFormData({ sellerId: "", shipmentId: "" })
-    setError(null)
-    setSuccess(false)
-  }
-
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
       <ModernHeader />
@@ -98,8 +92,8 @@ export default function SubirFlexManualPage() {
         <div className="mx-auto w-full max-w-[1700px]">
           <h1 className="mb-5 text-[34px] font-semibold tracking-tight text-[#1570ef]">Subir Flex Manual</h1>
 
-          <div className="ml-2 max-w-[560px] rounded-2xl border border-[#e6eaf4] bg-white p-6 shadow-sm min-h-[500px]">
-            <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="ml-2 max-w-[560px] rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="sellerId" className="block text-[14px] font-medium text-[#4d5571]">
                   Vendedor ID
@@ -144,7 +138,7 @@ export default function SubirFlexManualPage() {
                 </div>
               )}
 
-              <div className="space-y-2 pt-1">
+              <div className="pt-1">
                 <Button
                   type="submit"
                   disabled={loading}
@@ -152,13 +146,6 @@ export default function SubirFlexManualPage() {
                 >
                   {loading ? "Subiendo…" : "Subir"}
                 </Button>
-                <button
-                  type="button"
-                  onClick={handleClear}
-                  className="w-full text-center text-[13px] font-medium text-[#626d91] underline-offset-2 hover:text-[#4f46ce] hover:underline"
-                >
-                  Limpiar campos
-                </button>
               </div>
             </form>
           </div>
