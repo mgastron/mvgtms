@@ -6,7 +6,8 @@ import { ModernHeader } from "@/components/modern-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { RefreshCw, Filter, Eye, CheckCircle2, XCircle, AlertCircle } from "lucide-react"
+import { RefreshCw, Eye, CheckCircle2, XCircle, AlertCircle, Inbox } from "lucide-react"
+import { Montserrat } from "next/font/google"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { logDev, errorDev } from "@/lib/logger"
 import { EnvioDetailModal } from "@/components/envio-detail-modal"
@@ -19,6 +20,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+})
 
 interface PedidoTiendaNube {
   pedido: any // JSON del pedido de Tienda Nube
@@ -1145,72 +1151,87 @@ export default function EstadoOrdenesPage() {
     return Array.from(estados).sort()
   }, [pedidos])
 
+  const filterInputClass =
+    "h-10 rounded-xl border border-[#e6eaf4] bg-white text-[14px] font-medium text-[#1f2433] shadow-sm placeholder:font-normal placeholder:text-[#8890a8] focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"
+
+  const fieldLabelClass = "mb-1 block text-[14px] font-medium text-[#4d5571]"
+
+  const handleClearFilters = () => {
+    setFilters({
+      fechaDesde: "",
+      fechaHasta: "",
+      tienda: "todos",
+      estadoOrden: "todos",
+      nombreFantasia: "todos",
+      numeroOrden: "",
+      estadoProcesado: "todos",
+      fulfillment: "todos",
+      estadoFulfillment: "todos",
+      metodoEnvio: "",
+      destinatario: "",
+      direccionDestinatario: "",
+    })
+    setCurrentPage(1)
+  }
+
   if (!userProfile) {
     return null
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50" suppressHydrationWarning>
+    <div className="min-h-screen bg-[#f7f8fc]" suppressHydrationWarning>
       <ModernHeader />
-      <div className="flex-1 flex flex-col overflow-hidden" suppressHydrationWarning>
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">ESTADO ORDENES</h1>
-          </div>
-          <div className="flex items-center gap-3">
+      <main className={`px-4 pb-6 pt-3 ${montserrat.className}`} suppressHydrationWarning>
+        <div className="mx-auto w-full max-w-[1700px] space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Estado órdenes</h1>
             <Button
               onClick={loadPedidos}
               disabled={isLoading}
-              className="flex items-center gap-2"
+              className="h-10 gap-2 rounded-xl bg-[#eef4ff] px-5 text-[14px] font-semibold text-[#1570ef] hover:bg-[#e3edff] disabled:opacity-50"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
               Actualizar
             </Button>
           </div>
-        </div>
 
-        <div className="flex-1 overflow-auto p-2">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+            <div
+              className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[14px] text-red-800"
+              role="alert"
+            >
               {error}
             </div>
           )}
 
-          {/* Filtros */}
-          <div className="bg-white rounded-lg shadow mb-4 p-4">
-            {/* Fila Superior */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-              {/* Fecha venta desde/hasta */}
-              <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha venta desde/hasta
-                </label>
+          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
+            <h2 className="mb-4 text-[18px] font-semibold text-[#4f46ce]">Filtros</h2>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
+              <div className="space-y-1.5">
+                <label className={fieldLabelClass}>Fecha venta desde / hasta</label>
                 <div className="flex gap-2">
                   <Input
                     type="date"
                     value={filters.fechaDesde}
                     onChange={(e) => setFilters({ ...filters, fechaDesde: e.target.value })}
-                    className="w-full text-xs"
+                    className={`min-w-0 flex-1 ${filterInputClass}`}
                   />
                   <Input
                     type="date"
                     value={filters.fechaHasta}
                     onChange={(e) => setFilters({ ...filters, fechaHasta: e.target.value })}
-                    className="w-full text-xs"
+                    className={`min-w-0 flex-1 ${filterInputClass}`}
                   />
                 </div>
               </div>
 
-              {/* Tiendas */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tiendas
-                </label>
+              <div className="space-y-1.5">
+                <label className={fieldLabelClass}>Tiendas</label>
                 <Select
                   value={filters.tienda}
                   onValueChange={(value) => setFilters({ ...filters, tienda: value })}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-10 w-full text-[14px] font-medium text-[#1f2433]">
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1222,16 +1243,13 @@ export default function EstadoOrdenesPage() {
                 </Select>
               </div>
 
-              {/* Estado de la Orden */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estado de la Orden
-                </label>
+              <div className="space-y-1.5">
+                <label className={fieldLabelClass}>Estado de la orden</label>
                 <Select
                   value={filters.estadoOrden}
                   onValueChange={(value) => setFilters({ ...filters, estadoOrden: value })}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-10 w-full text-[14px] font-medium text-[#1f2433]">
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1242,16 +1260,13 @@ export default function EstadoOrdenesPage() {
                 </Select>
               </div>
 
-              {/* Nombre fantasia */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre fantasia
-                </label>
+              <div className="space-y-1.5">
+                <label className={fieldLabelClass}>Nombre fantasía</label>
                 <Select
                   value={filters.nombreFantasia}
                   onValueChange={(value) => setFilters({ ...filters, nombreFantasia: value })}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-10 w-full text-[14px] font-medium text-[#1f2433]">
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1265,33 +1280,26 @@ export default function EstadoOrdenesPage() {
                 </Select>
               </div>
 
-              {/* Número Orden */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Número Orden
-                </label>
+              <div className="space-y-1.5">
+                <label className={fieldLabelClass}>Número orden</label>
                 <Input
                   type="text"
-                  placeholder="Buscar por número..."
+                  placeholder="Buscar por número…"
                   value={filters.numeroOrden}
                   onChange={(e) => setFilters({ ...filters, numeroOrden: e.target.value })}
-                  className="w-full"
+                  className={filterInputClass}
                 />
               </div>
             </div>
 
-            {/* Fila Inferior */}
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
-              {/* Estado Procesado */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estado Procesado
-                </label>
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              <div className="space-y-1.5">
+                <label className={fieldLabelClass}>Estado procesado</label>
                 <Select
                   value={filters.estadoProcesado}
                   onValueChange={(value) => setFilters({ ...filters, estadoProcesado: value })}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-10 w-full text-[14px] font-medium text-[#1f2433]">
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1303,16 +1311,13 @@ export default function EstadoOrdenesPage() {
                 </Select>
               </div>
 
-              {/* Fulfillment */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fulfillment
-                </label>
+              <div className="space-y-1.5">
+                <label className={fieldLabelClass}>Fulfillment</label>
                 <Select
                   value={filters.fulfillment}
                   onValueChange={(value) => setFilters({ ...filters, fulfillment: value })}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-10 w-full text-[14px] font-medium text-[#1f2433]">
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1323,16 +1328,13 @@ export default function EstadoOrdenesPage() {
                 </Select>
               </div>
 
-              {/* Estado Fulfillment */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estado Fulfillment
-                </label>
+              <div className="space-y-1.5">
+                <label className={fieldLabelClass}>Estado fulfillment</label>
                 <Select
                   value={filters.estadoFulfillment}
                   onValueChange={(value) => setFilters({ ...filters, estadoFulfillment: value })}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-10 w-full text-[14px] font-medium text-[#1f2433]">
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1344,135 +1346,136 @@ export default function EstadoOrdenesPage() {
                 </Select>
               </div>
 
-              {/* Método de envío */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Método de envío
-                </label>
+              <div className="space-y-1.5">
+                <label className={fieldLabelClass}>Método de envío</label>
                 <Input
                   type="text"
-                  placeholder="Buscar método..."
+                  placeholder="Buscar método…"
                   value={filters.metodoEnvio}
                   onChange={(e) => setFilters({ ...filters, metodoEnvio: e.target.value })}
-                  className="w-full"
+                  className={filterInputClass}
                 />
               </div>
 
-              {/* Destinatario */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Destinatario
-                </label>
+              <div className="space-y-1.5">
+                <label className={fieldLabelClass}>Destinatario</label>
                 <Input
                   type="text"
-                  placeholder="Buscar destinatario..."
+                  placeholder="Buscar destinatario…"
                   value={filters.destinatario}
                   onChange={(e) => setFilters({ ...filters, destinatario: e.target.value })}
-                  className="w-full"
+                  className={filterInputClass}
                 />
               </div>
 
-              {/* Dirección destinatario */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Dirección destinatario
-                </label>
+              <div className="space-y-1.5">
+                <label className={fieldLabelClass}>Dirección destinatario</label>
                 <Input
                   type="text"
-                  placeholder="Buscar dirección..."
+                  placeholder="Buscar dirección…"
                   value={filters.direccionDestinatario}
                   onChange={(e) => setFilters({ ...filters, direccionDestinatario: e.target.value })}
-                  className="w-full"
+                  className={filterInputClass}
                 />
               </div>
             </div>
 
-            {/* Botón FILTRAR */}
-            <div className="flex justify-center mt-4">
+            <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-[#e6eaf4] pt-4">
               <Button
-                onClick={() => {
-                  // Los filtros ya se aplican automáticamente con useMemo
-                  // Este botón puede servir para forzar una recarga si es necesario
-                }}
-                className="bg-teal-500 hover:bg-teal-600 text-white font-semibold px-8 py-2 uppercase"
+                type="button"
+                variant="outline"
+                onClick={handleClearFilters}
+                className="h-10 rounded-xl border-[#e6eaf4] px-5 text-[14px] font-semibold text-[#4d5571] hover:bg-[#f7f8fc]"
               >
-                FILTRAR
+                Limpiar filtros
               </Button>
             </div>
           </div>
 
           {isLoading && pedidos.length === 0 ? (
-            <div className="flex items-center justify-center h-64" suppressHydrationWarning>
-              <div className="text-center" suppressHydrationWarning>
-                <RefreshCw className="w-8 h-8 animate-spin text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500" suppressHydrationWarning>Cargando pedidos...</p>
+            <div className="flex min-h-[240px] items-center justify-center rounded-2xl border border-[#e6eaf4] bg-white shadow-sm">
+              <div className="text-center">
+                <RefreshCw className="mx-auto mb-3 h-9 w-9 animate-spin text-[#1570ef]" />
+                <p className="text-[14px] font-medium text-[#5d6578]">Cargando pedidos…</p>
               </div>
             </div>
           ) : filteredPedidos.length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-8 text-center">
-              <p className="text-gray-500 text-lg" suppressHydrationWarning>
-                {pedidos.length === 0 
-                  ? "No hay pedidos de Tienda Nube, VTEX o Shopify disponibles"
-                  : "No se encontraron pedidos con los filtros aplicados"}
-              </p>
-              <p className="text-gray-400 text-sm mt-2" suppressHydrationWarning>
-                {pedidos.length === 0
-                  ? "Asegúrate de que los clientes tengan la integración de Tienda Nube o VTEX vinculada"
-                  : "Intenta ajustar los filtros de búsqueda"}
-              </p>
+            <div className="rounded-2xl border border-[#e6eaf4] bg-white px-6 py-14 text-center shadow-sm">
+              <div className="mx-auto flex max-w-md flex-col items-center">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#eef4ff]">
+                  <Inbox className="h-6 w-6 text-[#1570ef]" aria-hidden />
+                </div>
+                <p className="text-[14px] font-semibold text-[#1f2433]">
+                  {pedidos.length === 0
+                    ? "No hay pedidos de Tienda Nube, VTEX o Shopify"
+                    : "No se encontraron pedidos con los filtros aplicados"}
+                </p>
+                <p className="mt-2 text-[13px] text-[#8890a8]">
+                  {pedidos.length === 0
+                    ? "Asegurate de que los clientes tengan la integración vinculada"
+                    : "Probá ajustar los filtros de búsqueda"}
+                </p>
+              </div>
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:px-5">
+                <h3 className="text-[16px] font-semibold text-[#1f2433]">Listado</h3>
+                <div className="flex items-center gap-2 rounded-full border border-[#e6eaf4] bg-white px-3 py-1 text-[13px] font-medium text-[#5d6578]">
+                  <span className="text-[#1570ef]">{filteredPedidos.length}</span>
+                  <span>{filteredPedidos.length === 1 ? "pedido" : "pedidos"}</span>
+                </div>
+              </div>
               <div className="overflow-x-auto">
-                <table className="w-full divide-y divide-gray-200 text-xs">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="w-1 p-0"></th>
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-tight leading-tight whitespace-nowrap">
-                        Nombre<br />Fantasia
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[#e6eaf4] bg-[#f7f8fc]">
+                      <th className="w-1 p-0" />
+                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                        Nombre fantasía
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-tight whitespace-nowrap">
-                        Nombre Tienda
+                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                        Nombre tienda
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-tight whitespace-nowrap">
+                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
                         Tienda
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-tight whitespace-nowrap">
-                        Número Orden
+                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                        Número orden
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-tight leading-tight whitespace-nowrap">
-                        Estado<br />Procesado
+                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                        Estado procesado
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-tight whitespace-nowrap">
-                        Estado Orden
+                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                        Estado orden
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-tight leading-tight whitespace-nowrap">
-                        Metodo<br />de envio
+                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                        Método envío
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-tight whitespace-nowrap">
+                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
                         Destinatario
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-tight leading-tight whitespace-nowrap">
-                        Fecha<br />venta
+                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                        Fecha venta
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-tight leading-tight whitespace-nowrap">
-                        Hora<br />ingreso
+                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                        Hora ingreso
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-tight leading-tight whitespace-nowrap">
-                        Hora<br />Procesado
+                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                        Hora procesado
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-tight whitespace-nowrap">
-                        Direccion
+                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                        Dirección
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-tight whitespace-nowrap">
+                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
                         Destino CP
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-tight whitespace-nowrap">
+                      <th className="whitespace-nowrap px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
                         Acción
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="divide-y divide-[#eef1f8]">
                     {paginatedPedidos.map((item, index) => {
                       const pedido = item.pedido
                       // Para VTEX, usar creationDate; para Tienda Nube, usar created_at
@@ -1489,24 +1492,26 @@ export default function EstadoOrdenesPage() {
                       const coincide = metodoEnvioCoincide(item)
                       const originalIndex = startIndex + index // Índice original en filteredPedidos
                       return (
-                        <tr 
-                          key={originalIndex} 
-                          className={`hover:bg-gray-50 ${coincide ? 'bg-green-50' : 'bg-red-50'} relative`}
+                        <tr
+                          key={originalIndex}
+                          className={`transition-colors hover:bg-[#f7faff] ${coincide ? "bg-[#ecfdf5]/80" : "bg-[#fff1f2]/90"}`}
                         >
-                          {/* Barra vertical de color al inicio */}
-                          <td className="w-1 p-0">
-                            <div className={`h-full w-1 ${coincide ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                          <td className="w-1 p-0 align-stretch">
+                            <div
+                              className={`min-h-full w-1 ${coincide ? "bg-emerald-500" : "bg-rose-500"}`}
+                              aria-hidden
+                            />
                           </td>
-                          <td className="px-2 py-3 text-xs text-gray-900 whitespace-normal break-words">
+                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] text-[#1f2433]">
                             {item.clienteNombre}
                           </td>
-                          <td className="px-2 py-3 text-xs text-gray-500 whitespace-normal break-words">
+                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] text-[#5d6578]">
                             {getNombreTienda(item)}
                           </td>
-                          <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500">
+                          <td className="whitespace-nowrap px-3 py-3 text-[13px] text-[#5d6578]">
                             {item.origen === "Vtex" ? "VTEX" : item.origen === "Shopify" ? "Shopify" : "Tienda Nube"}
                           </td>
-                          <td className="px-2 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
+                          <td className="whitespace-nowrap px-3 py-3 text-[13px] font-semibold text-[#1f2433]">
                             {item.origen === "Vtex" 
                               ? (pedido.orderId || pedido.id || "-")
                               : item.origen === "Shopify"
@@ -1514,7 +1519,7 @@ export default function EstadoOrdenesPage() {
                               : (pedido.number || pedido.id || "-")
                             }
                           </td>
-                          <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500">
+                          <td className="whitespace-nowrap px-3 py-3 text-[13px] text-[#5d6578]">
                             {(() => {
                               let pedidoKey: string
                               if (item.origen === "Vtex") {
@@ -1530,45 +1535,46 @@ export default function EstadoOrdenesPage() {
                               return pedidosConEnvioExistente.has(pedidoKey) ? "Si" : "No"
                             })()}
                           </td>
-                          <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500">
+                          <td className="whitespace-nowrap px-3 py-3 text-[13px] text-[#5d6578]">
                             {getEstadoPedido(pedido)}
                           </td>
-                          <td className="px-2 py-3 text-xs text-gray-900 whitespace-normal break-words leading-tight">
+                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] leading-tight text-[#1f2433]">
                             {getMetodoEnvio(pedido, item.origen)}
                           </td>
-                          <td className="px-2 py-3 text-xs text-gray-500 whitespace-normal break-words">
+                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] text-[#5d6578]">
                             {getDestinatario(pedido)}
                           </td>
-                          <td className="px-2 py-3 text-xs text-gray-500 whitespace-normal break-words leading-tight">
+                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] leading-tight text-[#5d6578]">
                             <div className="break-words">{formatFecha(fechaCreacion)}</div>
-                            <div className="text-[10px] text-gray-400 break-words">{formatHora(fechaCreacion)}</div>
+                            <div className="break-words text-[11px] text-[#8890a8]">{formatHora(fechaCreacion)}</div>
                           </td>
-                          <td className="px-2 py-3 text-xs text-gray-500 whitespace-normal break-words leading-tight">
+                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] leading-tight text-[#5d6578]">
                             <div className="break-words">{formatFecha(fechaCreacion)}</div>
-                            <div className="text-[10px] text-gray-400 break-words">{formatHora(fechaCreacion)}</div>
+                            <div className="break-words text-[11px] text-[#8890a8]">{formatHora(fechaCreacion)}</div>
                           </td>
-                          <td className="px-2 py-3 text-xs text-gray-500 whitespace-normal break-words leading-tight">
+                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] leading-tight text-[#5d6578]">
                             <div className="break-words">{formatFecha(fechaActualizacion)}</div>
-                            <div className="text-[10px] text-gray-400 break-words">{formatHora(fechaActualizacion)}</div>
+                            <div className="break-words text-[11px] text-[#8890a8]">{formatHora(fechaActualizacion)}</div>
                           </td>
-                          <td className="px-2 py-3 text-xs text-gray-500 whitespace-normal break-words">
+                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] text-[#5d6578]">
                             {getDireccion(pedido, item.origen)}
                           </td>
-                          <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500">
+                          <td className="whitespace-nowrap px-3 py-3 text-[13px] text-[#5d6578]">
                             {getCodigoPostal(pedido, item.origen)}
                           </td>
-                          <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500 text-center">
+                          <td className="whitespace-nowrap px-3 py-3 text-center text-[13px] text-[#5d6578]">
                             {coincide ? (
-                              // Verdes: ícono de ojo para ver el envío
-                              <button
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => handleVerEnvio(item)}
-                                className="text-blue-600 hover:text-blue-800 transition-colors"
+                                className="h-9 w-9 rounded-lg text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1570ef]"
                                 title="Ver envío"
                               >
-                                <Eye className="w-4 h-4" />
-                              </button>
+                                <Eye className="h-4 w-4" />
+                              </Button>
                             ) : (
-                              // Rojos: checkbox para seleccionar
                               <input
                                 type="checkbox"
                                 checked={pedidosSeleccionados.has(originalIndex)}
@@ -1581,7 +1587,7 @@ export default function EstadoOrdenesPage() {
                                   }
                                   setPedidosSeleccionados(newSet)
                                 }}
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                                className="h-4 w-4 cursor-pointer rounded border-[#cfd6e6] text-[#1459e9] focus:ring-2 focus:ring-[#1570ef]/30"
                               />
                             )}
                           </td>
@@ -1591,119 +1597,111 @@ export default function EstadoOrdenesPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
-          )}
 
-          {/* Botón REPROCESAR */}
-          <div className="mt-4 flex justify-center">
-            <Button
-              onClick={handleReprocesar}
-              disabled={pedidosSeleccionados.size === 0 || procesando}
-              className="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-8 py-3 text-base uppercase disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {procesando ? "Procesando..." : "REPROCESAR"}
-            </Button>
-          </div>
-
-          {/* Paginación */}
-          {filteredPedidos.length > 0 && (
-            <div className="mt-6 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3">
-              {/* Información de registros */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-sm text-gray-700">
-                  <span className="font-medium">Total de registros: {filteredPedidos.length}</span>
-                </div>
-                <div className="text-sm text-gray-700 mt-2 sm:mt-0">
-                  <span className="font-medium">Total de páginas: {totalPages}</span>
-                </div>
+              <div className="flex flex-wrap justify-center border-t border-[#e6eaf4] bg-[#fafbff] px-4 py-4">
+                <Button
+                  onClick={handleReprocesar}
+                  disabled={pedidosSeleccionados.size === 0 || procesando}
+                  className="h-11 rounded-xl bg-[#1459e9] px-8 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {procesando ? "Procesando…" : "Reprocesar"}
+                </Button>
               </div>
 
-              {/* Controles de paginación */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                  className="px-2 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  &lt;&lt;
-                </button>
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="px-2 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  &lt;
-                </button>
-                
-                {/* Números de página */}
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum
-                  if (totalPages <= 5) {
-                    pageNum = i + 1
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i
-                  } else {
-                    pageNum = currentPage - 2 + i
-                  }
-                  
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => setCurrentPage(pageNum)}
-                      className={`px-3 py-1 text-sm border rounded ${
-                        currentPage === pageNum
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                      }`}
+              <div className="flex flex-col gap-3 border-t border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                <div className="flex flex-wrap items-center gap-3 text-[13px] text-[#5d6578]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium">Total</span>
+                    <span className="rounded-md bg-[#eef4ff] px-2 py-0.5 font-semibold text-[#1459e9]">
+                      {filteredPedidos.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium">Páginas</span>
+                    <span className="rounded-md border border-[#e6eaf4] bg-white px-2 py-0.5 font-semibold text-[#4d5571]">
+                      {totalPages || 1}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-0.5 rounded-xl border border-[#e6eaf4] bg-white p-0.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                      className="h-8 px-2.5 text-[13px] text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9] disabled:opacity-40"
                     >
-                      {pageNum}
-                    </button>
-                  )
-                })}
-                
-                <button
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-2 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  &gt;
-                </button>
-                <button
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                  className="px-2 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  &gt;&gt;
-                </button>
-              </div>
+                      &lt;&lt;
+                    </Button>
 
-              {/* Cantidad por página */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-700">Cantidad por página</span>
-                <Select
-                  value={itemsPerPage.toString()}
-                  onValueChange={(value) => {
-                    setItemsPerPage(Number(value))
-                    setCurrentPage(1)
-                  }}
-                >
-                  <SelectTrigger className="w-20 h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="100">100</SelectItem>
-                  </SelectContent>
-                </Select>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum
+                      if (totalPages <= 5) {
+                        pageNum = i + 1
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i
+                      } else {
+                        pageNum = currentPage - 2 + i
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`h-8 min-w-[2rem] px-2 text-[13px] font-medium ${
+                            currentPage === pageNum
+                              ? "bg-[#1459e9] text-white shadow-sm hover:bg-[#114bce] hover:text-white"
+                              : "text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9]"
+                          }`}
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                    })}
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages || totalPages === 0}
+                      className="h-8 px-2.5 text-[13px] text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9] disabled:opacity-40"
+                    >
+                      &gt;&gt;
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center gap-2 rounded-xl border border-[#e6eaf4] bg-white px-2.5 py-1">
+                    <span className="text-[13px] font-medium text-[#4d5571]">Por página</span>
+                    <Select
+                      value={itemsPerPage.toString()}
+                      onValueChange={(value) => {
+                        setItemsPerPage(Number(value))
+                        setCurrentPage(1)
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-14 border-0 bg-transparent text-[13px] font-semibold text-[#1459e9] shadow-none focus:ring-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       {/* Envio Detail Modal */}
       <EnvioDetailModal
@@ -1787,7 +1785,7 @@ export default function EstadoOrdenesPage() {
                 setShowReprocesarResult(false)
                 setReprocesarResult(null)
               }}
-              className="bg-cyan-500 hover:bg-cyan-600 text-white"
+              className="rounded-xl bg-[#1459e9] text-white hover:bg-[#114bce]"
             >
               Entendido
             </AlertDialogAction>
