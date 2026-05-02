@@ -73,14 +73,9 @@ export default function BuscadorPedidosPage() {
       <ModernHeader />
       <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
-          <div className="mb-5">
-            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Buscador de pedidos</h1>
-            <p className="mt-1 max-w-xl text-[15px] leading-relaxed text-[#5d6578]">
-              Mismo dato que en operaciones: abrís el seguimiento público al instante.
-            </p>
-          </div>
+          <h1 className="mb-4 text-[34px] font-semibold tracking-tight text-[#1570ef]">Buscador de pedidos</h1>
 
-          <div className="ml-2 grid w-full max-w-[900px] gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(220px,280px)]">
+          <div className="ml-2 w-full max-w-[640px]">
             <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-[0_10px_40px_-14px_rgba(20,89,233,0.2)]">
               <div className="h-1 bg-gradient-to-r from-[#1459e9] via-[#2f7ae8] to-[#5ba3ff]" aria-hidden />
               <div className="p-5 sm:p-6">
@@ -138,24 +133,6 @@ export default function BuscadorPedidosPage() {
                 </div>
               </div>
             </div>
-
-            <aside className="flex flex-col rounded-2xl border border-[#e6eaf4] bg-gradient-to-b from-[#fbfdff] via-white to-[#eef4ff] p-5 shadow-sm lg:min-h-[200px]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#1459e9]">Referencia</p>
-              <p className="mt-2 text-[15px] font-semibold text-[#1f2433]">¿Dónde copio el número?</p>
-              <ul className="mt-3 flex-1 space-y-2.5 text-[13px] leading-relaxed text-[#5d6578]">
-                <li className="flex gap-2.5">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1459e9]" aria-hidden />
-                  Etiqueta o documentación del paquete.
-                </li>
-                <li className="flex gap-2.5">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1459e9]" aria-hidden />
-                  Listado principal de Envíos (columna tracking / ID).
-                </li>
-              </ul>
-              <p className="mt-5 rounded-xl border border-[#e6eaf4] bg-white/90 px-3 py-2.5 text-[12px] leading-snug text-[#8890a8]">
-                Tip: copiá y pegá el texto completo para evitar errores de tipeo.
-              </p>
-            </aside>
           </div>
         </div>
       </main>
