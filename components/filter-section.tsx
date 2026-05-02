@@ -2,11 +2,24 @@
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const fieldLabelClass = "block text-[14px] font-medium text-[#4d5571]"
 
 const filterInputClass =
   "h-10 rounded-xl border border-[#e6eaf4] bg-white text-[14px] font-medium text-[#1f2433] shadow-sm placeholder:font-normal placeholder:text-[#8890a8] focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"
+
+/** Valores del filtro de integración (coinciden con `clients-table`) */
+export type FiltroIntegracionCliente =
+  | "todos"
+  | "flex_con"
+  | "flex_sin"
+  | "tiendanube_con"
+  | "tiendanube_sin"
+  | "shopify_con"
+  | "shopify_sin"
+  | "vtex_con"
+  | "vtex_sin"
 
 interface FilterSectionProps {
   filters: {
@@ -19,6 +32,8 @@ interface FilterSectionProps {
 }
 
 export function FilterSection({ filters, onFilterChange, onClearFilters }: FilterSectionProps) {
+  const integracion = (filters.integraciones || "todos") as FiltroIntegracionCliente
+
   return (
     <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
       <h2 className="mb-4 text-[18px] font-semibold text-[#4f46ce]">Filtros</h2>
@@ -44,13 +59,23 @@ export function FilterSection({ filters, onFilterChange, onClearFilters }: Filte
         </div>
 
         <div className="space-y-1.5">
-          <label className={fieldLabelClass}>Integraciones</label>
-          <Input
-            value={filters.integraciones}
-            onChange={(e) => onFilterChange("integraciones", e.target.value)}
-            placeholder="Buscar por integración…"
-            className={filterInputClass}
-          />
+          <label className={fieldLabelClass}>Integración</label>
+          <Select value={integracion} onValueChange={(v) => onFilterChange("integraciones", v)}>
+            <SelectTrigger className="h-10 w-full text-[14px] font-medium text-[#1f2433]">
+              <SelectValue placeholder="Todas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas</SelectItem>
+              <SelectItem value="flex_con">Flex — configurada</SelectItem>
+              <SelectItem value="flex_sin">Flex — no configurada</SelectItem>
+              <SelectItem value="tiendanube_con">Tienda Nube — configurada</SelectItem>
+              <SelectItem value="tiendanube_sin">Tienda Nube — no configurada</SelectItem>
+              <SelectItem value="shopify_con">Shopify — configurada</SelectItem>
+              <SelectItem value="shopify_sin">Shopify — no configurada</SelectItem>
+              <SelectItem value="vtex_con">VTEX — configurada</SelectItem>
+              <SelectItem value="vtex_sin">VTEX — no configurada</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

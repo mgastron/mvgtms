@@ -48,7 +48,7 @@ export default function ClientsPage() {
   const [filters, setFilters] = useState({
     codigo: "",
     nombreFantasia: "",
-    integraciones: "",
+    integraciones: "todos",
   })
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingClient, setEditingClient] = useState<any>(null)
@@ -67,7 +67,7 @@ export default function ClientsPage() {
     setFilters({
       codigo: "",
       nombreFantasia: "",
-      integraciones: "",
+      integraciones: "todos",
     })
   }
 

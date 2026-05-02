@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useState, useMemo, useEffect } from "react"
 
+import type { FiltroIntegracionCliente } from "@/components/filter-section"
+
 interface Client {
   id?: number
   codigo: string
@@ -40,6 +42,57 @@ interface Client {
   vtexKey?: string
   vtexToken?: string
   vtexIdLogistica?: string
+}
+
+function hasFlexConfigured(c: Client): boolean {
+  return !!(String(c.flexIdVendedor || "").trim() || String(c.flexUsername || "").trim())
+}
+
+function hasTiendaNubeConfigured(c: Client): boolean {
+  return !!(
+    String(c.tiendanubeUrl || "").trim() ||
+    String(c.tiendanubeAccessToken || "").trim() ||
+    String(c.tiendanubeStoreId || "").trim()
+  )
+}
+
+function hasShopifyConfigured(c: Client): boolean {
+  return !!(String(c.shopifyUrl || "").trim() || String(c.shopifyClaveUnica || "").trim())
+}
+
+function hasVtexConfigured(c: Client): boolean {
+  return !!(
+    String(c.vtexUrl || "").trim() ||
+    String(c.vtexKey || "").trim() ||
+    String(c.vtexToken || "").trim() ||
+    String(c.vtexIdLogistica || "").trim()
+  )
+}
+
+/** Coincide con los valores del `Select` en `FilterSection`. */
+export function clientMatchesIntegracionFiltro(client: Client, modo: string): boolean {
+  const m = (modo || "todos") as FiltroIntegracionCliente
+  if (m === "todos") return true
+  switch (m) {
+    case "flex_con":
+      return hasFlexConfigured(client)
+    case "flex_sin":
+      return !hasFlexConfigured(client)
+    case "tiendanube_con":
+      return hasTiendaNubeConfigured(client)
+    case "tiendanube_sin":
+      return !hasTiendaNubeConfigured(client)
+    case "shopify_con":
+      return hasShopifyConfigured(client)
+    case "shopify_sin":
+      return !hasShopifyConfigured(client)
+    case "vtex_con":
+      return hasVtexConfigured(client)
+    case "vtex_sin":
+      return !hasVtexConfigured(client)
+    default:
+      return true
+  }
 }
 
 interface ClientsTableProps {
@@ -196,15 +249,13 @@ export function ClientsTable({
     }
   }, [newClient, onClientAdded, onClientError])
 
-  // Filtrar clientes según los filtros aplicados
+  // Filtrar clientes según los filtros aplicados y ordenar por código
   const filteredClients = useMemo(() => {
-    return clients.filter((client) => {
-      // Filtro por código
+    const filtered = clients.filter((client) => {
       if (filters.codigo && !client.codigo.toLowerCase().includes(filters.codigo.toLowerCase())) {
         return false
       }
 
-      // Filtro por nombre fantasía
       if (
         filters.nombreFantasia &&
         !client.nombreFantasia.toLowerCase().includes(filters.nombreFantasia.toLowerCase())
@@ -212,25 +263,15 @@ export function ClientsTable({
         return false
       }
 
-      if (filters.integraciones?.trim()) {
-        const needle = filters.integraciones.toLowerCase()
-        const blob = [
-          client.tiendanubeUrl,
-          client.shopifyUrl,
-          client.vtexUrl,
-          client.flexUsername,
-          client.flexIdVendedor,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
-        if (!blob.includes(needle)) {
-          return false
-        }
+      if (!clientMatchesIntegracionFiltro(client, filters.integraciones ?? "todos")) {
+        return false
       }
 
       return true
     })
+    return [...filtered].sort((a, b) =>
+      a.codigo.localeCompare(b.codigo, "es", { sensitivity: "base" })
+    )
   }, [filters, clients])
 
   // Calcular paginación
@@ -334,6 +375,7 @@ export function ClientsTable({
           if (filters.numeroDocumento && !client.numDoc.includes(filters.numeroDocumento)) return false
           if (filters.habilitado === "habilitado" && !client.habilitado) return false
           if (filters.habilitado === "deshabilitado" && client.habilitado) return false
+          if (!clientMatchesIntegracionFiltro(client, filters.integraciones ?? "todos")) return false
           return true
         })
         
