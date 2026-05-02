@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ModernHeader } from "@/components/modern-header"
-import { Pencil, Trash2, UserPlus, Filter } from "lucide-react"
+import { Pencil, Trash2, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -204,10 +204,7 @@ export default function UsuariosPage() {
           </div>
 
           <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <Filter className="h-4 w-4 text-[#1570ef]" aria-hidden />
-              <h2 className="text-[18px] font-semibold text-[#4f46ce]">Filtros</h2>
-            </div>
+            <h2 className="mb-4 text-[18px] font-semibold text-[#4f46ce]">Filtros</h2>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-1.5">
                 <label className="block text-[14px] font-medium text-[#4d5571]">Nombre</label>

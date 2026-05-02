@@ -826,7 +826,7 @@ export default function EnviosPage() {
 
             {/* Filters Section */}
           <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm space-y-4">
-            <h2 className="text-[32px] font-semibold text-[#4f46ce]">Filtros</h2>
+            <h2 className="text-[18px] font-semibold text-[#4f46ce]">Filtros</h2>
               {/* Filtros básicos */}
               <div className="grid grid-cols-6 gap-3">
                 <div className="space-y-1">

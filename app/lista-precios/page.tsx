@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { ModernHeader } from "@/components/modern-header"
-import { Pencil, Trash2, Plus, DollarSign, Filter } from "lucide-react"
+import { Pencil, Trash2, Plus, Inbox } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -167,7 +167,7 @@ export default function ListaPreciosPage() {
 
   // Filtrar lista de precios
   const filteredListaPrecios = useMemo(() => {
-    return listaPrecios.filter((precio) => {
+    const filtered = listaPrecios.filter((precio) => {
       if (filters.codigo && !precio.codigo.toLowerCase().includes(filters.codigo.toLowerCase())) {
         return false
       }
@@ -182,6 +182,9 @@ export default function ListaPreciosPage() {
       }
       return true
     })
+    return [...filtered].sort((a, b) =>
+      a.codigo.localeCompare(b.codigo, "es", { sensitivity: "base" })
+    )
   }, [filters, listaPrecios])
 
   // Calcular paginación
@@ -223,10 +226,7 @@ export default function ListaPreciosPage() {
       <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px] space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <DollarSign className="h-8 w-8 shrink-0 text-[#1570ef]" aria-hidden />
-              <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Lista Precios</h1>
-            </div>
+            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Lista Precios</h1>
             <Button
               className="h-10 gap-2 rounded-xl bg-[#1459e9] px-5 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce]"
               onClick={() => {
@@ -240,10 +240,7 @@ export default function ListaPreciosPage() {
           </div>
 
           <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <Filter className="h-4 w-4 text-[#1570ef]" aria-hidden />
-              <h2 className="text-[18px] font-semibold text-[#1570ef]">Filtros</h2>
-            </div>
+            <h2 className="mb-4 text-[18px] font-semibold text-[#4f46ce]">Filtros</h2>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <div className="space-y-1.5">
                 <label className={fieldLabelClass}>Código</label>
@@ -311,7 +308,7 @@ export default function ListaPreciosPage() {
                       <td colSpan={4} className="px-5 py-14 text-center">
                         <div className="mx-auto flex max-w-md flex-col items-center">
                           <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#eef4ff]">
-                            <DollarSign className="h-6 w-6 text-[#1570ef]" aria-hidden />
+                            <Inbox className="h-6 w-6 text-[#1570ef]" aria-hidden />
                           </div>
                           <p className="text-[14px] font-semibold text-[#1f2433]">No se encontraron listas de precios</p>
                           <p className="mt-2 text-[13px] text-[#8890a8]">Probá cambiar los filtros</p>
