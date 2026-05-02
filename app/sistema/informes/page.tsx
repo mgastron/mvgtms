@@ -226,10 +226,7 @@ export default function InformesPage() {
 
           <div className="ml-2 w-full max-w-[640px] space-y-5 rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm sm:p-6">
             <div className="space-y-2">
-              <h2 className="text-[18px] font-semibold text-[#4f46ce]">Pedidos colectados</h2>
-              <p className="text-[13px] leading-relaxed text-[#8890a8]">
-                Son los pedidos <strong className="font-semibold text-[#5d6578]">colectados</strong> (retirados) en el rango indicado.
-              </p>
+              <h2 className="text-[18px] font-semibold text-[#1570ef]">Pedidos colectados</h2>
               <div className="flex flex-wrap items-end gap-3 pt-1">
                 <div className="min-w-[140px] flex-1">
                   <label className={fieldLabelClass}>Desde</label>
