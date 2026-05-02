@@ -1,6 +1,6 @@
 "use client"
 
-import { Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2, Inbox } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getApiBaseUrl } from "@/lib/api-config"
@@ -46,7 +46,7 @@ interface ClientsTableProps {
   filters: {
     codigo: string
     nombreFantasia: string
-    integraciones: string
+    integraciones?: string
     razonSocial?: string
     numeroDocumento?: string
     habilitado?: string
@@ -212,9 +212,22 @@ export function ClientsTable({
         return false
       }
 
-      // Filtro por integraciones (si el cliente tiene integraciones en el campo correspondiente)
-      // Nota: Este filtro se aplicaría si tuviéramos un campo de integraciones en el cliente
-      // Por ahora lo dejamos como placeholder
+      if (filters.integraciones?.trim()) {
+        const needle = filters.integraciones.toLowerCase()
+        const blob = [
+          client.tiendanubeUrl,
+          client.shopifyUrl,
+          client.vtexUrl,
+          client.flexUsername,
+          client.flexIdVendedor,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+        if (!blob.includes(needle)) {
+          return false
+        }
+      }
 
       return true
     })
@@ -353,82 +366,67 @@ export function ClientsTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <div className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white px-6 py-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Lista de Clientes</h3>
-          <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-1.5">
-            <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <span className="text-sm font-medium text-gray-700">{totalRecords} clientes</span>
-          </div>
+    <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:px-5">
+        <h3 className="text-[16px] font-semibold text-[#1f2433]">Listado</h3>
+        <div className="flex items-center gap-2 rounded-full border border-[#e6eaf4] bg-white px-3 py-1 text-[13px] font-medium text-[#5d6578]">
+          <span className="text-[#1570ef]">{totalRecords}</span>
+          <span>{totalRecords === 1 ? "cliente" : "clientes"}</span>
         </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50/50">
-              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+            <tr className="border-b border-[#e6eaf4] bg-[#f7f8fc]">
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
                 Código
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
-                Nombre Fantasía
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
+                Nombre fantasía
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
                 Grupo
               </th>
-              <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-700">
+              <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
                 Acciones
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
+          <tbody className="divide-y divide-[#eef1f8]">
             {paginatedClients.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-16 text-center">
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-                      <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
+                <td colSpan={4} className="px-5 py-14 text-center">
+                  <div className="mx-auto flex max-w-md flex-col items-center">
+                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#eef4ff]">
+                      <Inbox className="h-6 w-6 text-[#1570ef]" aria-hidden />
                     </div>
-                    <p className="text-sm font-medium text-gray-900">No se encontraron clientes</p>
-                    <p className="mt-1 text-sm text-gray-500">Intenta ajustar los filtros de búsqueda</p>
+                    <p className="text-[14px] font-semibold text-[#1f2433]">No se encontraron clientes</p>
+                    <p className="mt-2 text-[13px] text-[#8890a8]">Probá cambiar los filtros</p>
                   </div>
                 </td>
               </tr>
             ) : (
               paginatedClients.map((client, index) => (
                 <tr
-                  key={client.codigo}
-                  className="transition-all hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-transparent"
+                  key={client.id != null ? `c-${client.id}` : client.codigo}
+                  className={`transition-colors hover:bg-[#f7faff] ${index % 2 === 0 ? "bg-white" : "bg-[#fafbff]"}`}
                 >
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#6B46FF] to-[#8B5CF6] text-xs font-bold text-white shadow-sm">
-                        {client.codigo.charAt(0).toUpperCase()}
+                  <td className="whitespace-nowrap px-4 py-3 sm:px-5">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eef4ff] text-[12px] font-bold text-[#1459e9]">
+                        {(client.codigo || "?").charAt(0).toUpperCase()}
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{client.codigo}</span>
+                      <span className="text-[14px] font-medium text-[#1f2433]">{client.codigo}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-900">{client.nombreFantasia || "-"}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-gray-600">{client.grupoNombre || "-"}</span>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-4 py-3 text-[14px] text-[#1f2433] sm:px-5">{client.nombreFantasia || "—"}</td>
+                  <td className="px-4 py-3 text-[14px] text-[#5d6578] sm:px-5">{client.grupoNombre || "—"}</td>
+                  <td className="whitespace-nowrap px-4 py-3 sm:px-5">
+                    <div className="flex items-center justify-center gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 rounded-lg text-gray-600 transition-all hover:bg-purple-100 hover:text-purple-700"
+                        className="h-9 w-9 rounded-lg text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1570ef]"
                         onClick={() => onEditClient && onEditClient(client)}
                       >
                         <Pencil className="h-4 w-4" />
@@ -436,7 +434,7 @@ export function ClientsTable({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 rounded-lg text-gray-600 transition-all hover:bg-red-100 hover:text-red-600"
+                        className="h-9 w-9 rounded-lg text-[#5d6578] hover:bg-red-50 hover:text-red-600"
                         onClick={() => handleDeleteClick(client)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -450,26 +448,28 @@ export function ClientsTable({
         </table>
       </div>
 
-      <div className="flex flex-col gap-4 border-t border-gray-200 bg-gradient-to-r from-gray-50/50 to-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-gray-700">Total:</span>
-            <span className="rounded-md bg-purple-100 px-2 py-1 font-semibold text-purple-700">{totalRecords}</span>
+      <div className="flex flex-col gap-3 border-t border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="flex flex-wrap items-center gap-3 text-[13px] text-[#5d6578]">
+          <div className="flex items-center gap-1.5">
+            <span className="font-medium">Total</span>
+            <span className="rounded-md bg-[#eef4ff] px-2 py-0.5 font-semibold text-[#1459e9]">{totalRecords}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-gray-700">Páginas:</span>
-            <span className="rounded-md bg-gray-100 px-2 py-1 font-semibold text-gray-700">{totalPages || 1}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-medium">Páginas</span>
+            <span className="rounded-md border border-[#e6eaf4] bg-white px-2 py-0.5 font-semibold text-[#4d5571]">
+              {totalPages || 1}
+            </span>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-0.5 rounded-xl border border-[#e6eaf4] bg-white p-0.5">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setCurrentPage(1)}
               disabled={currentPage === 1}
-              className="h-8 px-3 text-gray-600 transition-all hover:bg-purple-50 hover:text-purple-700 disabled:opacity-40"
+              className="h-8 px-2.5 text-[13px] text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9] disabled:opacity-40"
             >
               &lt;&lt;
             </Button>
@@ -489,13 +489,13 @@ export function ClientsTable({
               return (
                 <Button
                   key={pageNum}
-                  variant={currentPage === pageNum ? "default" : "ghost"}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setCurrentPage(pageNum)}
-                  className={`h-8 px-3 transition-all ${
+                  className={`h-8 min-w-[2rem] px-2 text-[13px] font-medium ${
                     currentPage === pageNum
-                      ? "bg-gradient-to-r from-[#6B46FF] to-[#8B5CF6] text-white shadow-sm"
-                      : "text-gray-600 hover:bg-purple-50 hover:text-purple-700"
+                      ? "bg-[#1459e9] text-white shadow-sm hover:bg-[#114bce] hover:text-white"
+                      : "text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9]"
                   }`}
                 >
                   {pageNum}
@@ -508,21 +508,27 @@ export function ClientsTable({
               size="sm"
               onClick={() => setCurrentPage(totalPages)}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="h-8 px-3 text-gray-600 transition-all hover:bg-purple-50 hover:text-purple-700 disabled:opacity-40"
+              className="h-8 px-2.5 text-[13px] text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9] disabled:opacity-40"
             >
               &gt;&gt;
             </Button>
           </div>
 
-          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5">
-            <span className="text-sm font-medium text-gray-700">Por página:</span>
-            <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
-              <SelectTrigger className="h-8 w-16 border-0 bg-transparent shadow-none focus:ring-0">
+          <div className="flex items-center gap-2 rounded-xl border border-[#e6eaf4] bg-white px-2.5 py-1">
+            <span className="text-[13px] font-medium text-[#4d5571]">Por página</span>
+            <Select
+              value={itemsPerPage.toString()}
+              onValueChange={(value) => {
+                setItemsPerPage(Number(value))
+                setCurrentPage(1)
+              }}
+            >
+              <SelectTrigger className="h-8 w-14 border-0 bg-transparent text-[13px] font-semibold text-[#1459e9] shadow-none focus:ring-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="25">25</SelectItem>
                 <SelectItem value="50">50</SelectItem>
                 <SelectItem value="100">100</SelectItem>
               </SelectContent>
@@ -535,10 +541,10 @@ export function ClientsTable({
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-lg font-semibold text-[#1f2433]">¿Eliminar cliente?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[14px] leading-relaxed text-[#5d6578]">
               ¿Estás seguro de que deseas eliminar al cliente{" "}
-              <span className="font-semibold text-foreground">
+              <span className="font-semibold text-[#1f2433]">
                 {clientToDelete?.nombreFantasia || clientToDelete?.codigo}
               </span>
               ? Esta acción no se puede deshacer.

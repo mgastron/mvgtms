@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { Montserrat } from "next/font/google"
 import { ModernHeader } from "@/components/modern-header"
 import { ClientsTable } from "@/components/clients-table"
 import { FilterSection } from "@/components/filter-section"
@@ -10,6 +11,11 @@ import { UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+})
 import {
   AlertDialog,
   AlertDialogAction,
@@ -211,44 +217,30 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50" suppressHydrationWarning>
+    <div className="min-h-screen bg-[#f7f8fc]" suppressHydrationWarning>
       <ModernHeader />
 
-      <main className="p-6 lg:p-8">
-        <div className="mx-auto max-w-[1600px] space-y-6">
-
-          {/* Header */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#6B46FF] to-[#8B5CF6] shadow-lg shadow-purple-500/20">
-                <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900 lg:text-4xl">Clientes</h1>
-                <p className="mt-1 text-sm text-gray-500">Gestiona tus clientes y sus integraciones</p>
-              </div>
-            </div>
+      <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
+        <div className="mx-auto w-full max-w-[1700px] space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Clientes</h1>
             <Button
-              className="gap-2 bg-gradient-to-r from-[#6B46FF] to-[#8B5CF6] shadow-lg shadow-purple-500/30 hover:from-[#5a3ad6] hover:to-[#7c4dd4] transition-all duration-200"
+              className="h-10 gap-2 rounded-xl bg-[#1459e9] px-5 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce]"
               onClick={() => {
                 setEditingClient(null)
                 setIsModalOpen(true)
               }}
             >
-              <UserPlus className="h-5 w-5" />
-              Nuevo Cliente
+              <UserPlus className="h-4 w-4" />
+              Nuevo
             </Button>
           </div>
 
-          {/* Filter Section */}
-          <FilterSection filters={filters} onFilterChange={handleFilterChange} />
+          <FilterSection
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+          />
 
           {/* Table */}
           <ClientsTable
@@ -282,13 +274,20 @@ export default function ClientsPage() {
 
           {/* Error Dialog */}
           <AlertDialog open={errorDialog.open} onOpenChange={(open) => setErrorDialog({ open, message: "" })}>
-            <AlertDialogContent>
+            <AlertDialogContent className={montserrat.className}>
               <AlertDialogHeader>
-                <AlertDialogTitle>Error al crear cliente</AlertDialogTitle>
-                <AlertDialogDescription>{errorDialog.message}</AlertDialogDescription>
+                <AlertDialogTitle className="text-lg font-semibold text-[#1f2433]">
+                  Error al crear cliente
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-[14px] leading-relaxed text-[#5d6578]">
+                  {errorDialog.message}
+                </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogAction onClick={() => setErrorDialog({ open: false, message: "" })}>
+                <AlertDialogAction
+                  className="rounded-xl bg-[#1459e9] text-white hover:bg-[#114bce]"
+                  onClick={() => setErrorDialog({ open: false, message: "" })}
+                >
                   Aceptar
                 </AlertDialogAction>
               </AlertDialogFooter>
