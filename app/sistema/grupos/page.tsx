@@ -8,6 +8,15 @@ import { Input } from "@/components/ui/input"
 import { Pencil, Layers } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
+import { Montserrat } from "next/font/google"
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+})
+
+const inputEditClass =
+  "h-10 max-w-xs rounded-xl border border-[#e6eaf4] bg-white text-[14px] font-medium text-[#1f2433] shadow-sm focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -121,76 +130,102 @@ export default function GruposPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50" suppressHydrationWarning>
+    <div className="min-h-screen bg-[#f7f8fc]" suppressHydrationWarning>
       <ModernHeader />
-      <main className="p-4">
-        <div className="mx-auto max-w-5xl">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Grupos de clientes</h1>
-          </div>
+      <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
+        <div className="mx-auto w-full max-w-[1700px]">
+          <h1 className="mb-4 text-[34px] font-semibold tracking-tight text-[#1570ef]">Grupos</h1>
 
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white px-6 py-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Lista de grupos</h3>
-                <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-1.5">
-                  <Layers className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700">{grupos.length} grupos</span>
-                </div>
+          <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:px-5">
+              <h2 className="text-[16px] font-semibold text-[#1f2433]">Grupos de clientes</h2>
+              <div className="flex items-center gap-2 rounded-full border border-[#e6eaf4] bg-white px-3 py-1 text-[13px] font-medium text-[#5d6578]">
+                <Layers className="h-3.5 w-3.5 text-[#1570ef]" aria-hidden />
+                <span className="text-[#1570ef]">{grupos.length}</span>
+                <span>grupos</span>
               </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50/50">
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">Nombre</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">Clientes asignados</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-700 w-24">Acciones</th>
+                  <tr className="border-b border-[#e6eaf4] bg-[#f7f8fc]">
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
+                      Nombre
+                    </th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
+                      Clientes asignados
+                    </th>
+                    <th className="w-24 px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 bg-white">
+                <tbody className="divide-y divide-[#eef1f8]">
                   {loading ? (
                     <tr>
-                      <td colSpan={3} className="px-6 py-12 text-center text-sm text-gray-500">Cargando...</td>
+                      <td colSpan={3} className="px-5 py-12 text-center text-[14px] text-[#8890a8]">
+                        Cargando…
+                      </td>
                     </tr>
                   ) : grupos.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="px-6 py-16 text-center">
-                        <p className="text-sm font-medium text-gray-900">No hay grupos</p>
-                        <p className="mt-1 text-sm text-gray-500">Los grupos se crean al dar de alta un cliente (opción &quot;Crear grupo a partir del cliente&quot;) o desde la tabla de Clientes.</p>
+                      <td colSpan={3} className="px-5 py-14 text-center">
+                        <div className="mx-auto flex max-w-md flex-col items-center">
+                          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#eef4ff]">
+                            <Layers className="h-6 w-6 text-[#1570ef]" aria-hidden />
+                          </div>
+                          <p className="text-[14px] font-semibold text-[#1f2433]">No hay grupos</p>
+                          <p className="mt-2 text-[13px] leading-relaxed text-[#8890a8]">
+                            Los grupos se crean al dar de alta un cliente (opción &quot;Crear grupo a partir del cliente&quot;) o desde la tabla de Clientes.
+                          </p>
+                        </div>
                       </td>
                     </tr>
                   ) : (
-                    grupos.map((g) => (
-                      <tr key={g.id} className="transition-all hover:bg-gray-50/50">
-                        <td className="px-6 py-4">
+                    grupos.map((g, index) => (
+                      <tr
+                        key={g.id}
+                        className={`transition-colors hover:bg-[#f7faff] ${index % 2 === 0 ? "bg-white" : "bg-[#fafbff]"}`}
+                      >
+                        <td className="px-4 py-3 sm:px-5">
                           {editingId === g.id ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <Input
                                 value={editingNombre}
                                 onChange={(e) => setEditingNombre(e.target.value)}
-                                className="h-9 max-w-xs"
+                                className={inputEditClass}
                                 onKeyDown={(e) => e.key === "Enter" && handleSaveNombre()}
                               />
-                              <Button size="sm" onClick={handleSaveNombre} disabled={saving}>
-                                {saving ? "Guardando..." : "Guardar"}
+                              <Button
+                                size="sm"
+                                onClick={handleSaveNombre}
+                                disabled={saving}
+                                className="h-9 rounded-xl bg-[#1459e9] px-4 text-[13px] font-semibold text-white hover:bg-[#114bce] disabled:opacity-50"
+                              >
+                                {saving ? "Guardando…" : "Guardar"}
                               </Button>
-                              <Button size="sm" variant="outline" onClick={handleCancelEdit} disabled={saving}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelEdit}
+                                disabled={saving}
+                                className="h-9 rounded-xl border-[#e6eaf4] text-[13px] font-semibold text-[#1570ef] hover:bg-[#f7faff]"
+                              >
                                 Cancelar
                               </Button>
                             </div>
                           ) : (
-                            <span className="text-sm font-medium text-gray-900">{g.nombre}</span>
+                            <span className="text-[14px] font-medium text-[#1f2433]">{g.nombre}</span>
                           )}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3 sm:px-5">
                           {g.clientes && g.clientes.length > 0 ? (
                             <button
                               type="button"
                               onClick={() => setClientesModalGroup(g)}
-                              className="text-left w-full rounded-md p-1 -m-1 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1 transition-colors"
+                              className="-m-1 w-full rounded-xl p-2 text-left transition-colors hover:bg-[#eef4ff] focus:outline-none focus:ring-2 focus:ring-[#1570ef]/25"
                             >
-                              <ul className="text-sm text-gray-600 space-y-0.5">
+                              <ul className="space-y-0.5 text-[14px] text-[#5d6578]">
                                 {g.clientes.slice(0, 5).map((c) => (
                                   <li key={c.id}>
                                     {c.codigo}
@@ -198,22 +233,22 @@ export default function GruposPage() {
                                   </li>
                                 ))}
                                 {g.clientes.length > 5 && (
-                                  <li className="text-gray-500 font-medium pt-0.5">
+                                  <li className="pt-0.5 text-[13px] font-medium text-[#1570ef]">
                                     + {g.clientes.length - 5} más — clic para ver todos
                                   </li>
                                 )}
                               </ul>
                             </button>
                           ) : (
-                            <span className="text-sm text-gray-400">Ningún cliente</span>
+                            <span className="text-[14px] text-[#8890a8]">Ningún cliente</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-center">
+                        <td className="px-4 py-3 text-center sm:px-5">
                           {editingId === g.id ? null : (
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-9 w-9 rounded-lg text-gray-600 hover:bg-purple-100 hover:text-purple-700"
+                              className="h-9 w-9 rounded-lg text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1570ef]"
                               onClick={() => handleStartEdit(g)}
                             >
                               <Pencil className="h-4 w-4" />
@@ -231,41 +266,48 @@ export default function GruposPage() {
       </main>
 
       <AlertDialog open={errorDialog.open} onOpenChange={(open) => setErrorDialog((p) => ({ ...p, open }))}>
-        <AlertDialogContent>
+        <AlertDialogContent className={montserrat.className}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Error</AlertDialogTitle>
-            <AlertDialogDescription>{errorDialog.message}</AlertDialogDescription>
+            <AlertDialogTitle className="text-lg font-semibold text-[#1f2433]">Error</AlertDialogTitle>
+            <AlertDialogDescription className="text-[14px] leading-relaxed text-[#5d6578]">
+              {errorDialog.message}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction>Entendido</AlertDialogAction>
+            <AlertDialogAction className="rounded-xl bg-[#1459e9] px-6 text-[14px] font-semibold text-white hover:bg-[#114bce]">
+              Entendido
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <AlertDialog open={!!clientesModalGroup} onOpenChange={(open) => !open && setClientesModalGroup(null)}>
-        <AlertDialogContent className="max-w-md max-h-[85vh] flex flex-col">
+        <AlertDialogContent className={`flex max-h-[85vh] max-w-md flex-col ${montserrat.className}`}>
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle className="text-lg font-semibold text-[#1f2433]">
               Clientes de {clientesModalGroup?.nombre ?? ""}
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-[14px] text-[#5d6578]">
               {clientesModalGroup?.clientes?.length ?? 0} cliente(s) en este grupo
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="overflow-y-auto max-h-[50vh] rounded-lg border border-gray-200 bg-gray-50/50 py-2 -mx-1 px-3">
-            <ul className="text-sm text-gray-700 space-y-1.5">
+          <div className="-mx-1 max-h-[50vh] overflow-y-auto rounded-xl border border-[#e6eaf4] bg-[#fafbff] px-3 py-2">
+            <ul className="space-y-1.5 text-[14px] text-[#5d6578]">
               {clientesModalGroup?.clientes?.map((c) => (
-                <li key={c.id} className="py-1.5 border-b border-gray-100 last:border-0">
-                  <span className="font-medium text-gray-800">{c.codigo}</span>
-                  {c.nombreFantasia ? (
-                    <span className="text-gray-600"> — {c.nombreFantasia}</span>
-                  ) : null}
+                <li key={c.id} className="border-b border-[#eef1f8] py-2 last:border-0">
+                  <span className="font-semibold text-[#1f2433]">{c.codigo}</span>
+                  {c.nombreFantasia ? <span> — {c.nombreFantasia}</span> : null}
                 </li>
               ))}
             </ul>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setClientesModalGroup(null)}>Cerrar</AlertDialogCancel>
+            <AlertDialogCancel
+              onClick={() => setClientesModalGroup(null)}
+              className="rounded-xl border border-[#e6eaf4] bg-white text-[#1570ef] hover:bg-[#f7faff]"
+            >
+              Cerrar
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
