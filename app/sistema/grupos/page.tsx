@@ -74,7 +74,9 @@ export default function GruposPage() {
       const response = await fetch(`${apiBaseUrl}/grupos`)
       if (response.ok) {
         const data = await response.json()
-        setGrupos(Array.isArray(data) ? data : [])
+        const list: Grupo[] = Array.isArray(data) ? data : []
+        list.sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }))
+        setGrupos(list)
       } else {
         setGrupos([])
       }
