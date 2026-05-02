@@ -1,10 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Montserrat } from "next/font/google"
 import { ModernHeader } from "@/components/modern-header"
-import { Package, Truck, Clock } from "lucide-react"
+import { Clock, Inbox } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { errorDev } from "@/lib/logger"
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+})
 
 interface ChoferCierre {
   id: number
@@ -33,7 +40,6 @@ export default function CierrePage() {
     const calcularTiempoRestante = () => {
       const ahora = new Date()
 
-      // Obtener fecha/hora actual en Argentina
       const arParts = new Intl.DateTimeFormat("en-CA", {
         timeZone: ZONA_ARGENTINA,
         hour: "numeric",
@@ -53,7 +59,6 @@ export default function CierrePage() {
       const monthAr = parseInt(getPart(arDateParts, "month"), 10) - 1
       const dayAr = parseInt(getPart(arDateParts, "day"), 10)
 
-      // Si en Argentina son las 23:00 o más, cierre finalizado
       if (horaAr >= HORA_CIERRE) {
         setCierreCerrado(true)
         setTiempoRestante("")
@@ -62,8 +67,6 @@ export default function CierrePage() {
 
       setCierreCerrado(false)
 
-      // 23:00:00 del día de hoy en Argentina = esa fecha en UTC-3, luego a timestamp
-      // En Argentina 23:00 = UTC 02:00 del día siguiente (23 + 3 = 26 → 02)
       const cierreAr = new Date(Date.UTC(yearAr, monthAr, dayAr, HORA_CIERRE + 3, MINUTO_CIERRE, SEGUNDO_CIERRE))
       const diferenciaMs = cierreAr.getTime() - ahora.getTime()
 
@@ -92,12 +95,9 @@ export default function CierrePage() {
   const loadChoferes = async () => {
     setLoading(true)
     try {
-      const response = await fetch(
-        `${getApiBaseUrl()}/ruteate/cierre?soloFlex=${soloFlex}`
-      )
+      const response = await fetch(`${getApiBaseUrl()}/ruteate/cierre?soloFlex=${soloFlex}`)
       if (response.ok) {
         const data = await response.json()
-        // Filtrar choferes con 0 envíos y ordenar por cantidad descendente
         const choferesFiltrados = data
           .filter((chofer: ChoferCierre) => chofer.cantidadEnvios > 0)
           .sort((a: ChoferCierre, b: ChoferCierre) => b.cantidadEnvios - a.cantidadEnvios)
@@ -114,147 +114,141 @@ export default function CierrePage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-[#f7f8fc]">
       <ModernHeader />
-      <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-5xl mx-auto">
-            {/* Header */}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-[#6B46FF] to-[#5a3ae6] rounded-lg shadow-lg">
-                  <Package className="h-6 w-6 text-white" />
-                </div>
-                Cierre
-              </h1>
-              <p className="text-sm text-gray-500">Resumen de envíos pendientes por chofer - Día de hoy</p>
-            </div>
+      <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
+        <div className="mx-auto w-full max-w-[1100px] space-y-4">
+          <div>
+            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Cierre</h1>
+            <p className="mt-1 text-[14px] text-[#5d6578]">
+              Resumen de envíos pendientes por chofer — día de hoy (hora Argentina)
+            </p>
+          </div>
 
-            {/* Contador de cierre */}
-            {cierreCerrado ? (
-              <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl shadow-lg border-2 border-red-400 p-5 mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white/20 rounded-lg">
-                    <Clock className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-white font-bold text-lg">Cierre de Flex finalizado</p>
-                    <p className="text-white/90 text-sm">El período de cierre ha concluido</p>
-                  </div>
-                </div>
+          {cierreCerrado ? (
+            <div
+              className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm"
+              role="status"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/80">
+                <Clock className="h-5 w-5 text-red-600" aria-hidden />
               </div>
-            ) : (
-              <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 rounded-xl shadow-xl border-2 border-orange-400 p-5 mb-6 animate-pulse">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white/20 rounded-lg">
-                    <Clock className="h-7 w-7 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-white font-bold text-xl">Faltan <span className="font-mono text-2xl font-black tracking-wider bg-white/20 px-3 py-1 rounded-lg inline-block">{tiempoRestante}</span> para el cierre de Flex</p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Filtros */}
-            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5 mb-6">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-purple-50 border border-purple-200">
-                  <Truck className="h-5 w-5 text-[#6B46FF]" />
-                </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="soloFlex"
-                    checked={soloFlex}
-                    onChange={(e) => setSoloFlex(e.target.checked)}
-                    className="w-5 h-5 text-[#6B46FF] border-2 border-gray-300 rounded focus:ring-2 focus:ring-[#6B46FF] focus:ring-offset-2 cursor-pointer transition-all"
-                  />
-                  <label 
-                    htmlFor="soloFlex" 
-                    className="text-sm font-semibold text-gray-700 cursor-pointer select-none"
-                  >
-                    Flex
-                  </label>
-                </div>
+              <div>
+                <p className="text-[16px] font-semibold text-red-900">Cierre de Flex finalizado</p>
+                <p className="mt-0.5 text-[14px] text-red-800/90">El período de cierre de hoy ya concluyó (después de las 23:00 AR).</p>
               </div>
             </div>
+          ) : (
+            <div
+              className="flex flex-wrap items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50/90 p-5 shadow-sm"
+              role="status"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-white">
+                <Clock className="h-5 w-5 text-amber-700" aria-hidden />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-medium text-amber-900">Tiempo restante hasta el cierre de Flex</p>
+                <p className="mt-1 text-[13px] text-amber-800/90">Corte a las 23:00 (Buenos Aires)</p>
+              </div>
+              <div className="rounded-xl border border-amber-200/80 bg-white px-4 py-2 font-mono text-[22px] font-bold tabular-nums tracking-wide text-[#b45309] shadow-sm">
+                {tiempoRestante}
+              </div>
+            </div>
+          )}
 
-            {/* Tabla */}
-            <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-gray-50 via-gray-50 to-gray-100 border-b border-gray-200">
-                <table className="w-full">
-                  <thead>
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        Choferes
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                        Cantidad de envios restantes
-                      </th>
-                    </tr>
-                  </thead>
-                </table>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan={2} className="px-6 py-12 text-center">
-                          <div className="flex flex-col items-center gap-3">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6B46FF]"></div>
-                            <p className="text-sm text-gray-500">Cargando...</p>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : choferes.length === 0 ? (
-                      <tr>
-                        <td colSpan={2} className="px-6 py-12 text-center">
-                          <div className="flex flex-col items-center gap-3">
-                            <div className="p-4 bg-gray-100 rounded-full">
-                              <Package className="h-8 w-8 text-gray-400" />
-                            </div>
-                            <p className="text-sm font-medium text-gray-500">
-                              No hay choferes con envíos pendientes para el día de hoy
-                            </p>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      choferes.map((chofer, index) => (
-                        <tr 
-                          key={chofer.id} 
-                          className={`border-b border-gray-100 transition-all duration-200 ${
-                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                          } hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-transparent hover:shadow-sm`}
-                        >
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6B46FF] to-[#5a3ae6] flex items-center justify-center text-white font-bold text-sm shadow-md">
-                                {chofer.nombreCompleto.charAt(0).toUpperCase()}
-                              </div>
-                              <span className="text-sm font-medium text-gray-900">
-                                {chofer.nombreCompleto}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <div className="px-3 py-1.5 bg-gradient-to-r from-[#6B46FF] to-[#5a3ae6] text-white rounded-lg font-bold text-sm shadow-md min-w-[3rem] text-center">
-                                {chofer.cantidadEnvios}
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
+            <h2 className="mb-4 text-[18px] font-semibold text-[#4f46ce]">Filtros</h2>
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="soloFlex"
+                checked={soloFlex}
+                onCheckedChange={(checked) => setSoloFlex(!!checked)}
+                className="h-4 w-4 rounded border-[#cfd6e6] text-[#1459e9] focus:ring-2 focus:ring-[#1570ef]/30 focus:ring-offset-0"
+              />
+              <label htmlFor="soloFlex" className="cursor-pointer text-[14px] font-medium text-[#1f2433] select-none">
+                Solo Flex
+              </label>
             </div>
           </div>
-      </div>
+
+          <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:px-5">
+              <h3 className="text-[16px] font-semibold text-[#1f2433]">Listado</h3>
+              {!loading && (
+                <div className="flex items-center gap-2 rounded-full border border-[#e6eaf4] bg-white px-3 py-1 text-[13px] font-medium text-[#5d6578]">
+                  <span className="text-[#1570ef]">{choferes.length}</span>
+                  <span>{choferes.length === 1 ? "chofer" : "choferes"}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[#e6eaf4] bg-[#f7f8fc]">
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
+                      Chofer
+                    </th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
+                      Envíos restantes
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#eef1f8]">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={2} className="px-5 py-14 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                          <div
+                            className="h-9 w-9 animate-spin rounded-full border-2 border-[#e6eaf4] border-t-[#1570ef]"
+                            aria-hidden
+                          />
+                          <p className="text-[14px] font-medium text-[#5d6578]">Cargando…</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : choferes.length === 0 ? (
+                    <tr>
+                      <td colSpan={2} className="px-5 py-14 text-center">
+                        <div className="mx-auto flex max-w-md flex-col items-center">
+                          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#eef4ff]">
+                            <Inbox className="h-6 w-6 text-[#1570ef]" aria-hidden />
+                          </div>
+                          <p className="text-[14px] font-semibold text-[#1f2433]">
+                            No hay choferes con envíos pendientes
+                          </p>
+                          <p className="mt-2 text-[13px] text-[#8890a8]">Para el día de hoy, con los filtros actuales</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    choferes.map((chofer, index) => (
+                      <tr
+                        key={chofer.id}
+                        className={`transition-colors hover:bg-[#f7faff] ${index % 2 === 0 ? "bg-white" : "bg-[#fafbff]"}`}
+                      >
+                        <td className="px-4 py-3 sm:px-5">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eef4ff] text-[13px] font-semibold text-[#1459e9]">
+                              {chofer.nombreCompleto.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-[14px] font-medium text-[#1f2433]">{chofer.nombreCompleto}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 sm:px-5">
+                          <span className="inline-flex min-w-[2.5rem] items-center justify-center rounded-lg bg-[#eef4ff] px-2.5 py-1 text-[14px] font-semibold tabular-nums text-[#1459e9]">
+                            {chofer.cantidadEnvios}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }
-
