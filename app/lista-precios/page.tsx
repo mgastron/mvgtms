@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { ModernHeader } from "@/components/modern-header"
-import { Pencil, Trash2, Plus } from "lucide-react"
+import { Pencil, Trash2, Plus, DollarSign, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -20,6 +20,16 @@ import {
 } from "@/components/ui/alert-dialog"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev, errorDev } from "@/lib/logger"
+import { Montserrat } from "next/font/google"
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+})
+
+const fieldLabelClass = "block text-[14px] font-medium text-[#4d5571]"
+const filterInputClass =
+  "h-10 rounded-xl border border-[#e6eaf4] bg-white text-[14px] font-medium text-[#1f2433] shadow-sm placeholder:font-normal placeholder:text-[#8890a8] focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"
 
 interface ListaPrecio {
   id: number
@@ -208,79 +218,60 @@ export default function ListaPreciosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-[#f7f8fc]">
       <ModernHeader />
-      <main className="p-6 lg:p-8">
-        <div className="mx-auto max-w-[1600px] space-y-6">
-
-          {/* Header */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#6B46FF] to-[#8B5CF6] shadow-lg shadow-purple-500/20">
-                <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900 lg:text-4xl">Lista Precios</h1>
-                <p className="mt-1 text-sm text-gray-500">Gestiona las listas de precios del sistema</p>
-              </div>
+      <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
+        <div className="mx-auto w-full max-w-[1700px] space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <DollarSign className="h-8 w-8 shrink-0 text-[#1570ef]" aria-hidden />
+              <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Lista Precios</h1>
             </div>
             <Button
-              className="gap-2 bg-gradient-to-r from-[#6B46FF] to-[#8B5CF6] shadow-lg shadow-purple-500/30 hover:from-[#5a3ad6] hover:to-[#7c4dd4] transition-all duration-200"
+              className="h-10 gap-2 rounded-xl bg-[#1459e9] px-5 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce]"
               onClick={() => {
                 setEditingListaPrecio(null)
                 setIsNewListaPrecioModalOpen(true)
               }}
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-4 w-4" />
               Nuevo
             </Button>
           </div>
 
-          {/* Filter Section */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#6B46FF] to-[#8B5CF6]">
-                <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <h2 className="text-lg font-semibold text-gray-900">Filtros de búsqueda</h2>
+              <Filter className="h-4 w-4 text-[#1570ef]" aria-hidden />
+              <h2 className="text-[18px] font-semibold text-[#1570ef]">Filtros</h2>
             </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Codigo</label>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className="space-y-1.5">
+                <label className={fieldLabelClass}>Código</label>
                 <Input
                   value={filters.codigo}
                   onChange={(e) => handleFilterChange("codigo", e.target.value)}
-                  placeholder="Buscar por código..."
-                  className="h-10 rounded-lg border-gray-300 bg-gray-50 transition-all focus:border-[#6B46FF] focus:bg-white focus:ring-2 focus:ring-[#6B46FF]/20"
+                  placeholder="Buscar por código…"
+                  className={filterInputClass}
                 />
               </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Nombre</label>
+              <div className="space-y-1.5">
+                <label className={fieldLabelClass}>Nombre</label>
                 <Input
                   value={filters.nombre}
                   onChange={(e) => handleFilterChange("nombre", e.target.value)}
-                  placeholder="Buscar por nombre..."
-                  className="h-10 rounded-lg border-gray-300 bg-gray-50 transition-all focus:border-[#6B46FF] focus:bg-white focus:ring-2 focus:ring-[#6B46FF]/20"
+                  placeholder="Buscar por nombre…"
+                  className={filterInputClass}
                 />
               </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Zona Propia</label>
+              <div className="space-y-1.5">
+                <label className={fieldLabelClass}>Zona propia</label>
                 <Select value={filters.zonaPropia} onValueChange={(value) => handleFilterChange("zonaPropia", value)}>
-                  <SelectTrigger className="h-10 rounded-lg border-2 border-[#6B46FF] bg-white text-gray-600 focus:ring-2 focus:ring-[#6B46FF]/20">
+                  <SelectTrigger className="h-10 text-[14px] font-medium text-[#1f2433]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="TODOS">Todos</SelectItem>
-                    <SelectItem value="SI">Si</SelectItem>
+                    <SelectItem value="SI">Sí</SelectItem>
                     <SelectItem value="NO">No</SelectItem>
                   </SelectContent>
                 </Select>
@@ -288,46 +279,42 @@ export default function ListaPreciosPage() {
             </div>
           </div>
 
-          {/* Table */}
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white px-6 py-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Lista de Precios</h3>
-                <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-1.5">
-                  <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <span className="text-sm font-medium text-gray-700">{totalRecords} precios</span>
-                </div>
+          <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:px-5">
+              <h3 className="text-[16px] font-semibold text-[#1f2433]">Listado</h3>
+              <div className="flex items-center gap-2 rounded-full border border-[#e6eaf4] bg-white px-3 py-1 text-[13px] font-medium text-[#5d6578]">
+                <span className="text-[#1570ef]">{totalRecords}</span>
+                <span>precios</span>
               </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50/50">
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">Codigo</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">Nombre</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">ZONA PROPIA</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-700">Acciones</th>
+                  <tr className="border-b border-[#e6eaf4] bg-[#f7f8fc]">
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
+                      Código
+                    </th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
+                      Nombre
+                    </th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
+                      Zona propia
+                    </th>
+                    <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 bg-white">
+                <tbody className="divide-y divide-[#eef1f8]">
                   {paginatedListaPrecios.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-6 py-16 text-center">
-                        <div className="flex flex-col items-center justify-center">
-                          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-                            <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                              />
-                            </svg>
+                      <td colSpan={4} className="px-5 py-14 text-center">
+                        <div className="mx-auto flex max-w-md flex-col items-center">
+                          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#eef4ff]">
+                            <DollarSign className="h-6 w-6 text-[#1570ef]" aria-hidden />
                           </div>
-                          <p className="text-sm font-medium text-gray-900">No se encontraron listas de precios</p>
-                          <p className="mt-1 text-sm text-gray-500">Intenta ajustar los filtros de búsqueda</p>
+                          <p className="text-[14px] font-semibold text-[#1f2433]">No se encontraron listas de precios</p>
+                          <p className="mt-2 text-[13px] text-[#8890a8]">Probá cambiar los filtros</p>
                         </div>
                       </td>
                     </tr>
@@ -335,19 +322,19 @@ export default function ListaPreciosPage() {
                     paginatedListaPrecios.map((precio, index) => (
                       <tr
                         key={precio.id}
-                        className={`transition-all hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-transparent ${
-                          index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
-                        }`}
+                        className={`transition-colors hover:bg-[#f7faff] ${index % 2 === 0 ? "bg-white" : "bg-[#fafbff]"}`}
                       >
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{precio.codigo}</td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{precio.nombre}</td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">{precio.zonaPropia ? "SI" : "NO"}</td>
-                        <td className="whitespace-nowrap px-6 py-4">
-                          <div className="flex items-center justify-center gap-2">
+                        <td className="whitespace-nowrap px-4 py-3 text-[14px] text-[#1f2433] sm:px-5">{precio.codigo}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-[14px] text-[#1f2433] sm:px-5">{precio.nombre}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-[14px] text-[#5d6578] sm:px-5">
+                          {precio.zonaPropia ? "Sí" : "No"}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 sm:px-5">
+                          <div className="flex items-center justify-center gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-9 w-9 rounded-lg text-gray-600 transition-all hover:bg-purple-100 hover:text-purple-700"
+                              className="h-9 w-9 rounded-lg text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1570ef]"
                               onClick={() => {
                                 setEditingListaPrecio(precio)
                                 setIsNewListaPrecioModalOpen(true)
@@ -358,7 +345,7 @@ export default function ListaPreciosPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-9 w-9 rounded-lg text-gray-600 transition-all hover:bg-red-100 hover:text-red-600"
+                              className="h-9 w-9 rounded-lg text-[#5d6578] hover:bg-red-50 hover:text-red-600"
                               onClick={() => handleDeleteClick(precio)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -372,27 +359,28 @@ export default function ListaPreciosPage() {
               </table>
             </div>
 
-            {/* Pagination */}
-            <div className="flex flex-col gap-4 border-t border-gray-200 bg-gradient-to-r from-gray-50/50 to-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-700">Total:</span>
-                  <span className="rounded-md bg-purple-100 px-2 py-1 font-semibold text-purple-700">{totalRecords}</span>
+            <div className="flex flex-col gap-3 border-t border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+              <div className="flex flex-wrap items-center gap-3 text-[13px] text-[#5d6578]">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-medium">Total</span>
+                  <span className="rounded-md bg-[#eef4ff] px-2 py-0.5 font-semibold text-[#1459e9]">{totalRecords}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-700">Páginas:</span>
-                  <span className="rounded-md bg-gray-100 px-2 py-1 font-semibold text-gray-700">{totalPages || 1}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-medium">Páginas</span>
+                  <span className="rounded-md border border-[#e6eaf4] bg-white px-2 py-0.5 font-semibold text-[#4d5571]">
+                    {totalPages || 1}
+                  </span>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-0.5 rounded-xl border border-[#e6eaf4] bg-white p-0.5">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setCurrentPage(1)}
                     disabled={currentPage === 1}
-                    className="h-8 px-3 text-gray-600 transition-all hover:bg-purple-50 hover:text-purple-700 disabled:opacity-40"
+                    className="h-8 px-2.5 text-[13px] text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9] disabled:opacity-40"
                   >
                     &lt;&lt;
                   </Button>
@@ -412,13 +400,13 @@ export default function ListaPreciosPage() {
                     return (
                       <Button
                         key={pageNum}
-                        variant={currentPage === pageNum ? "default" : "ghost"}
+                        variant="ghost"
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`h-8 px-3 transition-all ${
+                        className={`h-8 min-w-[2rem] px-2 text-[13px] font-medium ${
                           currentPage === pageNum
-                            ? "bg-gradient-to-r from-[#6B46FF] to-[#8B5CF6] text-white shadow-sm"
-                            : "text-gray-600 hover:bg-purple-50 hover:text-purple-700"
+                            ? "bg-[#1459e9] text-white shadow-sm hover:bg-[#114bce] hover:text-white"
+                            : "text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9]"
                         }`}
                       >
                         {pageNum}
@@ -431,24 +419,31 @@ export default function ListaPreciosPage() {
                     size="sm"
                     onClick={() => setCurrentPage(totalPages)}
                     disabled={currentPage === totalPages || totalPages === 0}
-                    className="h-8 px-3 text-gray-600 transition-all hover:bg-purple-50 hover:text-purple-700 disabled:opacity-40"
+                    className="h-8 px-2.5 text-[13px] text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9] disabled:opacity-40"
                   >
                     &gt;&gt;
                   </Button>
                 </div>
 
-                <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5">
-                  <span className="text-sm font-medium text-gray-700">Por página:</span>
-                  <select
-                    value={itemsPerPage}
-                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                    className="h-8 rounded border-0 bg-transparent text-sm focus:outline-none focus:ring-0"
+                <div className="flex items-center gap-2 rounded-xl border border-[#e6eaf4] bg-white px-2.5 py-1">
+                  <span className="text-[13px] font-medium text-[#4d5571]">Por página</span>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(v) => {
+                      setItemsPerPage(Number(v))
+                      setCurrentPage(1)
+                    }}
                   >
-                    <option value={10}>10</option>
-                    <option value={25}>25</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
+                    <SelectTrigger className="h-8 w-14 border-0 bg-transparent text-[13px] font-semibold text-[#1459e9] shadow-none focus:ring-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
@@ -456,24 +451,28 @@ export default function ListaPreciosPage() {
         </div>
       </main>
 
-      {/* Diálogo de confirmación de eliminación */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className={montserrat.className}>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar lista de precios?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-lg font-semibold text-[#1f2433]">¿Eliminar lista de precios?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[14px] leading-relaxed text-[#5d6578]">
               ¿Estás seguro de que deseas eliminar la lista de precios{" "}
-              <span className="font-semibold text-foreground">
+              <span className="font-semibold text-[#1f2433]">
                 {precioToDelete?.codigo} - {precioToDelete?.nombre}
               </span>
               ? Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPrecioToDelete(null)}>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel
+              onClick={() => setPrecioToDelete(null)}
+              className="rounded-xl border border-[#e6eaf4] bg-white text-[#1570ef] hover:bg-[#f7faff]"
+            >
+              Cancelar
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="rounded-xl bg-red-600 text-white hover:bg-red-700"
             >
               Eliminar
             </AlertDialogAction>
