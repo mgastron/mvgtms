@@ -1426,51 +1426,77 @@ export default function EstadoOrdenesPage() {
                   <span>{filteredPedidos.length === 1 ? "pedido" : "pedidos"}</span>
                 </div>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="max-w-full min-w-0 overflow-x-hidden">
+                <table className="w-full table-fixed border-collapse text-[12px]">
+                  <colgroup>
+                    <col style={{ width: "4px" }} />
+                    <col style={{ width: "9%" }} />
+                    <col style={{ width: "9%" }} />
+                    <col style={{ width: "5%" }} />
+                    <col style={{ width: "2.75rem" }} />
+                    <col style={{ width: "2.75rem" }} />
+                    <col style={{ width: "6%" }} />
+                    <col style={{ width: "8%" }} />
+                    <col style={{ width: "7%" }} />
+                    <col style={{ width: "5%" }} />
+                    <col style={{ width: "5%" }} />
+                    <col style={{ width: "5%" }} />
+                    <col style={{ width: "32%" }} />
+                    <col style={{ width: "3.25rem" }} />
+                    <col style={{ width: "2.75rem" }} />
+                  </colgroup>
                   <thead>
                     <tr className="border-b border-[#e6eaf4] bg-[#f7f8fc]">
-                      <th className="w-1 p-0" />
-                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                      <th className="w-px p-0" />
+                      <th className="min-w-0 px-2 py-2 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wide text-[#5d6578]">
                         Nombre fantasía
                       </th>
-                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                      <th className="min-w-0 px-2 py-2 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wide text-[#5d6578]">
                         Nombre tienda
                       </th>
-                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                      <th className="min-w-0 px-2 py-2 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wide text-[#5d6578]">
                         Tienda
                       </th>
-                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
-                        Número orden
+                      <th
+                        title="Número orden"
+                        className="min-w-0 px-1.5 py-2 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wide text-[#5d6578]"
+                      >
+                        Nº orden
                       </th>
-                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
-                        Estado procesado
+                      <th
+                        title="Estado procesado"
+                        className="min-w-0 px-1.5 py-2 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wide text-[#5d6578]"
+                      >
+                        Est. proc.
                       </th>
-                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                      <th className="min-w-0 px-2 py-2 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wide text-[#5d6578]">
                         Estado orden
                       </th>
-                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                      <th className="min-w-0 px-2 py-2 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wide text-[#5d6578]">
                         Método envío
                       </th>
-                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                      <th className="min-w-0 px-2 py-2 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wide text-[#5d6578]">
                         Destinatario
                       </th>
-                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                      <th className="min-w-0 px-1.5 py-2 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wide text-[#5d6578]">
                         Fecha venta
                       </th>
-                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                      <th className="min-w-0 px-1.5 py-2 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wide text-[#5d6578]">
                         Hora ingreso
                       </th>
-                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
-                        Hora procesado
+                      <th className="min-w-0 px-1.5 py-2 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wide text-[#5d6578]">
+                        Hora proc.
                       </th>
-                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                      <th className="min-w-0 px-2 py-2 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wide text-[#5d6578]">
                         Dirección
                       </th>
-                      <th className="whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
-                        Destino CP
+                      <th
+                        title="Destino código postal"
+                        className="min-w-0 px-1.5 py-2 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wide text-[#5d6578]"
+                      >
+                        CP
                       </th>
-                      <th className="whitespace-nowrap px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                      <th className="min-w-0 px-1 py-2 text-center align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wide text-[#5d6578]">
                         Acción
                       </th>
                     </tr>
@@ -1496,22 +1522,22 @@ export default function EstadoOrdenesPage() {
                           key={originalIndex}
                           className={`transition-colors hover:bg-[#f7faff] ${coincide ? "bg-[#ecfdf5]/80" : "bg-[#fff1f2]/90"}`}
                         >
-                          <td className="w-1 p-0 align-stretch">
+                          <td className="w-px p-0 align-stretch">
                             <div
-                              className={`min-h-full w-1 ${coincide ? "bg-emerald-500" : "bg-rose-500"}`}
+                              className={`min-h-full w-px min-w-px ${coincide ? "bg-emerald-500" : "bg-rose-500"}`}
                               aria-hidden
                             />
                           </td>
-                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] text-[#1f2433]">
+                          <td className="min-w-0 whitespace-normal break-words px-2 py-2.5 align-top text-[12px] text-[#1f2433]">
                             {item.clienteNombre}
                           </td>
-                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] text-[#5d6578]">
+                          <td className="min-w-0 whitespace-normal break-all px-2 py-2.5 align-top text-[12px] text-[#5d6578]">
                             {getNombreTienda(item)}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-3 text-[13px] text-[#5d6578]">
+                          <td className="min-w-0 whitespace-normal break-words px-2 py-2.5 align-top text-[12px] text-[#5d6578]">
                             {item.origen === "Vtex" ? "VTEX" : item.origen === "Shopify" ? "Shopify" : "Tienda Nube"}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-3 text-[13px] font-semibold text-[#1f2433]">
+                          <td className="min-w-0 whitespace-nowrap px-1.5 py-2.5 align-top text-center text-[12px] font-semibold tabular-nums text-[#1f2433]">
                             {item.origen === "Vtex" 
                               ? (pedido.orderId || pedido.id || "-")
                               : item.origen === "Shopify"
@@ -1519,7 +1545,7 @@ export default function EstadoOrdenesPage() {
                               : (pedido.number || pedido.id || "-")
                             }
                           </td>
-                          <td className="whitespace-nowrap px-3 py-3 text-[13px] text-[#5d6578]">
+                          <td className="min-w-0 whitespace-nowrap px-1.5 py-2.5 align-top text-center text-[12px] text-[#5d6578]">
                             {(() => {
                               let pedidoKey: string
                               if (item.origen === "Vtex") {
@@ -1535,34 +1561,34 @@ export default function EstadoOrdenesPage() {
                               return pedidosConEnvioExistente.has(pedidoKey) ? "Si" : "No"
                             })()}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-3 text-[13px] text-[#5d6578]">
+                          <td className="min-w-0 whitespace-normal break-words px-2 py-2.5 align-top text-[12px] leading-snug text-[#5d6578]">
                             {getEstadoPedido(pedido)}
                           </td>
-                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] leading-tight text-[#1f2433]">
+                          <td className="min-w-0 whitespace-normal break-words px-2 py-2.5 align-top text-[12px] leading-snug text-[#1f2433]">
                             {getMetodoEnvio(pedido, item.origen)}
                           </td>
-                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] text-[#5d6578]">
+                          <td className="min-w-0 whitespace-normal break-words px-2 py-2.5 align-top text-[12px] leading-snug text-[#5d6578]">
                             {getDestinatario(pedido)}
                           </td>
-                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] leading-tight text-[#5d6578]">
-                            <div className="break-words">{formatFecha(fechaCreacion)}</div>
-                            <div className="break-words text-[11px] text-[#8890a8]">{formatHora(fechaCreacion)}</div>
+                          <td className="min-w-0 whitespace-normal break-words px-1.5 py-2.5 align-top text-[11px] leading-snug text-[#5d6578]">
+                            <div>{formatFecha(fechaCreacion)}</div>
+                            <div className="text-[10px] text-[#8890a8]">{formatHora(fechaCreacion)}</div>
                           </td>
-                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] leading-tight text-[#5d6578]">
-                            <div className="break-words">{formatFecha(fechaCreacion)}</div>
-                            <div className="break-words text-[11px] text-[#8890a8]">{formatHora(fechaCreacion)}</div>
+                          <td className="min-w-0 whitespace-normal break-words px-1.5 py-2.5 align-top text-[11px] leading-snug text-[#5d6578]">
+                            <div>{formatFecha(fechaCreacion)}</div>
+                            <div className="text-[10px] text-[#8890a8]">{formatHora(fechaCreacion)}</div>
                           </td>
-                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] leading-tight text-[#5d6578]">
-                            <div className="break-words">{formatFecha(fechaActualizacion)}</div>
-                            <div className="break-words text-[11px] text-[#8890a8]">{formatHora(fechaActualizacion)}</div>
+                          <td className="min-w-0 whitespace-normal break-words px-1.5 py-2.5 align-top text-[11px] leading-snug text-[#5d6578]">
+                            <div>{formatFecha(fechaActualizacion)}</div>
+                            <div className="text-[10px] text-[#8890a8]">{formatHora(fechaActualizacion)}</div>
                           </td>
-                          <td className="whitespace-normal break-words px-3 py-3 text-[13px] text-[#5d6578]">
+                          <td className="min-w-0 whitespace-normal break-words px-2 py-2.5 align-top text-[12px] leading-snug text-[#5d6578]">
                             {getDireccion(pedido, item.origen)}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-3 text-[13px] text-[#5d6578]">
+                          <td className="min-w-0 whitespace-nowrap px-1.5 py-2.5 align-top text-center text-[12px] tabular-nums text-[#5d6578]">
                             {getCodigoPostal(pedido, item.origen)}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-3 text-center text-[13px] text-[#5d6578]">
+                          <td className="min-w-0 whitespace-nowrap px-1 py-2.5 align-top text-center text-[12px] text-[#5d6578]">
                             {coincide ? (
                               <Button
                                 type="button"
