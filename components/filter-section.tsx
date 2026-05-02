@@ -9,17 +9,8 @@ const fieldLabelClass = "block text-[14px] font-medium text-[#4d5571]"
 const filterInputClass =
   "h-10 rounded-xl border border-[#e6eaf4] bg-white text-[14px] font-medium text-[#1f2433] shadow-sm placeholder:font-normal placeholder:text-[#8890a8] focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"
 
-/** Valores del filtro de integración (coinciden con `clients-table`) */
-export type FiltroIntegracionCliente =
-  | "todos"
-  | "flex_con"
-  | "flex_sin"
-  | "tiendanube_con"
-  | "tiendanube_sin"
-  | "shopify_con"
-  | "shopify_sin"
-  | "vtex_con"
-  | "vtex_sin"
+/** Valores del filtro de integración (solo “con integración configurada”; coinciden con `clients-table`) */
+export type FiltroIntegracionCliente = "todos" | "flex" | "tiendanube" | "shopify" | "vtex"
 
 interface FilterSectionProps {
   filters: {
@@ -66,14 +57,10 @@ export function FilterSection({ filters, onFilterChange, onClearFilters }: Filte
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todas</SelectItem>
-              <SelectItem value="flex_con">Flex — configurada</SelectItem>
-              <SelectItem value="flex_sin">Flex — no configurada</SelectItem>
-              <SelectItem value="tiendanube_con">Tienda Nube — configurada</SelectItem>
-              <SelectItem value="tiendanube_sin">Tienda Nube — no configurada</SelectItem>
-              <SelectItem value="shopify_con">Shopify — configurada</SelectItem>
-              <SelectItem value="shopify_sin">Shopify — no configurada</SelectItem>
-              <SelectItem value="vtex_con">VTEX — configurada</SelectItem>
-              <SelectItem value="vtex_sin">VTEX — no configurada</SelectItem>
+              <SelectItem value="flex">Flex</SelectItem>
+              <SelectItem value="tiendanube">Tienda Nube</SelectItem>
+              <SelectItem value="shopify">Shopify</SelectItem>
+              <SelectItem value="vtex">VTEX</SelectItem>
             </SelectContent>
           </Select>
         </div>

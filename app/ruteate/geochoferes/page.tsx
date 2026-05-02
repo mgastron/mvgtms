@@ -2,10 +2,20 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Globe, Search, X } from "lucide-react"
+import { Montserrat } from "next/font/google"
+import { Search, X } from "lucide-react"
 import { ModernHeader } from "@/components/modern-header"
+import { Input } from "@/components/ui/input"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev, errorDev } from "@/lib/logger"
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+})
+
+const searchInputClass =
+  "h-10 rounded-xl border border-[#e6eaf4] bg-white pl-9 pr-8 text-[14px] font-medium text-[#1f2433] shadow-sm placeholder:font-normal placeholder:text-[#8890a8] focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"
 
 interface ChoferConUbicacion {
   id: number
@@ -276,107 +286,114 @@ export default function GeochoferesPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      {/* Header */}
+    <div className="flex h-screen flex-col bg-[#f7f8fc]">
       <ModernHeader />
-      
-      {/* Contenido principal */}
-      <div className="flex flex-1 overflow-hidden">
-      {/* Lista de choferes */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-        {/* Header */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center gap-2 mb-4">
-            <Globe className="h-5 w-5 text-[#6B46FF]" />
-            <h1 className="text-lg font-semibold text-gray-900">GEO CHOFERES</h1>
-          </div>
-          
-          {/* Búsqueda */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Ubicar chofer"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#6B46FF] focus:border-transparent"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-            <div className="text-sm text-gray-600 font-medium min-w-[30px] text-center">
-              {countdown}
-            </div>
-          </div>
-        </div>
 
-        {/* Lista */}
-        <div className="flex-1 overflow-y-auto">
-          {isLoading ? (
-            <div className="p-4 text-center text-gray-500">Cargando choferes...</div>
-          ) : choferesFiltrados.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">
-              {searchTerm ? "No se encontraron choferes" : "No hay choferes con envíos asignados"}
-            </div>
-          ) : (
-            choferesFiltrados.map((chofer) => (
-              <div
-                key={chofer.id}
-                onClick={() => handleChoferClick(chofer)}
-                className="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-10 h-10 rounded-full bg-[#6B46FF]/10 flex items-center justify-center">
-                      <span className="text-[#6B46FF] font-semibold text-sm">
-                        {chofer.nombre.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 truncate">
-                        {chofer.nombreCompleto}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span>{chofer.cantidadEnvios} envío{chofer.cantidadEnvios !== 1 ? "s" : ""}</span>
-                        {chofer.bateria !== null && chofer.bateria !== undefined && (
-                          <span
-                            className={
-                              chofer.bateria > 50
-                                ? "text-green-600"
-                                : chofer.bateria > 20
-                                ? "text-yellow-600"
-                                : "text-red-600"
-                            }
-                          >
-                            {chofer.bateria}%
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {chofer.latitud && chofer.longitud ? (
-                    <div className="w-3 h-3 rounded-full bg-green-500 ml-2"></div>
-                  ) : (
-                    <div className="w-3 h-3 rounded-full bg-gray-300 ml-2"></div>
-                  )}
-                </div>
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <aside
+          className={`flex w-80 shrink-0 flex-col border-r border-[#e6eaf4] bg-white shadow-sm ${montserrat.className}`}
+        >
+          <div className="border-b border-[#e6eaf4] px-4 py-4">
+            <h1 className="mb-3 text-[18px] font-semibold tracking-tight text-[#1570ef]">Geochoferes</h1>
+
+            <div className="flex items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8890a8]"
+                  aria-hidden
+                />
+                <Input
+                  type="text"
+                  placeholder="Ubicar chofer"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className={searchInputClass}
+                  aria-label="Buscar chofer"
+                />
+                {searchTerm ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#8890a8] hover:bg-[#f7f8fc] hover:text-[#1f2433]"
+                    aria-label="Limpiar búsqueda"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                ) : null}
               </div>
-            ))
-          )}
-        </div>
-      </div>
+              <div
+                className="flex h-10 min-w-[2.5rem] shrink-0 items-center justify-center rounded-xl border border-[#e6eaf4] bg-[#fafbff] px-2 text-[13px] font-semibold tabular-nums text-[#1459e9]"
+                title="Segundos hasta la próxima actualización"
+              >
+                {countdown}
+              </div>
+            </div>
+          </div>
 
-      {/* Mapa */}
-      <div className="flex-1 relative">
-        <div ref={mapRef} className="w-full h-full" />
-      </div>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {isLoading ? (
+              <div className="px-4 py-8 text-center text-[14px] font-medium text-[#5d6578]">Cargando choferes…</div>
+            ) : choferesFiltrados.length === 0 ? (
+              <div className="px-4 py-8 text-center text-[14px] text-[#5d6578]">
+                {searchTerm ? "No se encontraron choferes" : "No hay choferes con envíos asignados"}
+              </div>
+            ) : (
+              <ul className="divide-y divide-[#eef1f8]">
+                {choferesFiltrados.map((chofer) => (
+                  <li key={chofer.id}>
+                    <button
+                      type="button"
+                      onClick={() => handleChoferClick(chofer)}
+                      className="flex w-full cursor-pointer items-center justify-between gap-2 px-4 py-3 text-left transition-colors hover:bg-[#f7faff]"
+                    >
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eef4ff]">
+                          <span className="text-[13px] font-semibold text-[#1459e9]">
+                            {chofer.nombre.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-[14px] font-semibold text-[#1f2433]">
+                            {chofer.nombreCompleto}
+                          </div>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-[#5d6578]">
+                            <span>
+                              {chofer.cantidadEnvios} envío{chofer.cantidadEnvios !== 1 ? "s" : ""}
+                            </span>
+                            {chofer.bateria !== null && chofer.bateria !== undefined ? (
+                              <span
+                                className={
+                                  chofer.bateria > 50
+                                    ? "font-medium text-emerald-600"
+                                    : chofer.bateria > 20
+                                      ? "font-medium text-amber-600"
+                                      : "font-medium text-rose-600"
+                                }
+                              >
+                                {chofer.bateria}%
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                          chofer.latitud && chofer.longitud ? "bg-emerald-500" : "bg-[#cfd6e6]"
+                        }`}
+                        title={chofer.latitud && chofer.longitud ? "Ubicación disponible" : "Sin ubicación"}
+                        aria-hidden
+                      />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </aside>
+
+        <div className="relative min-h-0 min-w-0 flex-1">
+          <div ref={mapRef} className="h-full w-full" />
+        </div>
       </div>
     </div>
   )

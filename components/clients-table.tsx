@@ -69,27 +69,19 @@ function hasVtexConfigured(c: Client): boolean {
   )
 }
 
-/** Coincide con los valores del `Select` en `FilterSection`. */
+/** Coincide con los valores del `Select` en `FilterSection` (solo clientes con esa integración configurada). */
 export function clientMatchesIntegracionFiltro(client: Client, modo: string): boolean {
   const m = (modo || "todos") as FiltroIntegracionCliente
   if (m === "todos") return true
   switch (m) {
-    case "flex_con":
+    case "flex":
       return hasFlexConfigured(client)
-    case "flex_sin":
-      return !hasFlexConfigured(client)
-    case "tiendanube_con":
+    case "tiendanube":
       return hasTiendaNubeConfigured(client)
-    case "tiendanube_sin":
-      return !hasTiendaNubeConfigured(client)
-    case "shopify_con":
+    case "shopify":
       return hasShopifyConfigured(client)
-    case "shopify_sin":
-      return !hasShopifyConfigured(client)
-    case "vtex_con":
+    case "vtex":
       return hasVtexConfigured(client)
-    case "vtex_sin":
-      return !hasVtexConfigured(client)
     default:
       return true
   }
