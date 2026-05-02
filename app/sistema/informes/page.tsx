@@ -9,6 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileBarChart, Download } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
+import { Montserrat } from "next/font/google"
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+})
+
+const fieldLabelClass = "block text-[14px] font-medium text-[#4d5571]"
+const inputClass =
+  "mt-1.5 h-10 w-full rounded-xl border border-[#e6eaf4] bg-white text-[14px] font-medium text-[#1f2433] shadow-sm focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface Grupo {
@@ -76,7 +86,9 @@ export default function InformesPage() {
       const res = await fetch(`${apiBaseUrl}/grupos`)
       if (res.ok) {
         const data = await res.json()
-        setGrupos(Array.isArray(data) ? data : [])
+        const list: Grupo[] = Array.isArray(data) ? data : []
+        list.sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }))
+        setGrupos(list)
       } else {
         setGrupos([])
       }
@@ -95,8 +107,9 @@ export default function InformesPage() {
       const res = await fetch(`${apiBaseUrl}/clientes?page=0&size=1000`)
       if (res.ok) {
         const data = await res.json()
-        const list = data?.content ?? []
-        setClientes(Array.isArray(list) ? list : [])
+        const list: Cliente[] = Array.isArray(data?.content) ? data.content : []
+        list.sort((a, b) => (a.codigo || "").localeCompare(b.codigo || "", "es", { sensitivity: "base" }))
+        setClientes(list)
       } else {
         setClientes([])
       }
@@ -202,54 +215,56 @@ export default function InformesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50" suppressHydrationWarning>
+    <div className="min-h-screen bg-[#f7f8fc]" suppressHydrationWarning>
       <ModernHeader />
-      <main className="p-4">
-        <div className="mx-auto max-w-2xl">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
-              <FileBarChart className="h-7 w-7 text-indigo-600" />
-              Informes
-            </h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Informe de pedidos colectados por rango de fechas y cliente o grupo.
-            </p>
+      <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
+        <div className="mx-auto w-full max-w-[1700px]">
+          <div className="mb-4 flex items-center gap-3">
+            <FileBarChart className="h-8 w-8 shrink-0 text-[#1570ef]" aria-hidden />
+            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Informes</h1>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 space-y-6">
-            {/* Pedidos colectados desde / hasta */}
+          <div className="ml-2 w-full max-w-[640px] space-y-5 rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm sm:p-6">
             <div className="space-y-2">
-              <label className="text-base font-medium text-gray-900">Pedidos colectados desde y hasta</label>
-              <p className="text-xs text-gray-500">
-                Son los pedidos que fueron <strong>colectados</strong> (retirados) en el rango indicado. Defina el límite desde y hasta.
+              <h2 className="text-[18px] font-semibold text-[#4f46ce]">Pedidos colectados</h2>
+              <p className="text-[13px] leading-relaxed text-[#8890a8]">
+                Son los pedidos <strong className="font-semibold text-[#5d6578]">colectados</strong> (retirados) en el rango indicado.
               </p>
-              <div className="flex flex-wrap gap-4 items-end">
-                <div className="flex-1 min-w-[140px]">
-                  <label className="block text-xs text-gray-600">Desde</label>
+              <div className="flex flex-wrap items-end gap-3 pt-1">
+                <div className="min-w-[140px] flex-1">
+                  <label className={fieldLabelClass}>Desde</label>
                   <Input
                     type="date"
                     value={fechaDesde}
                     onChange={(e) => setFechaDesde(e.target.value)}
-                    className="mt-1"
+                    className={inputClass}
+                    suppressHydrationWarning
                   />
                 </div>
-                <div className="flex-1 min-w-[140px]">
-                  <label className="block text-xs text-gray-600">Hasta</label>
+                <div className="min-w-[140px] flex-1">
+                  <label className={fieldLabelClass}>Hasta</label>
                   <Input
                     type="date"
                     value={fechaHasta}
                     onChange={(e) => setFechaHasta(e.target.value)}
-                    className="mt-1"
+                    className={inputClass}
+                    suppressHydrationWarning
                   />
                 </div>
               </div>
             </div>
 
-            {/* Hacer pedido para */}
-            <div className="space-y-2">
-              <label className="text-base font-medium text-gray-900">Hacer informe para</label>
-              <Select value={tipoDestinatario} onValueChange={(v) => { setTipoDestinatario(v); setIdsGrupos([]); setIdsCuentas([]) }}>
-                <SelectTrigger>
+            <div className="space-y-2 border-t border-[#eef1f8] pt-5">
+              <label className={fieldLabelClass}>Hacer informe para</label>
+              <Select
+                value={tipoDestinatario}
+                onValueChange={(v) => {
+                  setTipoDestinatario(v)
+                  setIdsGrupos([])
+                  setIdsCuentas([])
+                }}
+              >
+                <SelectTrigger className="h-10 text-[14px] font-medium text-[#1f2433]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -260,21 +275,18 @@ export default function InformesPage() {
                 </SelectContent>
               </Select>
               {tipoDestinatario === TIPO_DESTINATARIO.GRUPOS && (
-                <div className="mt-3 border rounded-lg p-3 bg-gray-50/50 max-h-48 overflow-y-auto">
-                  <p className="text-xs text-gray-600 mb-2">Seleccione uno o más grupos:</p>
+                <div className="mt-3 max-h-48 overflow-y-auto rounded-xl border border-[#e6eaf4] bg-[#fafbff] p-3">
+                  <p className="mb-2 text-[12px] font-medium text-[#5d6578]">Seleccioná uno o más grupos</p>
                   {loadingGrupos ? (
-                    <p className="text-sm text-gray-500">Cargando grupos...</p>
+                    <p className="text-[14px] text-[#8890a8]">Cargando grupos…</p>
                   ) : grupos.length === 0 ? (
-                    <p className="text-sm text-gray-500">No hay grupos.</p>
+                    <p className="text-[14px] text-[#8890a8]">No hay grupos.</p>
                   ) : (
                     <div className="space-y-2">
                       {grupos.map((g) => (
-                        <label key={g.id} className="flex items-center gap-2 cursor-pointer">
-                          <Checkbox
-                            checked={idsGrupos.includes(g.id)}
-                            onCheckedChange={() => toggleGrupo(g.id)}
-                          />
-                          <span className="text-sm">{g.nombre}</span>
+                        <label key={g.id} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-0.5 hover:bg-white/80">
+                          <Checkbox checked={idsGrupos.includes(g.id)} onCheckedChange={() => toggleGrupo(g.id)} />
+                          <span className="text-[14px] text-[#1f2433]">{g.nombre}</span>
                         </label>
                       ))}
                     </div>
@@ -282,21 +294,21 @@ export default function InformesPage() {
                 </div>
               )}
               {tipoDestinatario === TIPO_DESTINATARIO.CUENTAS && (
-                <div className="mt-3 border rounded-lg p-3 bg-gray-50/50 max-h-48 overflow-y-auto">
-                  <p className="text-xs text-gray-600 mb-2">Seleccione una o más cuentas (clientes):</p>
+                <div className="mt-3 max-h-48 overflow-y-auto rounded-xl border border-[#e6eaf4] bg-[#fafbff] p-3">
+                  <p className="mb-2 text-[12px] font-medium text-[#5d6578]">Seleccioná una o más cuentas (clientes)</p>
                   {loadingClientes ? (
-                    <p className="text-sm text-gray-500">Cargando clientes...</p>
+                    <p className="text-[14px] text-[#8890a8]">Cargando clientes…</p>
                   ) : clientes.length === 0 ? (
-                    <p className="text-sm text-gray-500">No hay clientes.</p>
+                    <p className="text-[14px] text-[#8890a8]">No hay clientes.</p>
                   ) : (
                     <div className="space-y-2">
                       {clientes.map((c) => (
-                        <label key={c.id} className="flex items-center gap-2 cursor-pointer">
-                          <Checkbox
-                            checked={idsCuentas.includes(c.id)}
-                            onCheckedChange={() => toggleCuenta(c.id)}
-                          />
-                          <span className="text-sm">{c.codigo}{c.nombreFantasia ? ` - ${c.nombreFantasia}` : ""}</span>
+                        <label key={c.id} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-0.5 hover:bg-white/80">
+                          <Checkbox checked={idsCuentas.includes(c.id)} onCheckedChange={() => toggleCuenta(c.id)} />
+                          <span className="text-[14px] text-[#1f2433]">
+                            {c.codigo}
+                            {c.nombreFantasia ? ` - ${c.nombreFantasia}` : ""}
+                          </span>
                         </label>
                       ))}
                     </div>
@@ -305,11 +317,10 @@ export default function InformesPage() {
               )}
             </div>
 
-            {/* Forma de descarga */}
-            <div className="space-y-2">
-              <label className="text-base font-medium text-gray-900">Forma de descarga</label>
+            <div className="space-y-2 border-t border-[#eef1f8] pt-5">
+              <label className={fieldLabelClass}>Forma de descarga</label>
               <Select value={formato} onValueChange={setFormato}>
-                <SelectTrigger>
+                <SelectTrigger className="h-10 text-[14px] font-medium text-[#1f2433]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -319,11 +330,10 @@ export default function InformesPage() {
               </Select>
             </div>
 
-            {/* Tomar envíos */}
-            <div className="space-y-2">
-              <label className="text-base font-medium text-gray-900">Tomar envíos</label>
+            <div className="space-y-2 border-t border-[#eef1f8] pt-5">
+              <label className={fieldLabelClass}>Tomar envíos</label>
               <Select value={tomarEnvios} onValueChange={setTomarEnvios}>
-                <SelectTrigger>
+                <SelectTrigger className="h-10 min-h-[2.75rem] whitespace-normal py-2 text-left text-[14px] font-medium leading-snug text-[#1f2433] sm:min-h-10 sm:whitespace-nowrap">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -336,19 +346,21 @@ export default function InformesPage() {
             </div>
 
             {error && (
-              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[14px] font-medium text-red-800">
                 {error}
               </div>
             )}
 
-            <Button
-              onClick={handleDescargar}
-              disabled={downloading}
-              className="w-full sm:w-auto gap-2"
-            >
-              <Download className="h-4 w-4" />
-              {downloading ? "Generando..." : "Descargar"}
-            </Button>
+            <div className="border-t border-[#eef1f8] pt-4">
+              <Button
+                onClick={handleDescargar}
+                disabled={downloading}
+                className="h-11 w-full gap-2 rounded-xl bg-[#1459e9] px-6 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce] disabled:opacity-50 sm:w-auto"
+              >
+                <Download className="h-4 w-4" />
+                {downloading ? "Generando…" : "Descargar"}
+              </Button>
+            </div>
           </div>
         </div>
       </main>
