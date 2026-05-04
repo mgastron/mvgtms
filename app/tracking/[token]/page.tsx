@@ -65,15 +65,9 @@ function TrackingPublicHeader() {
           >
             <img src="/logos/nexo-logo-white.png" alt="Nexo" className="h-auto w-[96px] sm:w-[102px]" />
           </button>
-          <div className="min-w-0 text-right">
-            <p className="truncate text-[13px] font-medium text-white/90 sm:text-[14px]">Seguimiento de envío</p>
-            <Link
-              href="/"
-              className="text-[12px] font-semibold text-white underline decoration-white/60 underline-offset-2 hover:decoration-white"
-            >
-              Ingresar a Nexo
-            </Link>
-          </div>
+          <p className="min-w-0 truncate text-right text-[13px] font-medium text-white/95 sm:text-[14px]">
+            Seguimiento de envío
+          </p>
         </div>
       </div>
     </header>
