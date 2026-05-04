@@ -363,7 +363,7 @@ export default function ReimprimirNoflexPage() {
         format: "a4",
       })
 
-      let logoMvgDataUrl: string | null = null
+      let logoA4DataUrl: string | null = null
       let iconCalendarDataUrl: string | null = null
       let iconUserDataUrl: string | null = null
       let iconFileTextDataUrl: string | null = null
@@ -374,7 +374,7 @@ export default function ReimprimirNoflexPage() {
       let iconClienteDataUrl: string | null = null
       try {
         const assets = await getLabelIconDataUrls()
-        logoMvgDataUrl = assets.logo || null
+        logoA4DataUrl = assets.logoA4 || null
         iconCalendarDataUrl = assets.calendar || null
         iconUserDataUrl = assets.person || null
         iconClienteDataUrl = assets.business || null
@@ -608,28 +608,28 @@ export default function ReimprimirNoflexPage() {
           y += 18
         }
 
-        // 5) Logo MVG: dentro del recuadro gris, abajo a la derecha (sin pisar)
+        // 5) Isotipo Nexo: dentro del recuadro gris, abajo a la derecha (sin pisar)
         const logoBoxW = 36
         const logoBoxH = 36
         const logoBoxX = startX + labelWidth - pad - logoBoxW - 6
         const logoY = destSectionBottom - logoBoxH - 6
         let logoDrawn = false
-        if (logoMvgDataUrl) {
+        if (logoA4DataUrl) {
           try {
-            pdf.addImage(logoMvgDataUrl, "PNG", logoBoxX, logoY - 2, logoBoxW, logoBoxH)
+            pdf.addImage(logoA4DataUrl, "PNG", logoBoxX, logoY - 2, logoBoxW, logoBoxH)
             logoDrawn = true
           } catch {
             // fallback abajo
           }
         }
         if (!logoDrawn) {
-          pdf.setFillColor(79, 70, 229)
+          pdf.setFillColor(20, 89, 233)
           pdf.roundedRect(logoBoxX, logoY - 2, logoBoxW, logoBoxH, 4, 4, "F")
-          pdf.setFontSize(12)
+          pdf.setFontSize(11)
           pdf.setFont("helvetica", "bold")
           pdf.setTextColor(255, 255, 255)
-          const mvgW = pdf.getTextWidth("MVG")
-          pdf.text("MVG", logoBoxX + (logoBoxW - mvgW) / 2, logoY - 2 + logoBoxH / 2 + 4)
+          const nexoW = pdf.getTextWidth("NEXO")
+          pdf.text("NEXO", logoBoxX + (logoBoxW - nexoW) / 2, logoY - 2 + logoBoxH / 2 + 4)
           pdf.setFont("helvetica", "normal")
           pdf.setTextColor(0, 0, 0)
         }
@@ -769,12 +769,12 @@ export default function ReimprimirNoflexPage() {
         const bulletR = 1.4
         let currentY = marginTop
 
-        // Título MVG (solo texto, sin fondo negro)
+        // Título NEXO (solo texto, sin fondo negro)
         pdf.setFontSize(14)
         pdf.setFont("helvetica", "bold")
         pdf.setTextColor(0, 0, 0)
-        const titleWidth = pdf.getTextWidth("MVG")
-        pdf.text("MVG", (width - titleWidth) / 2, currentY)
+        const titleWidth = pdf.getTextWidth("NEXO")
+        pdf.text("NEXO", (width - titleWidth) / 2, currentY)
         currentY += 14
 
         // Barra negra con zona (CABA)

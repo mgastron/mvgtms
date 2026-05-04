@@ -1,12 +1,16 @@
 package com.zetallegue.tms.service;
 
 import com.zetallegue.tms.dto.InformeRequestDTO;
+import com.zetallegue.tms.dto.InformeResultDTO;
 import com.zetallegue.tms.model.Cliente;
 import com.zetallegue.tms.model.Envio;
 import com.zetallegue.tms.model.Grupo;
+import com.zetallegue.tms.model.ListaPrecio;
+import com.zetallegue.tms.model.Zona;
 import com.zetallegue.tms.repository.ClienteRepository;
 import com.zetallegue.tms.repository.EnvioRepository;
 import com.zetallegue.tms.repository.GrupoRepository;
+import com.zetallegue.tms.repository.ListaPrecioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
@@ -20,7 +24,6 @@ import com.lowagie.text.Chunk;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
-import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
@@ -64,16 +67,20 @@ public class InformeService {
     private static final String ESTADO_CANCELADO = "Cancelado";
     private static final DateTimeFormatter FMT_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter FMT_DATETIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    /** Formato de fecha seguro para nombres de archivo (sin barras). */
+    private static final DateTimeFormatter FMT_ARCHIVO = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     private final EnvioRepository envioRepository;
     private final ClienteRepository clienteRepository;
     private final GrupoRepository grupoRepository;
+    private final ListaPrecioRepository listaPrecioRepository;
 
     /**
-     * Genera el informe según la solicitud. Retorna archivo único (Excel o PDF) o ZIP con varios archivos + resumen.
+     * Genera el informe según la solicitud. Retorna archivo único (Excel o PDF) o ZIP con varios archivos + resumen,
+     * y el nombre sugerido para la descarga (informe_cliente/grupo_fechainicio_fechafin.ext o informe_fechas.zip).
      */
     @Transactional(readOnly = true)
-    public byte[] generarInforme(InformeRequestDTO req) throws IOException, DocumentException {
+    public InformeResultDTO generarInforme(InformeRequestDTO req) throws IOException, DocumentException {
         if (req.getFechaDesde() == null || req.getFechaHasta() == null) {
             throw new IllegalArgumentException("fechaDesde y fechaHasta son obligatorios");
         }
@@ -111,20 +118,37 @@ public class InformeService {
         List<ReportFile> reportes = new ArrayList<>();
         List<ResumenFila> resumenFilas = new ArrayList<>();
 
+        boolean unSoloDestinatario = targets.size() == 1;
+        String ext = esExcel ? "xlsx" : "pdf";
+        String sufijoFechas = req.getFechaDesde().format(FMT_ARCHIVO) + "_" + req.getFechaHasta().format(FMT_ARCHIVO);
+
         for (Target target : targets) {
             List<Envio> envios = filtrarEnviosParaTarget(todosColectados, target, tomarEnvios);
-            log.info("[Informe] Target '{}' codigos={} -> envíos filtrados: {}", target.nombre, target.codigos, envios.size());
+            List<Envio> rechazadosCancelados = Collections.emptyList();
+            if (TOMAR_RETIRADOS_EXCEPTO.equals(tomarEnvios)) {
+                rechazadosCancelados = todosColectados.stream()
+                        .filter(e -> perteneceATarget(e.getCliente(), target))
+                        .filter(e -> ESTADO_RECHAZADO.equals(e.getEstado()) || ESTADO_CANCELADO.equals(e.getEstado()))
+                        .collect(Collectors.toList());
+            }
+            log.info("[Informe] Target '{}' codigos={} -> envíos filtrados: {}, rechazados/cancelados: {}", target.nombre, target.codigos, envios.size(), rechazadosCancelados.size());
             ResumenData resumen = buildResumen(envios);
-            String nombreSeguro = sanitizeFileName(target.nombre) + (esExcel ? ".xlsx" : ".pdf");
+            Map<String, String> preciosPorZona = obtenerPreciosPorZonaParaTarget(target);
+            String nombreSeguro;
+            if (unSoloDestinatario) {
+                nombreSeguro = "informe_" + slugParaArchivo(target.nombre) + "_" + sufijoFechas + "." + ext;
+            } else {
+                nombreSeguro = sanitizeFileName(target.nombre) + "." + ext;
+            }
             byte[] contenido = esExcel
-                    ? generarExcel(envios, resumen, target.nombre, req.getFechaDesde(), req.getFechaHasta())
-                    : generarPdf(envios, resumen, target.nombre, req.getFechaDesde(), req.getFechaHasta());
+                    ? generarExcel(envios, resumen, target.nombre, req.getFechaDesde(), req.getFechaHasta(), rechazadosCancelados, target.esGrupo())
+                    : generarPdf(envios, resumen, target.nombre, req.getFechaDesde(), req.getFechaHasta(), preciosPorZona, target.esGrupo(), rechazadosCancelados);
             reportes.add(new ReportFile(nombreSeguro, contenido));
             resumenFilas.add(new ResumenFila(target.nombre, envios.size(), resumen.precioTotal));
         }
 
         if (reportes.size() == 1) {
-            return reportes.get(0).contenido;
+            return new InformeResultDTO(reportes.get(0).contenido, reportes.get(0).nombre);
         }
 
         ByteArrayOutputStream zipOut = new ByteArrayOutputStream();
@@ -139,7 +163,8 @@ public class InformeService {
             zos.write(resumenExcel);
             zos.closeEntry();
         }
-        return zipOut.toByteArray();
+        String nombreZip = "informe_" + sufijoFechas + ".zip";
+        return new InformeResultDTO(zipOut.toByteArray(), nombreZip);
     }
 
     private List<Target> resolveTargets(InformeRequestDTO req) {
@@ -161,7 +186,7 @@ public class InformeService {
                             if (!nom.trim().isEmpty()) textosCliente.add(nom.trim());
                             if (c.getNombreFantasia() != null && !c.getNombreFantasia().trim().isEmpty()) textosCliente.add(c.getNombreFantasia().trim());
                         }
-                        out.add(new Target(g.getNombre(), codigos, textosCliente));
+                        out.add(new Target(g.getNombre(), codigos, textosCliente, true));
                     }
                 }
                 break;
@@ -175,7 +200,7 @@ public class InformeService {
                         textos.add(nombre.trim());
                         if (c.getCodigo() != null) textos.add(c.getCodigo().trim());
                         if (c.getNombreFantasia() != null) textos.add(c.getNombreFantasia().trim());
-                        out.add(new Target(nombre, Set.of(c.getCodigo()), textos));
+                        out.add(new Target(nombre, Set.of(c.getCodigo()), textos, false));
                     }
                 }
                 break;
@@ -190,7 +215,7 @@ public class InformeService {
                         if (!nom.trim().isEmpty()) textosCliente.add(nom.trim());
                         if (c.getNombreFantasia() != null && !c.getNombreFantasia().trim().isEmpty()) textosCliente.add(c.getNombreFantasia().trim());
                     }
-                    out.add(new Target(g.getNombre(), codigos, textosCliente));
+                    out.add(new Target(g.getNombre(), codigos, textosCliente, true));
                 }
                 break;
             case TIPO_TODAS_CUENTAS:
@@ -201,7 +226,7 @@ public class InformeService {
                     textos.add(nombre.trim());
                     textos.add(c.getCodigo().trim());
                     if (c.getNombreFantasia() != null) textos.add(c.getNombreFantasia().trim());
-                    out.add(new Target(nombre, Set.of(c.getCodigo()), textos));
+                    out.add(new Target(nombre, Set.of(c.getCodigo()), textos, false));
                 }
                 break;
             default:
@@ -260,6 +285,37 @@ public class InformeService {
         return false;
     }
 
+    /**
+     * Obtiene los precios por zona acordados para el cliente/grupo del target.
+     * Usa la lista de precios del primer cliente encontrado por código en el target.
+     */
+    private Map<String, String> obtenerPreciosPorZonaParaTarget(Target target) {
+        Map<String, String> out = new LinkedHashMap<>();
+        if (target.codigos() == null || target.codigos().isEmpty()) return out;
+        for (String codigo : target.codigos()) {
+            if (codigo == null || codigo.trim().isEmpty()) continue;
+            Cliente c = clienteRepository.findByCodigo(codigo.trim()).orElse(null);
+            if (c == null || c.getListaPreciosId() == null) continue;
+            ListaPrecio listaPrecio = listaPrecioRepository.findById(c.getListaPreciosId()).orElse(null);
+            if (listaPrecio == null) continue;
+            List<Zona> zonas;
+            if (Boolean.FALSE.equals(listaPrecio.getZonaPropia()) && listaPrecio.getListaPrecioSeleccionada() != null) {
+                ListaPrecio ref = listaPrecioRepository.findById(listaPrecio.getListaPrecioSeleccionada()).orElse(null);
+                zonas = (ref != null && Boolean.TRUE.equals(ref.getZonaPropia()) && ref.getZonas() != null) ? ref.getZonas() : new ArrayList<>();
+            } else {
+                zonas = (listaPrecio.getZonas() != null) ? listaPrecio.getZonas() : new ArrayList<>();
+            }
+            for (Zona z : zonas) {
+                String nombre = (z.getNombre() != null && !z.getNombre().trim().isEmpty()) ? z.getNombre().trim() : (z.getCodigo() != null ? z.getCodigo().trim() : "Zona");
+                if (!nombre.isEmpty() && z.getValor() != null && !z.getValor().trim().isEmpty()) {
+                    out.putIfAbsent(nombre, z.getValor().trim());
+                }
+            }
+            break; // un solo cliente para la lista de precios de referencia
+        }
+        return out;
+    }
+
     /** Fecha de colecta efectiva: fechaColecta si existe, si no fechaUltimoMovimiento (envíos retirados sin fecha guardada). */
     private static LocalDateTime fechaColectaEfectiva(Envio e) {
         return e.getFechaColecta() != null ? e.getFechaColecta() : e.getFechaUltimoMovimiento();
@@ -269,6 +325,7 @@ public class InformeService {
         double precioTotal = 0;
         double efectivo = 0;
         Map<LocalDate, Map<String, ZonaDia>> porDiaZona = new LinkedHashMap<>();
+        Map<String, PorZona> porZona = new LinkedHashMap<>();
 
         for (Envio e : envios) {
             double costo = parseDouble(e.getCostoEnvio(), 0);
@@ -278,14 +335,16 @@ public class InformeService {
             }
             LocalDateTime fec = fechaColectaEfectiva(e);
             LocalDate dia = fec != null ? fec.toLocalDate() : null;
-            if (dia == null) continue;
-            String zona = e.getZonaEntrega() != null ? e.getZonaEntrega().trim() : "(sin zona)";
-            porDiaZona.computeIfAbsent(dia, k -> new LinkedHashMap<>())
-                    .computeIfAbsent(zona, k -> new ZonaDia(zona, 0, 0))
-                    .sumar(1, costo);
+            final String zona = (e.getZonaEntrega() != null && !e.getZonaEntrega().trim().isEmpty()) ? e.getZonaEntrega().trim() : "Sin Zona";
+            if (dia != null) {
+                porDiaZona.computeIfAbsent(dia, k -> new LinkedHashMap<>())
+                        .computeIfAbsent(zona, k -> new ZonaDia(zona, 0, 0))
+                        .sumar(1, costo);
+            }
+            porZona.merge(zona, new PorZona(zona, 1, costo), (a, b) -> new PorZona(a.zona(), a.cantidad() + b.cantidad(), a.totalPrecio() + b.totalPrecio()));
         }
 
-        return new ResumenData(porDiaZona, envios.size(), precioTotal, efectivo);
+        return new ResumenData(porDiaZona, porZona, envios.size(), precioTotal, efectivo);
     }
 
     private static double parseDouble(String s, double def) {
@@ -298,7 +357,7 @@ public class InformeService {
     }
 
     private byte[] generarExcel(List<Envio> envios, ResumenData resumen, String nombreDestinatario,
-                               LocalDate fechaDesde, LocalDate fechaHasta) throws IOException {
+                               LocalDate fechaDesde, LocalDate fechaHasta, List<Envio> rechazadosCancelados, boolean esInformeGrupo) throws IOException {
         try (Workbook wb = new XSSFWorkbook()) {
             Sheet detalle = wb.createSheet("Detalle");
             Sheet hojaResumen = wb.createSheet("Resumen");
@@ -371,6 +430,35 @@ public class InformeService {
                 }
             }
 
+            // Hoja Rechazados y cancelados (solo cuando hay datos)
+            if (rechazadosCancelados != null && !rechazadosCancelados.isEmpty()) {
+                Sheet hojaRC = wb.createSheet("Rechazados y cancelados");
+                int rRC = 0;
+                crearCelda(hojaRC.createRow(rRC++), 0, "Rechazados por el comprador y cancelados");
+                crearCelda(hojaRC.createRow(rRC++), 0, "Envíos colectados en el período que quedaron en estado rechazado o cancelado.");
+                rRC++;
+                Row headerRC = hojaRC.createRow(rRC++);
+                String[] headersRC = esInformeGrupo
+                        ? new String[]{"Tracking", "Fecha colecta", "Cliente", "Dirección", "Estado final"}
+                        : new String[]{"Tracking", "Fecha colecta", "Dirección", "Estado final"};
+                for (int i = 0; i < headersRC.length; i++) {
+                    Cell c = headerRC.createCell(i);
+                    c.setCellValue(headersRC[i]);
+                    c.setCellStyle(headerStyle);
+                }
+                for (Envio e : rechazadosCancelados) {
+                    Row rowRC = hojaRC.createRow(rRC++);
+                    rowRC.createCell(0).setCellValue(e.getTracking() != null ? e.getTracking() : "");
+                    rowRC.createCell(1).setCellValue(fechaColectaEfectiva(e) != null ? fechaColectaEfectiva(e).format(FMT_DATETIME) : "");
+                    int col = 2;
+                    if (esInformeGrupo) {
+                        rowRC.createCell(col++).setCellValue(e.getCliente() != null ? e.getCliente() : "");
+                    }
+                    rowRC.createCell(col++).setCellValue(e.getDireccion() != null ? e.getDireccion() : "");
+                    rowRC.createCell(col).setCellValue(e.getEstado() != null ? e.getEstado() : "");
+                }
+            }
+
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             wb.write(out);
             return out.toByteArray();
@@ -389,141 +477,365 @@ public class InformeService {
         return s;
     }
 
-    // Colores marca MVG TMS
-    private static final Color COLOR_MVG_INDIGO = new Color(79, 70, 229);
-    private static final Color COLOR_MVG_CYAN = new Color(6, 182, 212);
+    // Colores marca Nexo (#1459e9 y acento)
+    private static final Color COLOR_NEXO_PRIMARY = new Color(20, 89, 233);
+    private static final Color COLOR_NEXO_ACCENT = new Color(59, 130, 246);
     private static final Color COLOR_GRIS_FOOTER = new Color(107, 114, 128);
     private static final Color COLOR_GRIS_CLARO = new Color(248, 250, 252);
     private static final Color COLOR_BORDE = new Color(226, 232, 240);
+    private static final Color COLOR_GRIS_TEXTO = new Color(55, 65, 81);
+    private static final Color COLOR_GRIS_SUBTITULO = new Color(107, 114, 128);
 
     private byte[] generarPdf(List<Envio> envios, ResumenData resumen, String nombreDestinatario,
-                             LocalDate fechaDesde, LocalDate fechaHasta) throws DocumentException, IOException {
-        Document doc = new Document(PageSize.A4, 36, 36, 50, 44);
+                             LocalDate fechaDesde, LocalDate fechaHasta, Map<String, String> preciosPorZona, boolean esInformeGrupo,
+                             List<Envio> rechazadosCancelados) throws DocumentException, IOException {
+        Document doc = new Document(PageSize.A4, 40, 40, 54, 48);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PdfWriter writer = PdfWriter.getInstance(doc, out);
-        writer.setPageEvent(new MvgReportFooter());
+        writer.setPageEvent(new NexoReportFooter());
         doc.open();
 
-        Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 22);
-        fontTitulo.setColor(COLOR_MVG_INDIGO);
-        Font fontSubtitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
-        fontSubtitulo.setColor(Color.DARK_GRAY);
-        Font fontNormal = FontFactory.getFont(FontFactory.HELVETICA, 10);
-        fontNormal.setColor(Color.DARK_GRAY);
-        Font fontBold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
-        Font fontSeccion = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
-        fontSeccion.setColor(COLOR_MVG_INDIGO);
+        com.lowagie.text.Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 24);
+        fontTitulo.setColor(COLOR_NEXO_PRIMARY);
+        com.lowagie.text.Font fontSubtitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13);
+        fontSubtitulo.setColor(COLOR_GRIS_TEXTO);
+        com.lowagie.text.Font fontNormal = FontFactory.getFont(FontFactory.HELVETICA, 10);
+        fontNormal.setColor(COLOR_GRIS_TEXTO);
+        com.lowagie.text.Font fontSeccion = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13);
+        fontSeccion.setColor(COLOR_NEXO_PRIMARY);
+        com.lowagie.text.Font fontSubtituloSeccion = FontFactory.getFont(FontFactory.HELVETICA, 9);
+        fontSubtituloSeccion.setColor(COLOR_GRIS_SUBTITULO);
 
-        // Barra de marca (MVG) arriba
-        PdfPTable barraMarca = new PdfPTable(1);
-        barraMarca.setWidthPercentage(100);
-        barraMarca.setSpacingAfter(10);
-        barraMarca.setTotalWidth(doc.getPageSize().getWidth() - doc.leftMargin() - doc.rightMargin());
-        Font fontMarca = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
+        // ——— Header de marca: barra principal + franja cyan
+        PdfPTable headerBar = new PdfPTable(1);
+        headerBar.setWidthPercentage(100);
+        headerBar.setSpacingAfter(0);
+        com.lowagie.text.Font fontMarca = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20);
         fontMarca.setColor(Color.WHITE);
-        PdfPCell barraCell = new PdfPCell(new Phrase("  MVG", fontMarca));
-        barraCell.setBackgroundColor(COLOR_MVG_INDIGO);
+        com.lowagie.text.Font fontTagline = FontFactory.getFont(FontFactory.HELVETICA, 10);
+        fontTagline.setColor(new Color(224, 231, 255));
+        PdfPCell barraCell = new PdfPCell();
+        barraCell.setBackgroundColor(COLOR_NEXO_PRIMARY);
         barraCell.setBorder(0);
-        barraCell.setFixedHeight(28);
+        barraCell.setFixedHeight(44);
         barraCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        barraMarca.addCell(barraCell);
-        doc.add(barraMarca);
+        barraCell.setPaddingLeft(16);
+        barraCell.setPaddingRight(16);
+        Paragraph pMarca = new Paragraph("NEXO", fontMarca);
+        pMarca.add(new Chunk("\n"));
+        pMarca.add(new Phrase("Informe de pedidos colectados", fontTagline));
+        barraCell.addElement(pMarca);
+        headerBar.addCell(barraCell);
+        doc.add(headerBar);
+        PdfPTable accentBar = new PdfPTable(1);
+        accentBar.setWidthPercentage(100);
+        accentBar.setSpacingAfter(18);
+        PdfPCell accentCell = new PdfPCell();
+        accentCell.setBackgroundColor(COLOR_NEXO_ACCENT);
+        accentCell.setBorder(0);
+        accentCell.setFixedHeight(4);
+        accentBar.addCell(accentCell);
+        doc.add(accentBar);
 
-        // Cabecera con marca
-        Paragraph pTitulo = new Paragraph("Informe de pedidos colectados", fontTitulo);
-        pTitulo.setSpacingAfter(6);
-        doc.add(pTitulo);
+        // Título del informe: destinatario y período
         doc.add(new Paragraph(nombreDestinatario, fontSubtitulo));
-        doc.add(new Paragraph("Colectados desde " + fechaDesde.format(FMT_DATE) + " hasta " + fechaHasta.format(FMT_DATE), fontNormal));
+        doc.add(new Paragraph("Período: " + fechaDesde.format(FMT_DATE) + " a " + fechaHasta.format(FMT_DATE), fontNormal));
         doc.add(Chunk.NEWLINE);
 
-        Paragraph intro = new Paragraph(
-                "Este informe resume los pedidos que fueron colectados (retirados) en el rango de fechas indicado. "
-                        + "Incluye totales por día y zona, el detalle de cada envío y el monto retirado en efectivo cuando corresponde.",
-                fontNormal);
-        intro.setSpacingAfter(16);
-        doc.add(intro);
+        // Intro en bloque con fondo suave
+        PdfPTable introBox = new PdfPTable(1);
+        introBox.setWidthPercentage(100);
+        introBox.setSpacingBefore(0);
+        introBox.setSpacingAfter(20);
+        PdfPCell introCell = new PdfPCell(new Paragraph(
+                "El presente informe detalla los envíos colectados en el período indicado: tarifas acordadas por zona, desglose por zona y detalle de cada envío. "
+                        + "Al final se incluye el detalle de cobros a destino, cuando corresponda.",
+                fontNormal));
+        introCell.setBackgroundColor(COLOR_GRIS_CLARO);
+        introCell.setBorderWidth(0);
+        introCell.setBorderWidthLeft(4);
+        introCell.setBorderColorLeft(COLOR_NEXO_PRIMARY);
+        introCell.setPadding(14);
+        introBox.addCell(introCell);
+        doc.add(introBox);
 
-        // Bloque Resumen con fondo
-        doc.add(new Paragraph("Resumen", fontSeccion));
-        doc.add(Chunk.NEWLINE);
+        // Resumen ejecutivo
+        addSectionTitle(doc, fontSeccion, fontSubtituloSeccion, "Resumen ejecutivo", null);
         PdfPTable cardResumen = new PdfPTable(1);
         cardResumen.setWidthPercentage(100);
-        cardResumen.setSpacingBefore(4);
-        cardResumen.setSpacingAfter(12);
-        cardResumen.setBackgroundColor(COLOR_GRIS_CLARO);
-        cardResumen.setBorderColor(COLOR_BORDE);
-        cardResumen.setBorderWidth(0.5f);
-        cardResumen.setPadding(12);
-        cardResumen.addCell(cellResumen("Total envíos: " + resumen.cantidadEnvios, false));
-        cardResumen.addCell(cellResumen("Precio total: $ " + String.format("%.2f", resumen.precioTotal), false));
-        cardResumen.addCell(cellResumen("Plata retirada en efectivo: $ " + String.format("%.2f", resumen.efectivo), false));
+        cardResumen.setSpacingBefore(6);
+        cardResumen.setSpacingAfter(22);
+        cardResumen.getDefaultCell().setBorder(0);
+        PdfPCell c1 = cellResumen("Cantidad de envíos: " + resumen.cantidadEnvios, false);
+        c1.setBackgroundColor(COLOR_GRIS_CLARO);
+        c1.setBorderWidth(0);
+        c1.setBorderWidthLeft(4);
+        c1.setBorderColorLeft(COLOR_NEXO_PRIMARY);
+        c1.setPadding(12);
+        cardResumen.addCell(c1);
+        PdfPCell c2 = cellResumen("Total envíos: $ " + String.format("%.2f", resumen.precioTotal), false);
+        c2.setBackgroundColor(COLOR_GRIS_CLARO);
+        c2.setBorderWidth(0);
+        c2.setBorderWidthLeft(4);
+        c2.setBorderColorLeft(COLOR_NEXO_PRIMARY);
+        c2.setPadding(12);
+        cardResumen.addCell(c2);
+        PdfPCell c3 = cellResumen("Cobros a destino (efectivo): $ " + String.format("%.2f", resumen.efectivo), false);
+        c3.setBackgroundColor(COLOR_GRIS_CLARO);
+        c3.setBorderWidth(0);
+        c3.setBorderWidthLeft(4);
+        c3.setBorderColorLeft(COLOR_NEXO_PRIMARY);
+        c3.setPadding(12);
+        cardResumen.addCell(c3);
         doc.add(cardResumen);
+
+        // Precios por zona acordados
+        if (preciosPorZona != null && !preciosPorZona.isEmpty()) {
+            addSectionTitle(doc, fontSeccion, fontSubtituloSeccion, "Tarifas por zona", "Precios acordados por zona de entrega para el presente informe.");
+            com.lowagie.text.Font fontLine = FontFactory.getFont(FontFactory.HELVETICA, 10);
+            fontLine.setColor(COLOR_GRIS_TEXTO);
+            PdfPTable preciosBox = new PdfPTable(1);
+            preciosBox.setWidthPercentage(100);
+            preciosBox.setSpacingBefore(4);
+            preciosBox.setSpacingAfter(12);
+            preciosBox.getDefaultCell().setBorder(0);
+            for (Map.Entry<String, String> entry : preciosPorZona.entrySet()) {
+                String zona = entry.getKey();
+                String valor = entry.getValue();
+                PdfPCell lineCell = new PdfPCell(new Paragraph("  · " + zona + ": $ " + valor, fontLine));
+                lineCell.setBorder(0);
+                lineCell.setPadding(8);
+                lineCell.setPaddingLeft(14);
+                lineCell.setBackgroundColor(COLOR_GRIS_CLARO);
+                lineCell.setBorderWidthLeft(4);
+                lineCell.setBorderColorLeft(COLOR_NEXO_ACCENT);
+                preciosBox.addCell(lineCell);
+            }
+            doc.add(preciosBox);
+            doc.add(Chunk.NEWLINE);
+        }
 
         if (envios.isEmpty()) {
             doc.add(new Paragraph("No hay envíos en el período para este destinatario.", fontNormal));
             doc.add(Chunk.NEWLINE);
         } else {
-            doc.add(new Paragraph("Por día y zona", fontSeccion));
-            doc.add(new Paragraph("Desglose de cantidades y precios por fecha y zona de entrega.", FontFactory.getFont(FontFactory.HELVETICA, 9)));
-            doc.add(Chunk.NEWLINE);
-            PdfPTable tablaResumen = new PdfPTable(4);
-            tablaResumen.setWidthPercentage(100);
-            tablaResumen.setWidths(new float[]{2f, 3f, 2f, 2f});
-            tablaResumen.setSpacingBefore(4);
-            tablaResumen.setSpacingAfter(14);
-            addHeaderCell(tablaResumen, "Fecha");
-            addHeaderCell(tablaResumen, "Zona");
-            addHeaderCell(tablaResumen, "Cant.");
-            addHeaderCell(tablaResumen, "Precio");
-            for (Map.Entry<LocalDate, Map<String, ZonaDia>> entry : resumen.porDiaZona.entrySet()) {
-                for (ZonaDia zd : entry.getValue().values()) {
-                    tablaResumen.addCell(cell(entry.getKey().format(FMT_DATE), false));
-                    tablaResumen.addCell(cell(zd.zona, false));
-                    tablaResumen.addCell(cell(String.valueOf(zd.cantidad), false));
-                    tablaResumen.addCell(cell(String.format("%.2f", zd.precio), false));
-                }
+            addSectionTitle(doc, fontSeccion, fontSubtituloSeccion, "Desglose por zonas", "Cantidad de envíos y monto total por zona en el período.");
+            com.lowagie.text.Font fontLine = FontFactory.getFont(FontFactory.HELVETICA, 10);
+            fontLine.setColor(COLOR_GRIS_TEXTO);
+            PdfPTable desgloseBox = new PdfPTable(1);
+            desgloseBox.setWidthPercentage(100);
+            desgloseBox.setSpacingBefore(4);
+            desgloseBox.setSpacingAfter(12);
+            desgloseBox.getDefaultCell().setBorder(0);
+            for (PorZona pz : resumen.porZona.values()) {
+                PdfPCell lineCell = new PdfPCell(new Paragraph("  · " + pz.zona() + " — " + pz.cantidad() + " envío(s), Total $ " + String.format("%.2f", pz.totalPrecio()), fontLine));
+                lineCell.setBorder(0);
+                lineCell.setPadding(8);
+                lineCell.setPaddingLeft(14);
+                lineCell.setBackgroundColor(COLOR_GRIS_CLARO);
+                lineCell.setBorderWidthLeft(4);
+                lineCell.setBorderColorLeft(COLOR_NEXO_ACCENT);
+                desgloseBox.addCell(lineCell);
             }
-            doc.add(tablaResumen);
+            doc.add(desgloseBox);
+            doc.add(Chunk.NEWLINE);
 
-            doc.add(new Paragraph("Detalle de envíos", fontSeccion));
-            doc.add(new Paragraph("Listado de cada envío con tracking, cliente, fecha de colecta, estado y costo.", FontFactory.getFont(FontFactory.HELVETICA, 9)));
-            doc.add(Chunk.NEWLINE);
-            PdfPTable tabla = new PdfPTable(new float[]{2.5f, 2.5f, 2f, 2f, 1.5f, 2f});
-            tabla.setWidthPercentage(100);
-            tabla.setSpacingBefore(4);
-            addHeaderCell(tabla, "Tracking");
-            addHeaderCell(tabla, "Cliente");
-            addHeaderCell(tabla, "Fecha colecta");
-            addHeaderCell(tabla, "Estado");
-            addHeaderCell(tabla, "Zona");
-            addHeaderCell(tabla, "Costo");
+            // Columna Cliente solo cuando el informe es de un grupo (varios clientes); si es de un solo cliente se omite.
+            boolean mostrarColumnaCliente = esInformeGrupo;
+            int numColsDetalle = mostrarColumnaCliente ? 6 : 5;
+            float[] widthsDetalle = mostrarColumnaCliente ? new float[]{2f, 1.2f, 2f, 2.5f, 1.5f, 1.2f} : new float[]{2.2f, 1.2f, 2.8f, 2f, 1.2f};
+
+            addSectionTitle(doc, fontSeccion, fontSubtituloSeccion, "Detalle de envíos", "Listado de envíos con tracking, fecha de colecta, dirección y precio.");
+            com.lowagie.text.Font fontCelda = FontFactory.getFont(FontFactory.HELVETICA, 9);
+            fontCelda.setColor(COLOR_GRIS_TEXTO);
+
+            PdfPTable tablaDetalle = new PdfPTable(numColsDetalle);
+            tablaDetalle.setWidthPercentage(100);
+            tablaDetalle.setWidths(widthsDetalle);
+            tablaDetalle.setSpacingBefore(6);
+            tablaDetalle.setSpacingAfter(4);
+            addHeaderCell(tablaDetalle, "Tracking");
+            addHeaderCell(tablaDetalle, "Fecha");
+            if (mostrarColumnaCliente) addHeaderCell(tablaDetalle, "Cliente");
+            addHeaderCell(tablaDetalle, "Dirección");
+            addHeaderCell(tablaDetalle, "Localidad");
+            addHeaderCell(tablaDetalle, "Precio");
+
+            double sumaPrecio = 0;
             for (Envio e : envios) {
-                tabla.addCell(cell(e.getTracking() != null ? e.getTracking() : "", false));
-                tabla.addCell(cell(e.getCliente() != null ? e.getCliente() : "", false));
-                tabla.addCell(cell(fechaColectaEfectiva(e) != null ? fechaColectaEfectiva(e).format(FMT_DATETIME) : "", false));
-                tabla.addCell(cell(e.getEstado() != null ? e.getEstado() : "", false));
-                tabla.addCell(cell(e.getZonaEntrega() != null ? e.getZonaEntrega() : "", false));
-                tabla.addCell(cell(e.getCostoEnvio() != null ? e.getCostoEnvio() : "", false));
+                LocalDateTime fec = fechaColectaEfectiva(e);
+                String fechaStr = fec != null ? fec.toLocalDate().format(FMT_DATE) : "—";
+                double precio = parseDouble(e.getCostoEnvio(), 0);
+                sumaPrecio += precio;
+                addBodyCell(tablaDetalle, e.getTracking() != null ? e.getTracking() : "—", fontCelda);
+                addBodyCell(tablaDetalle, fechaStr, fontCelda);
+                if (mostrarColumnaCliente) addBodyCell(tablaDetalle, e.getCliente() != null ? e.getCliente() : "—", fontCelda);
+                addBodyCell(tablaDetalle, e.getDireccion() != null ? e.getDireccion() : "—", fontCelda);
+                addBodyCell(tablaDetalle, e.getLocalidad() != null ? e.getLocalidad() : "—", fontCelda);
+                addBodyCell(tablaDetalle, "$ " + String.format("%.2f", precio), fontCelda);
             }
-            doc.add(tabla);
+            // Fila total detalle
+            com.lowagie.text.Font fontTotal = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
+            fontTotal.setColor(COLOR_GRIS_TEXTO);
+            int colSpanTotal = numColsDetalle - 1;
+            PdfPCell vacioTotal = new PdfPCell(new Phrase("Total", fontTotal));
+            vacioTotal.setColspan(colSpanTotal);
+            vacioTotal.setPadding(8);
+            vacioTotal.setBackgroundColor(COLOR_GRIS_CLARO);
+            vacioTotal.setBorderWidth(1);
+            vacioTotal.setBorderColor(COLOR_BORDE);
+            vacioTotal.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            tablaDetalle.addCell(vacioTotal);
+            PdfPCell totalPrecioCell = new PdfPCell(new Phrase("$ " + String.format("%.2f", sumaPrecio), fontTotal));
+            totalPrecioCell.setPadding(8);
+            totalPrecioCell.setBackgroundColor(COLOR_GRIS_CLARO);
+            totalPrecioCell.setBorderWidth(1);
+            totalPrecioCell.setBorderColor(COLOR_BORDE);
+            tablaDetalle.addCell(totalPrecioCell);
+            doc.add(tablaDetalle);
+            doc.add(Chunk.NEWLINE);
+
+            // Sección Cobros en destino (solo envíos con totalACobrar > 0)
+            List<Envio> conCobro = envios.stream()
+                    .filter(e -> e.getTotalACobrar() != null && !e.getTotalACobrar().trim().isEmpty() && parseDouble(e.getTotalACobrar(), 0) > 0)
+                    .toList();
+            addSectionTitle(doc, fontSeccion, fontSubtituloSeccion, "Cobros a destino", "Detalle de montos cobrados en destino por envío.");
+            PdfPTable tablaCobros = new PdfPTable(4);
+            tablaCobros.setWidthPercentage(100);
+            tablaCobros.setWidths(new float[]{2f, 1.2f, 2.8f, 1.2f});
+            tablaCobros.setSpacingBefore(6);
+            tablaCobros.setSpacingAfter(4);
+            addHeaderCell(tablaCobros, "Tracking");
+            addHeaderCell(tablaCobros, "Fecha");
+            addHeaderCell(tablaCobros, "Dirección");
+            addHeaderCell(tablaCobros, "Cobrado");
+
+            double sumaCobros = 0;
+            for (Envio e : conCobro) {
+                LocalDateTime fec = fechaColectaEfectiva(e);
+                String fechaStr = fec != null ? fec.toLocalDate().format(FMT_DATE) : "—";
+                double cobro = parseDouble(e.getTotalACobrar(), 0);
+                sumaCobros += cobro;
+                addBodyCell(tablaCobros, e.getTracking() != null ? e.getTracking() : "—", fontCelda);
+                addBodyCell(tablaCobros, fechaStr, fontCelda);
+                addBodyCell(tablaCobros, e.getDireccion() != null ? e.getDireccion() : "—", fontCelda);
+                addBodyCell(tablaCobros, "$ " + String.format("%.2f", cobro), fontCelda);
+            }
+            PdfPCell vacioCobro = new PdfPCell(new Phrase("Total cobros a destino", fontTotal));
+            vacioCobro.setColspan(3);
+            vacioCobro.setPadding(8);
+            vacioCobro.setBackgroundColor(COLOR_GRIS_CLARO);
+            vacioCobro.setBorderWidth(1);
+            vacioCobro.setBorderColor(COLOR_BORDE);
+            vacioCobro.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            tablaCobros.addCell(vacioCobro);
+            PdfPCell totalCobroCell = new PdfPCell(new Phrase("$ " + String.format("%.2f", sumaCobros), fontTotal));
+            totalCobroCell.setPadding(8);
+            totalCobroCell.setBackgroundColor(COLOR_GRIS_CLARO);
+            totalCobroCell.setBorderWidth(1);
+            totalCobroCell.setBorderColor(COLOR_BORDE);
+            tablaCobros.addCell(totalCobroCell);
+            doc.add(tablaCobros);
+
+            // Cierre: importe a abonar (Total envíos − Cobros a destino)
+            double importeAbonar = resumen.precioTotal - resumen.efectivo;
+            doc.add(Chunk.NEWLINE);
+            PdfPTable cierreBox = new PdfPTable(1);
+            cierreBox.setWidthPercentage(100);
+            cierreBox.setSpacingBefore(8);
+            cierreBox.setSpacingAfter(8);
+            com.lowagie.text.Font fontCierre = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
+            fontCierre.setColor(COLOR_NEXO_PRIMARY);
+            PdfPCell cierreCell = new PdfPCell();
+            cierreCell.setBorder(0);
+            cierreCell.setPadding(14);
+            cierreCell.setBackgroundColor(COLOR_GRIS_CLARO);
+            cierreCell.setBorderWidthLeft(4);
+            cierreCell.setBorderColorLeft(COLOR_NEXO_PRIMARY);
+            Paragraph pImporte = new Paragraph("Importe a abonar: $ " + String.format("%.2f", importeAbonar), fontCierre);
+            pImporte.add(new Chunk("\n"));
+            pImporte.add(new Phrase("(Total envíos menos cobros a destino)", fontSubtituloSeccion));
+            cierreCell.addElement(pImporte);
+            cierreCell.addElement(Chunk.NEWLINE);
+            cierreCell.addElement(new Paragraph("Agradecemos su confianza y quedamos a disposición.", fontNormal));
+            cierreBox.addCell(cierreCell);
+            doc.add(cierreBox);
+        }
+
+        // Tabla de rechazados por el comprador y cancelados (solo cuando la opción fue "todos los retirados excepto...")
+        if (rechazadosCancelados != null && !rechazadosCancelados.isEmpty()) {
+            doc.add(Chunk.NEWLINE);
+            addSectionTitle(doc, fontSeccion, fontSubtituloSeccion, "Rechazados por el comprador y cancelados", "Envíos colectados en el período que quedaron en estado rechazado o cancelado.");
+            boolean mostrarColCliente = esInformeGrupo;
+            int numColsRC = mostrarColCliente ? 5 : 4;
+            float[] widthsRC = mostrarColCliente ? new float[]{2f, 1.2f, 2f, 2.5f, 1.8f} : new float[]{2.2f, 1.2f, 2.8f, 1.8f};
+            PdfPTable tablaRC = new PdfPTable(numColsRC);
+            tablaRC.setWidthPercentage(100);
+            tablaRC.setWidths(widthsRC);
+            tablaRC.setSpacingBefore(6);
+            tablaRC.setSpacingAfter(12);
+            addHeaderCell(tablaRC, "Tracking");
+            addHeaderCell(tablaRC, "Fecha");
+            if (mostrarColCliente) addHeaderCell(tablaRC, "Cliente");
+            addHeaderCell(tablaRC, "Dirección");
+            addHeaderCell(tablaRC, "Estado final");
+            com.lowagie.text.Font fontCeldaRC = FontFactory.getFont(FontFactory.HELVETICA, 9);
+            fontCeldaRC.setColor(COLOR_GRIS_TEXTO);
+            for (Envio e : rechazadosCancelados) {
+                LocalDateTime fec = fechaColectaEfectiva(e);
+                String fechaStr = fec != null ? fec.toLocalDate().format(FMT_DATE) : "—";
+                String estadoFinal = e.getEstado() != null ? e.getEstado() : "—";
+                addBodyCell(tablaRC, e.getTracking() != null ? e.getTracking() : "—", fontCeldaRC);
+                addBodyCell(tablaRC, fechaStr, fontCeldaRC);
+                if (mostrarColCliente) addBodyCell(tablaRC, e.getCliente() != null ? e.getCliente() : "—", fontCeldaRC);
+                addBodyCell(tablaRC, e.getDireccion() != null ? e.getDireccion() : "—", fontCeldaRC);
+                addBodyCell(tablaRC, estadoFinal, fontCeldaRC);
+            }
+            doc.add(tablaRC);
         }
         doc.close();
         return out.toByteArray();
     }
 
+    private void addSectionTitle(Document doc, com.lowagie.text.Font fontSeccion, com.lowagie.text.Font fontSub,
+                                  String title, String subtitle) throws DocumentException {
+        doc.add(new Paragraph(title, fontSeccion));
+        if (subtitle != null && !subtitle.isEmpty()) {
+            doc.add(new Paragraph(subtitle, fontSub));
+        }
+        PdfPTable lineTable = new PdfPTable(1);
+        lineTable.setWidthPercentage(100);
+        lineTable.setSpacingBefore(4);
+        lineTable.setSpacingAfter(6);
+        PdfPCell lineCell = new PdfPCell();
+        lineCell.setBackgroundColor(COLOR_NEXO_ACCENT);
+        lineCell.setBorder(0);
+        lineCell.setFixedHeight(2);
+        lineTable.addCell(lineCell);
+        doc.add(lineTable);
+    }
+
     private static void addHeaderCell(PdfPTable table, String text) {
-        Font f = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
+        com.lowagie.text.Font f = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
         f.setColor(Color.WHITE);
         PdfPCell c = new PdfPCell(new Phrase(text != null ? text : "", f));
-        c.setBackgroundColor(COLOR_MVG_INDIGO);
+        c.setBackgroundColor(COLOR_NEXO_PRIMARY);
         c.setPadding(6);
         c.setHorizontalAlignment(Element.ALIGN_LEFT);
         table.addCell(c);
     }
 
+    private static void addBodyCell(PdfPTable table, String text, com.lowagie.text.Font font) {
+        PdfPCell c = new PdfPCell(new Phrase(text != null ? text : "", font));
+        c.setPadding(6);
+        c.setBorderWidth(1);
+        c.setBorderColor(COLOR_BORDE);
+        c.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        table.addCell(c);
+    }
+
     private static PdfPCell cellResumen(String text, boolean bold) {
-        Font f = bold ? FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10) : FontFactory.getFont(FontFactory.HELVETICA, 10);
+        com.lowagie.text.Font f = bold ? FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10) : FontFactory.getFont(FontFactory.HELVETICA, 10);
         f.setColor(Color.DARK_GRAY);
         PdfPCell c = new PdfPCell(new Phrase(text != null ? text : "", f));
         c.setPadding(4);
@@ -532,20 +844,20 @@ public class InformeService {
     }
 
     private static PdfPCell cell(String text, boolean bold) {
-        Font f = bold ? FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9) : FontFactory.getFont(FontFactory.HELVETICA, 8);
+        com.lowagie.text.Font f = bold ? FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9) : FontFactory.getFont(FontFactory.HELVETICA, 8);
         PdfPCell c = new PdfPCell(new Phrase(text != null ? text : "", f));
         c.setPadding(5);
         return c;
     }
 
-    /** Pie de página en todas las hojas: "Powered by MVG TMS" */
-    private static class MvgReportFooter extends PdfPageEventHelper {
+    /** Pie de página en todas las hojas */
+    private static class NexoReportFooter extends PdfPageEventHelper {
         @Override
         public void onEndPage(PdfWriter writer, Document document) {
             PdfContentByte cb = writer.getDirectContent();
-            Font fontFooter = FontFactory.getFont(FontFactory.HELVETICA, 8);
+            com.lowagie.text.Font fontFooter = FontFactory.getFont(FontFactory.HELVETICA, 8);
             fontFooter.setColor(COLOR_GRIS_FOOTER);
-            Phrase footer = new Phrase("Powered by MVG TMS", fontFooter);
+            Phrase footer = new Phrase("Powered by Nexo", fontFooter);
             float x = (document.left() + document.right()) / 2f;
             float y = document.bottom() - 12;
             ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, footer, x, y, 0);
@@ -579,8 +891,15 @@ public class InformeService {
         return name.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
     }
 
-    /** nombre: etiqueta del informe; codigos: códigos de cliente; textosCliente: variantes que pueden aparecer en envio.cliente (codigo, "codigo - nombre", nombreFantasia). */
-    private record Target(String nombre, Set<String> codigos, Set<String> textosCliente) {}
+    /** Slug para nombre de archivo: sin espacios ni " - ", solo letras/números/guiones bajos. */
+    private static String slugParaArchivo(String name) {
+        if (name == null || name.trim().isEmpty()) return "informe";
+        String s = name.trim().replace(" - ", "_").replace(" ", "_");
+        return sanitizeFileName(s);
+    }
+
+    /** nombre: etiqueta del informe; codigos: códigos de cliente; textosCliente: variantes que pueden aparecer en envio.cliente; esGrupo: true si el destinatario es un grupo (mostrar columna Cliente en PDF). */
+    private record Target(String nombre, Set<String> codigos, Set<String> textosCliente, boolean esGrupo) {}
     private record ReportFile(String nombre, byte[] contenido) {}
     private record ResumenFila(String nombre, int cantidad, double precioTotal) {}
 
@@ -601,14 +920,18 @@ public class InformeService {
         }
     }
 
+    private record PorZona(String zona, int cantidad, double totalPrecio) {}
+
     private static class ResumenData {
         final Map<LocalDate, Map<String, ZonaDia>> porDiaZona;
+        final Map<String, PorZona> porZona;
         final int cantidadEnvios;
         final double precioTotal;
         final double efectivo;
 
-        ResumenData(Map<LocalDate, Map<String, ZonaDia>> porDiaZona, int cantidadEnvios, double precioTotal, double efectivo) {
+        ResumenData(Map<LocalDate, Map<String, ZonaDia>> porDiaZona, Map<String, PorZona> porZona, int cantidadEnvios, double precioTotal, double efectivo) {
             this.porDiaZona = porDiaZona;
+            this.porZona = porZona;
             this.cantidadEnvios = cantidadEnvios;
             this.precioTotal = precioTotal;
             this.efectivo = efectivo;

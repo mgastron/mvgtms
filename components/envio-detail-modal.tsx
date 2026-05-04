@@ -616,7 +616,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       pdf.setFontSize(14)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(0, 0, 0)
-      pdf.text("MVG", (width - pdf.getTextWidth("MVG")) / 2, currentY)
+      pdf.text("NEXO", (width - pdf.getTextWidth("NEXO")) / 2, currentY)
       currentY += 14
 
       const barHeight = 20

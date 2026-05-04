@@ -194,9 +194,9 @@ export default function SubirIndividualPage() {
       pdf.setFontSize(14)
       pdf.setFont("helvetica", "bold")
       pdf.setTextColor(0, 0, 0)
-      const titleWidth = pdf.getTextWidth("MVG")
+      const titleWidth = pdf.getTextWidth("NEXO")
       const titleX = (pageWidth - titleWidth) / 2
-      pdf.text("MVG", titleX, currentY)
+      pdf.text("NEXO", titleX, currentY)
       
       // Línea superior (debajo del texto, no lo corta)
       pdf.setDrawColor(0, 0, 0)

@@ -1,10 +1,42 @@
 /**
- * Genera en memoria el logo MVG (estilo header) e íconos como PNG data URLs
- * para usar en el PDF, sin depender del DOM ni html2canvas.
+ * Logo Nexo (ISO en A4) e íconos como PNG data URLs para PDFs,
+ * sin depender del DOM ni html2canvas.
  */
 
-/** Logo: gradiente indigo→cyan→teal + "MVG" blanco (mismo estilo que MvgLogo en header). */
-export function getMvgLogoDataUrl(width: number = 80, height: number = 80): string {
+const NEXO_BLUE = "#1459e9"
+
+/** Carga el isotipo desde /public y lo escala a un tamaño máximo (mantiene proporción). */
+export async function getNexoIsoDataUrl(maxSize = 160): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const w = img.naturalWidth
+      const h = img.naturalHeight
+      if (!w || !h) {
+        resolve("")
+        return
+      }
+      const scale = Math.min(maxSize / w, maxSize / h)
+      const cw = Math.max(1, Math.round(w * scale))
+      const ch = Math.max(1, Math.round(h * scale))
+      const canvas = document.createElement("canvas")
+      canvas.width = cw
+      canvas.height = ch
+      const ctx = canvas.getContext("2d")
+      if (!ctx) {
+        resolve("")
+        return
+      }
+      ctx.drawImage(img, 0, 0, cw, ch)
+      resolve(canvas.toDataURL("image/png"))
+    }
+    img.onerror = () => resolve("")
+    img.src = "/logos/nexo-iso.png"
+  })
+}
+
+/** Marca texto “NEXO” sobre fondo azul (respaldo si no carga el ISO o para usos legacy). */
+export function getNexoWordBadgeDataUrl(width: number = 80, height: number = 80): string {
   const canvas = document.createElement("canvas")
   canvas.width = width
   canvas.height = height
@@ -27,19 +59,15 @@ export function getMvgLogoDataUrl(width: number = 80, height: number = 80): stri
   ctx.lineTo(x, y + r)
   ctx.quadraticCurveTo(x, y, x + r, y)
   ctx.closePath()
-
-  const gradient = ctx.createLinearGradient(0, 0, w, h)
-  gradient.addColorStop(0, "#4f46e5")
-  gradient.addColorStop(0.5, "#06b6d4")
-  gradient.addColorStop(1, "#14b8a6")
-  ctx.fillStyle = gradient
+  ctx.fillStyle = NEXO_BLUE
   ctx.fill()
 
   ctx.fillStyle = "#ffffff"
-  ctx.font = "bold 32px system-ui, sans-serif"
+  const fontPx = width >= 72 ? 28 : 22
+  ctx.font = `bold ${fontPx}px system-ui, sans-serif`
   ctx.textAlign = "center"
   ctx.textBaseline = "middle"
-  ctx.fillText("MVG", w / 2, h / 2)
+  ctx.fillText("NEXO", w / 2, h / 2)
 
   return canvas.toDataURL("image/png")
 }
@@ -81,7 +109,8 @@ const iconSvg = {
 const iconSize = 48
 
 export async function getLabelIconDataUrls(): Promise<{
-  logo: string
+  /** Isotipo Nexo para recuadro A4 (etiquetas). */
+  logoA4: string
   calendar: string
   person: string
   document: string
@@ -91,6 +120,7 @@ export async function getLabelIconDataUrls(): Promise<{
   mail: string
   business: string
 }> {
+  const iso = await getNexoIsoDataUrl(160)
   const [
     calendar,
     person,
@@ -112,7 +142,7 @@ export async function getLabelIconDataUrls(): Promise<{
   ])
 
   return {
-    logo: getMvgLogoDataUrl(80, 80),
+    logoA4: iso || getNexoWordBadgeDataUrl(80, 80),
     calendar,
     person,
     document,

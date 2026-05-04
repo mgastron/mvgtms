@@ -243,9 +243,9 @@ export async function drawA4Label(
   const logoBoxH = 36
   const logoBoxX = startX + labelWidth - pad - logoBoxW - 6
   const logoY = destSectionBottom - logoBoxH - 6
-  if (assets?.logo) {
+  if (assets?.logoA4) {
     try {
-      pdf.addImage(assets.logo, "PNG", logoBoxX, logoY - 2, logoBoxW, logoBoxH)
+      pdf.addImage(assets.logoA4, "PNG", logoBoxX, logoY - 2, logoBoxW, logoBoxH)
     } catch {
       drawLogoFallback(pdf, logoBoxX, logoY)
     }
@@ -261,13 +261,13 @@ export async function drawA4Label(
 function drawLogoFallback(pdf: jsPDF, logoBoxX: number, logoY: number) {
   const logoBoxW = 36
   const logoBoxH = 36
-  pdf.setFillColor(79, 70, 229)
+  pdf.setFillColor(20, 89, 233)
   pdf.roundedRect(logoBoxX, logoY - 2, logoBoxW, logoBoxH, 4, 4, "F")
-  pdf.setFontSize(12)
+  pdf.setFontSize(11)
   pdf.setFont("helvetica", "bold")
   pdf.setTextColor(255, 255, 255)
-  const mvgW = pdf.getTextWidth("MVG")
-  pdf.text("MVG", logoBoxX + (logoBoxW - mvgW) / 2, logoY - 2 + logoBoxH / 2 + 4)
+  const nexoW = pdf.getTextWidth("NEXO")
+  pdf.text("NEXO", logoBoxX + (logoBoxW - nexoW) / 2, logoY - 2 + logoBoxH / 2 + 4)
   pdf.setFont("helvetica", "normal")
   pdf.setTextColor(0, 0, 0)
 }
@@ -310,8 +310,8 @@ export async function drawSmallLabel(
   pdf.setFontSize(14)
   pdf.setFont("helvetica", "bold")
   pdf.setTextColor(0, 0, 0)
-  const titleWidth = pdf.getTextWidth("MVG")
-  pdf.text("MVG", (width - titleWidth) / 2, currentY)
+  const titleWidth = pdf.getTextWidth("NEXO")
+  pdf.text("NEXO", (width - titleWidth) / 2, currentY)
   currentY += 14
 
   const barHeight = 20
