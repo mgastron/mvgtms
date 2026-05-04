@@ -1,14 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { ModernHeader } from "@/components/modern-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FileBarChart, Download } from "lucide-react"
+import { FileBarChart, Download, Search } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
+import { cn } from "@/lib/utils"
 import { Montserrat } from "next/font/google"
 
 const montserrat = Montserrat({
@@ -61,6 +62,7 @@ export default function InformesPage() {
   const [tomarEnvios, setTomarEnvios] = useState<string>(TOMAR_ENVIOS.RETIRADOS_EXCEPTO)
   const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [filtroCuentas, setFiltroCuentas] = useState("")
 
   useEffect(() => {
     const isAuthenticated = sessionStorage.getItem("isAuthenticated")
@@ -136,6 +138,16 @@ export default function InformesPage() {
   const toggleCuenta = (id: number) => {
     setIdsCuentas((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
+
+  const clientesFiltrados = useMemo(() => {
+    const q = filtroCuentas.trim().toLowerCase()
+    if (!q) return clientes
+    return clientes.filter((c) => {
+      const codigo = (c.codigo || "").toLowerCase()
+      const nombre = (c.nombreFantasia || "").toLowerCase()
+      return codigo.includes(q) || nombre.includes(q)
+    })
+  }, [clientes, filtroCuentas])
 
   const handleDescargar = async () => {
     setError(null)
@@ -259,6 +271,7 @@ export default function InformesPage() {
                   setTipoDestinatario(v)
                   setIdsGrupos([])
                   setIdsCuentas([])
+                  setFiltroCuentas("")
                 }}
               >
                 <SelectTrigger className="h-10 text-[14px] font-medium text-[#1f2433]">
@@ -291,24 +304,45 @@ export default function InformesPage() {
                 </div>
               )}
               {tipoDestinatario === TIPO_DESTINATARIO.CUENTAS && (
-                <div className="mt-3 max-h-48 overflow-y-auto rounded-xl border border-[#e6eaf4] bg-[#fafbff] p-3">
+                <div className="mt-3 rounded-xl border border-[#e6eaf4] bg-[#fafbff] p-3">
                   <p className="mb-2 text-[12px] font-medium text-[#5d6578]">Seleccioná una o más cuentas (clientes)</p>
                   {loadingClientes ? (
                     <p className="text-[14px] text-[#8890a8]">Cargando clientes…</p>
                   ) : clientes.length === 0 ? (
                     <p className="text-[14px] text-[#8890a8]">No hay clientes.</p>
                   ) : (
-                    <div className="space-y-2">
-                      {clientes.map((c) => (
-                        <label key={c.id} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-0.5 hover:bg-white/80">
-                          <Checkbox checked={idsCuentas.includes(c.id)} onCheckedChange={() => toggleCuenta(c.id)} />
-                          <span className="text-[14px] text-[#1f2433]">
-                            {c.codigo}
-                            {c.nombreFantasia ? ` - ${c.nombreFantasia}` : ""}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
+                    <>
+                      <div className="relative mb-2">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8890a8]" aria-hidden />
+                        <Input
+                          type="search"
+                          value={filtroCuentas}
+                          onChange={(e) => setFiltroCuentas(e.target.value)}
+                          placeholder="Buscar por código o nombre…"
+                          autoComplete="off"
+                          aria-label="Filtrar lista de clientes"
+                          className={cn(inputClass, "mt-0 pl-9")}
+                        />
+                      </div>
+                      <div className="max-h-48 space-y-2 overflow-y-auto pr-0.5">
+                        {clientesFiltrados.length === 0 ? (
+                          <p className="text-[14px] text-[#8890a8]">Ningún cliente coincide con la búsqueda.</p>
+                        ) : (
+                          clientesFiltrados.map((c) => (
+                            <label
+                              key={c.id}
+                              className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-0.5 hover:bg-white/80"
+                            >
+                              <Checkbox checked={idsCuentas.includes(c.id)} onCheckedChange={() => toggleCuenta(c.id)} />
+                              <span className="text-[14px] text-[#1f2433]">
+                                {c.codigo}
+                                {c.nombreFantasia ? ` - ${c.nombreFantasia}` : ""}
+                              </span>
+                            </label>
+                          ))
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
               )}
