@@ -1,9 +1,29 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
+import Link from "next/link"
+import {
+  AlertCircle,
+  Loader2,
+  Mail,
+  MapPin,
+  Package,
+  Phone,
+  User,
+  Clock,
+  Truck,
+} from "lucide-react"
+import { Montserrat } from "next/font/google"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { logDev, warnDev, errorDev } from "@/lib/logger"
+import { cn } from "@/lib/utils"
+import { ModernHeader } from "@/components/modern-header"
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+})
 
 interface Envio {
   id: number
@@ -28,16 +48,46 @@ interface HistorialItem {
   quien?: string
 }
 
-const estadosOrden = [
-  "A retirar",
-  "Retirado",
-  "En camino al destinatario",
-  "Entregado",
-  "Nadie",
-  "Cancelado",
-  "Rechazado por el comprador",
-  "reprogramado por comprador",
-]
+const fieldLabel = "text-[12px] font-semibold uppercase tracking-wide text-[#5d6578]"
+const cardClass = "rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm sm:p-6"
+
+function TrackingPublicHeader() {
+  const router = useRouter()
+  return (
+    <header className="sticky top-0 z-50 w-full bg-[#f7f8fc]">
+      <div className={`mx-auto w-full max-w-[1700px] px-3 pt-3 ${montserrat.className}`}>
+        <div className="flex h-[64px] items-center justify-between gap-4 rounded-2xl bg-[#1459e9] px-5 sm:px-6">
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="shrink-0 transition-opacity hover:opacity-90"
+            aria-label="Ir al inicio"
+          >
+            <img src="/logos/nexo-logo-white.png" alt="Nexo" className="h-auto w-[96px] sm:w-[102px]" />
+          </button>
+          <div className="min-w-0 text-right">
+            <p className="truncate text-[13px] font-medium text-white/90 sm:text-[14px]">Seguimiento de envío</p>
+            <Link
+              href="/"
+              className="text-[12px] font-semibold text-white underline decoration-white/60 underline-offset-2 hover:decoration-white"
+            >
+              Ingresar a Nexo
+            </Link>
+          </div>
+        </div>
+      </div>
+    </header>
+  )
+}
+
+function estadoBadgeClass(estado: string): string {
+  const e = estado.toLowerCase()
+  if (e.includes("entregado")) return "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80"
+  if (e.includes("cancel") || e.includes("rechazado")) return "bg-red-50 text-red-800 ring-1 ring-red-200/80"
+  if (e.includes("camino") || e.includes("retirado")) return "bg-sky-50 text-sky-900 ring-1 ring-sky-200/80"
+  if (e.includes("retirar") || e.includes("reprogramado")) return "bg-[#eef4ff] text-[#1459e9] ring-1 ring-[#dbeafe]"
+  return "bg-[#f4f6fb] text-[#4d5571] ring-1 ring-[#e6eaf4]"
+}
 
 export default function TrackingPage() {
   const params = useParams()
@@ -46,12 +96,19 @@ export default function TrackingPage() {
   const [historial, setHistorial] = useState<HistorialItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [geolocalizacionEncontrada, setGeolocalizacionEncontrada] = useState(false)
+  /** Evita mostrar “sin geolocalización” antes de que termine el geocoder */
+  const [geoLookupStatus, setGeoLookupStatus] = useState<"idle" | "pending" | "ok" | "fail">("idle")
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<google.maps.Map | null>(null)
   const markerRef = useRef<google.maps.Marker | null>(null)
-  const checkRefIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const checkScriptIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const checkRefIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const checkScriptIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [useAppHeader, setUseAppHeader] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    setUseAppHeader(sessionStorage.getItem("isAuthenticated") === "true")
+  }, [])
 
   useEffect(() => {
     if (!token) return
@@ -60,7 +117,7 @@ export default function TrackingPage() {
       try {
         const apiBaseUrl = getApiBaseUrl()
         const response = await fetch(`${apiBaseUrl}/envios/tracking/${token}`)
-        
+
         if (!response.ok) {
           setError("Envío no encontrado")
           setLoading(false)
@@ -70,15 +127,12 @@ export default function TrackingPage() {
         const envioData = await response.json()
         setEnvio(envioData)
 
-        // Cargar historial
         try {
           const historialResponse = await fetch(`${apiBaseUrl}/envios/${envioData.id}/historial`)
           if (historialResponse.ok) {
             const historialData = await historialResponse.json()
-            // El backend devuelve ordenado por fecha descendente, necesitamos ordenarlo ascendente
             const historialFormateado: HistorialItem[] = historialData
-              .map((item: any) => {
-                // Parsear la fecha desde ISO string del backend
+              .map((item: { id: number; estado: string; fecha: string; quien?: string }) => {
                 const fecha = new Date(item.fecha)
                 return {
                   id: item.id,
@@ -86,41 +140,33 @@ export default function TrackingPage() {
                   fecha: fecha.toLocaleDateString("es-AR"),
                   horaEstimada: fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
                   quien: item.quien,
-                  fechaTimestamp: fecha.getTime(), // Guardar timestamp para ordenar
+                  fechaTimestamp: fecha.getTime(),
                 }
               })
-              // Ordenar por timestamp ascendente (más antiguo primero) para timeline acumulativo
-              .sort((a: any, b: any) => a.fechaTimestamp - b.fechaTimestamp)
-              // Limpiar fechaTimestamp antes de guardar
-              .map(({ fechaTimestamp, ...rest }: any) => rest)
-            
-            // Si el historial no incluye el estado inicial "A retirar" y el envío tiene fechaLlegue,
-            // agregarlo al inicio del timeline
-            const estadosEnHistorial = new Set(historialFormateado.map(h => h.estado))
+              .sort((a: { fechaTimestamp: number }, b: { fechaTimestamp: number }) => a.fechaTimestamp - b.fechaTimestamp)
+              .map(({ fechaTimestamp: _t, ...rest }: { fechaTimestamp: number } & HistorialItem) => rest)
+
+            const estadosEnHistorial = new Set(historialFormateado.map((h) => h.estado))
             if (!estadosEnHistorial.has("A retirar") && envioData.fechaLlegue) {
               const fechaLlegue = new Date(envioData.fechaLlegue)
               historialFormateado.unshift({
-                id: -1, // ID temporal para el estado inicial
+                id: -1,
                 estado: "A retirar",
                 fecha: fechaLlegue.toLocaleDateString("es-AR"),
                 horaEstimada: fechaLlegue.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
                 quien: "Sistema",
               })
             }
-            
-            // Filtrar entradas consecutivas con el mismo estado para evitar duplicados
-            // (por ejemplo, cuando hay una reasignación sin cambio de estado)
+
             const historialFiltrado: HistorialItem[] = []
             let ultimoEstado: string | null = null
             for (const item of historialFormateado) {
-              // Solo agregar si el estado es diferente al anterior
-              // O si es la primera entrada
               if (ultimoEstado === null || item.estado !== ultimoEstado) {
                 historialFiltrado.push(item)
                 ultimoEstado = item.estado
               }
             }
-            
+
             setHistorial(historialFiltrado)
           }
         } catch (e) {
@@ -138,16 +184,17 @@ export default function TrackingPage() {
     loadEnvio()
   }, [token])
 
-  // Inicializar mapa de Google Maps (copiado EXACTAMENTE del modal que funciona)
   useEffect(() => {
-    logDev("[TRACKING MAP] useEffect ejecutado", { 
-      tieneEnvio: !!envio, 
+    logDev("[TRACKING MAP] useEffect ejecutado", {
+      tieneEnvio: !!envio,
       tieneMapRef: !!mapRef.current,
-      envioData: envio ? {
-        direccion: envio.direccion,
-        localidad: envio.localidad,
-        codigoPostal: envio.codigoPostal
-      } : null
+      envioData: envio
+        ? {
+            direccion: envio.direccion,
+            localidad: envio.localidad,
+            codigoPostal: envio.codigoPostal,
+          }
+        : null,
     })
 
     if (!envio) {
@@ -155,13 +202,11 @@ export default function TrackingPage() {
       return
     }
 
-    // Esperar a que el mapRef esté disponible (el div se monta después del render)
+    setGeoLookupStatus("pending")
+
     if (!mapRef.current) {
-      logDev("[TRACKING MAP] mapRef no disponible aún, esperando...")
-      // Usar un pequeño intervalo para verificar cuando el ref esté disponible
       checkRefIntervalRef.current = setInterval(() => {
         if (mapRef.current) {
-          logDev("[TRACKING MAP] mapRef ahora disponible, continuando...")
           if (checkRefIntervalRef.current) clearInterval(checkRefIntervalRef.current)
           initializeMapLogic()
         }
@@ -174,108 +219,59 @@ export default function TrackingPage() {
       if (!envio || !mapRef.current) {
         logDev("[TRACKING MAP] Condición no cumplida en initializeMapLogic", {
           tieneEnvio: !!envio,
-          tieneMapRef: !!mapRef.current
+          tieneMapRef: !!mapRef.current,
         })
         return
       }
 
-      // Cargar script de Google Maps si no está cargado
       if (!window.google) {
         logDev("[TRACKING MAP] Google Maps API no está cargada")
         const existingScript = document.querySelector('script[src*="maps.googleapis.com"]')
         if (existingScript) {
-          logDev("[TRACKING MAP] Script existente encontrado, esperando carga...")
-          // Si el script ya existe, esperar a que cargue
           checkScriptIntervalRef.current = setInterval(() => {
             if (window.google && window.google.maps) {
-              logDev("[TRACKING MAP] Script cargado, inicializando mapa")
               if (checkScriptIntervalRef.current) clearInterval(checkScriptIntervalRef.current)
               initializeMap()
             }
           }, 100)
         } else {
-          logDev("[TRACKING MAP] Cargando script de Google Maps...")
           const script = document.createElement("script")
           script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY || "YOUR_API_KEY"}&libraries=places,geometry`
           script.async = true
           script.defer = true
           script.id = "google-maps-script-tracking"
-          script.onload = () => {
-            logDev("[TRACKING MAP] Script cargado exitosamente, inicializando mapa")
-            initializeMap()
-          }
+          script.onload = () => initializeMap()
           script.onerror = () => {
             errorDev("[TRACKING MAP] Error al cargar Google Maps API")
+            setGeoLookupStatus("fail")
           }
           document.head.appendChild(script)
         }
       } else {
-        logDev("[TRACKING MAP] Google Maps API ya está cargada, inicializando mapa directamente")
         initializeMap()
       }
 
       function initializeMap() {
-        logDev("[TRACKING MAP] initializeMap llamado", {
-          tieneMapRef: !!mapRef.current,
-          tieneEnvio: !!envio
-        })
-
         if (!mapRef.current || !envio) {
           warnDev("[TRACKING MAP] initializeMap: Condición no cumplida", {
             tieneMapRef: !!mapRef.current,
-            tieneEnvio: !!envio
+            tieneEnvio: !!envio,
           })
           return
         }
 
-        logDev("[TRACKING MAP] Datos del envío:", {
-          direccion: envio.direccion,
-          localidad: envio.localidad,
-          codigoPostal: envio.codigoPostal,
-          tipoDireccion: typeof envio.direccion,
-          tipoLocalidad: typeof envio.localidad,
-          tipoCodigoPostal: typeof envio.codigoPostal
-        })
-
-        // Geocodificar la dirección para obtener coordenadas
         const geocoder = new google.maps.Geocoder()
-        // Enriquecer la dirección para evitar ambigüedad (ej: "Roca 1768" existe en varias localidades)
-        // Usamos: dirección + localidad + CP + Argentina
-        const addressParts = [
-          envio.direccion,
-          envio.localidad,
-          envio.codigoPostal,
-          "Argentina",
-        ]
+        const addressParts = [envio.direccion, envio.localidad, envio.codigoPostal, "Argentina"]
           .map((p) => (p || "").toString().trim())
           .filter(Boolean)
 
         const address = addressParts.join(", ")
-        logDev("[TRACKING MAP] Dirección construida para geocodificación:", address)
-        logDev("[TRACKING MAP] Partes de la dirección:", addressParts)
 
         geocoder.geocode({ address }, (results, status) => {
-          logDev("[TRACKING MAP] Resultado de geocodificación:", {
-            status,
-            resultsCount: results?.length || 0,
-            firstResult: results?.[0] ? {
-              formatted_address: results[0].formatted_address,
-              location: results[0].geometry.location ? {
-                lat: results[0].geometry.location.lat(),
-                lng: results[0].geometry.location.lng()
-              } : null
-            } : null
-          })
-
           if (status === "OK" && results && results[0]) {
             const location = results[0].geometry.location
-            logDev("[TRACKING MAP] Ubicación encontrada:", {
-              lat: location.lat(),
-              lng: location.lng()
-            })
-            setGeolocalizacionEncontrada(true)
+            setGeoLookupStatus("ok")
 
-            // Crear mapa centrado en la ubicación
             const map = new google.maps.Map(mapRef.current!, {
               zoom: 15,
               center: location,
@@ -285,9 +281,7 @@ export default function TrackingPage() {
             })
 
             mapInstanceRef.current = map
-            logDev("[TRACKING MAP] Mapa creado exitosamente")
 
-            // Crear marcador
             const marker = new google.maps.Marker({
               position: location,
               map: map,
@@ -295,28 +289,18 @@ export default function TrackingPage() {
             })
 
             markerRef.current = marker
-            logDev("[TRACKING MAP] Marcador creado exitosamente")
           } else {
-            warnDev("[TRACKING MAP] No se pudo geocodificar la dirección", {
-              status,
-              errorMessage: status === "ZERO_RESULTS" ? "No se encontraron resultados" :
-                            status === "OVER_QUERY_LIMIT" ? "Límite de consultas excedido" :
-                            status === "REQUEST_DENIED" ? "Solicitud denegada" :
-                            status === "INVALID_REQUEST" ? "Solicitud inválida" :
-                            "Error desconocido"
-            })
-            // Si no se puede geocodificar, mostrar mapa por defecto
-            setGeolocalizacionEncontrada(false)
+            warnDev("[TRACKING MAP] No se pudo geocodificar la dirección", { status })
+            setGeoLookupStatus("fail")
             const map = new google.maps.Map(mapRef.current!, {
               zoom: 10,
-              center: { lat: -34.6037, lng: -58.3816 }, // Buenos Aires por defecto
+              center: { lat: -34.6037, lng: -58.3816 },
               mapTypeControl: true,
               streetViewControl: true,
               fullscreenControl: true,
             })
 
             mapInstanceRef.current = map
-            logDev("[TRACKING MAP] Mapa por defecto creado")
           }
         })
       }
@@ -324,24 +308,28 @@ export default function TrackingPage() {
 
     return () => {
       logDev("[TRACKING MAP] Cleanup ejecutado")
-      // Limpiar intervalos
       if (checkRefIntervalRef.current) clearInterval(checkRefIntervalRef.current)
       if (checkScriptIntervalRef.current) clearInterval(checkScriptIntervalRef.current)
-      // Limpiar marcador al cerrar
       if (markerRef.current) {
         markerRef.current.setMap(null)
         markerRef.current = null
       }
-      setGeolocalizacionEncontrada(false)
+      setGeoLookupStatus("idle")
     }
   }, [envio])
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center" suppressHydrationWarning>
-        <div className="text-center" suppressHydrationWarning>
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4" suppressHydrationWarning></div>
-          <p className="text-gray-600">Cargando información del envío...</p>
+      <div
+        className={cn("flex min-h-screen flex-col bg-[#f7f8fc]", montserrat.className)}
+        suppressHydrationWarning
+      >
+        <TrackingPublicHeader />
+        <div className="flex flex-1 items-center justify-center px-4 py-16" suppressHydrationWarning>
+          <div className="flex flex-col items-center gap-4 rounded-2xl border border-[#e6eaf4] bg-white px-10 py-12 shadow-sm">
+            <Loader2 className="h-10 w-10 animate-spin text-[#1459e9]" aria-hidden />
+            <p className="text-center text-[15px] font-medium text-[#4d5571]">Cargando información del envío…</p>
+          </div>
         </div>
       </div>
     )
@@ -349,181 +337,231 @@ export default function TrackingPage() {
 
   if (error || !envio) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center" suppressHydrationWarning>
-        <div className="text-center" suppressHydrationWarning>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Envío no encontrado</h1>
-          <p className="text-gray-600">El envío que buscas no existe o el token es inválido.</p>
-        </div>
+      <div className={cn("min-h-screen bg-[#f7f8fc]", montserrat.className)} suppressHydrationWarning>
+        <TrackingPublicHeader />
+        <main className="mx-auto max-w-lg px-4 py-16">
+          <div className={cn(cardClass, "text-center")}>
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#fef2f2] text-[#dc2626]">
+              <AlertCircle className="h-6 w-6" aria-hidden />
+            </div>
+            <h1 className="text-[22px] font-semibold text-[#1f2433]">Envío no encontrado</h1>
+            <p className="mt-2 text-[14px] leading-relaxed text-[#5d6578]">
+              El enlace no es válido o el envío ya no está disponible en el sistema.
+            </p>
+            <Link
+              href="/"
+              className="mt-6 inline-flex h-11 items-center justify-center rounded-xl bg-[#1459e9] px-6 text-[14px] font-semibold text-white shadow-sm transition-colors hover:bg-[#114bce]"
+            >
+              Volver al inicio
+            </Link>
+          </div>
+        </main>
       </div>
     )
   }
 
-  // Determinar el estado actual
   const estadoActual = envio.estado || "A retirar"
-  const estadoIndex = estadosOrden.indexOf(estadoActual)
-  const estadosHastaActual = estadoIndex >= 0 ? estadosOrden.slice(0, estadoIndex + 1) : [estadoActual]
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4" suppressHydrationWarning>
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Seguimiento del envío {envio.tracking}
-          </h1>
-          {envio.cliente && (
-            <p className="text-gray-600">{envio.cliente}</p>
-          )}
+    <div className={cn("min-h-screen bg-[#f7f8fc]", montserrat.className)} suppressHydrationWarning>
+      {useAppHeader ? <ModernHeader /> : <TrackingPublicHeader />}
+
+      <main className="mx-auto w-full max-w-[1700px] px-4 pb-10 pt-4">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-[30px] font-semibold tracking-tight text-[#1570ef] sm:text-[34px]">Seguimiento de envío</h1>
+            <p className="mt-1 text-[14px] text-[#5d6578]">
+              {envio.cliente ? (
+                <>
+                  <span className="font-medium text-[#1f2433]">{envio.cliente}</span>
+                  <span className="text-[#8890a8]"> · </span>
+                </>
+              ) : null}
+              <span className="font-mono text-[13px] font-semibold text-[#1f2433]">{envio.tracking}</span>
+            </p>
+          </div>
+          <span
+            className={cn(
+              "inline-flex w-fit items-center rounded-full px-4 py-1.5 text-[13px] font-semibold",
+              estadoBadgeClass(estadoActual)
+            )}
+          >
+            {estadoActual}
+          </span>
         </div>
 
-        {/* Main Content - 3 Columns */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Recipient Info */}
-          <div className="space-y-4">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Entrega a domicilio</h2>
-              <div className="space-y-3">
-                <div className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-6">
+          {/* Entrega */}
+          <div className="space-y-5 lg:col-span-4">
+            <section className={cardClass}>
+              <h2 className="mb-4 flex items-center gap-2 text-[18px] font-semibold text-[#1570ef]">
+                <Truck className="h-5 w-5 shrink-0 text-[#1459e9]" aria-hidden />
+                Entrega a domicilio
+              </h2>
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-[#8890a8]" aria-hidden />
                   <div>
-                    <p className="text-sm text-gray-600">{envio.direccion}</p>
-                    {envio.localidad && (
-                      <p className="text-sm text-gray-500">{envio.localidad}</p>
-                    )}
-                    {envio.codigoPostal && (
-                      <p className="text-sm text-gray-500">CP: {envio.codigoPostal}</p>
+                    <p className={fieldLabel}>Dirección</p>
+                    <p className="mt-1 text-[14px] font-medium leading-snug text-[#1f2433]">{envio.direccion}</p>
+                    {(envio.localidad || envio.codigoPostal) && (
+                      <p className="mt-1 text-[13px] text-[#5d6578]">
+                        {[envio.localidad, envio.codigoPostal ? `CP ${envio.codigoPostal}` : ""].filter(Boolean).join(" · ")}
+                      </p>
                     )}
                   </div>
                 </div>
-                <div className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+                <div className="flex gap-3 border-t border-[#eef1f8] pt-4">
+                  <User className="mt-0.5 h-5 w-5 shrink-0 text-[#8890a8]" aria-hidden />
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{envio.nombreDestinatario}</p>
+                    <p className={fieldLabel}>Destinatario</p>
+                    <p className="mt-1 text-[14px] font-semibold text-[#1f2433]">{envio.nombreDestinatario}</p>
                   </div>
                 </div>
+                {envio.telefono ? (
+                  <div className="flex gap-3 border-t border-[#eef1f8] pt-4">
+                    <Phone className="mt-0.5 h-5 w-5 shrink-0 text-[#8890a8]" aria-hidden />
+                    <div>
+                      <p className={fieldLabel}>Teléfono</p>
+                      <p className="mt-1 text-[14px] font-medium text-[#1f2433]">{envio.telefono}</p>
+                    </div>
+                  </div>
+                ) : null}
+                {envio.email ? (
+                  <div className="flex gap-3 border-t border-[#eef1f8] pt-4">
+                    <Mail className="mt-0.5 h-5 w-5 shrink-0 text-[#8890a8]" aria-hidden />
+                    <div>
+                      <p className={fieldLabel}>Correo</p>
+                      <p className="mt-1 break-all text-[14px] font-medium text-[#1f2433]">{envio.email}</p>
+                    </div>
+                  </div>
+                ) : null}
               </div>
-            </div>
+            </section>
 
-            {/* Key Information Card */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">DATOS CLAVE SOBRE TU ENVÍO</h2>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p className="font-semibold text-gray-800">✔ RECEPCIÓN DEL PAQUETE</p>
-                  <p className="text-gray-600 mt-1">Cualquier persona mayor de 18 años puede recibirlo.</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-800">📦 PAQUETE DAÑADO</p>
-                  <p className="text-gray-600 mt-1">Si el embalaje está visiblemente deteriorado, no lo aceptes y rechaza la entrega completa.</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-800">💰 ENTREGA SIN COSTO EXTRA</p>
-                  <p className="text-gray-600 mt-1">No debes pagar ningún importe adicional al recibir el paquete. Si el transportista te solicita dinero, no lo aceptes.</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-800">🚚 INTENTOS DE ENTREGA</p>
-                  <p className="text-gray-600 mt-1">Si no se logra entregar en la primera visita, se intentará nuevamente hasta una vez más.</p>
-                </div>
-              </div>
-            </div>
+            <section className={cardClass}>
+              <h2 className="mb-4 flex items-center gap-2 text-[18px] font-semibold text-[#1570ef]">
+                <Package className="h-5 w-5 shrink-0 text-[#1459e9]" aria-hidden />
+                Datos útiles
+              </h2>
+              <ul className="space-y-4 text-[14px] leading-relaxed text-[#4d5571]">
+                <li className="flex gap-3">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1459e9]" aria-hidden />
+                  <span>
+                    <strong className="font-semibold text-[#1f2433]">Recepción:</strong> puede recibirlo cualquier
+                    persona mayor de 18 años.
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1459e9]" aria-hidden />
+                  <span>
+                    <strong className="font-semibold text-[#1f2433]">Paquete dañado:</strong> si el embalaje está
+                    visiblemente deteriorado, rechazá la entrega completa.
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1459e9]" aria-hidden />
+                  <span>
+                    <strong className="font-semibold text-[#1f2433]">Sin costo extra:</strong> no debés pagar al
+                    recibir el paquete. Si el transportista pide dinero, no lo aceptes.
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1459e9]" aria-hidden />
+                  <span>
+                    <strong className="font-semibold text-[#1f2433]">Reintentos:</strong> si no hay nadie en el
+                    domicilio, se intentará entregar nuevamente según la política del transportista.
+                  </span>
+                </li>
+              </ul>
+            </section>
           </div>
 
-          {/* Middle Column - Status Timeline */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">{estadoActual}</h2>
-            
-            <div className="space-y-4">
+          {/* Timeline */}
+          <section className={cn(cardClass, "lg:col-span-4")}>
+            <h2 className="mb-1 text-[18px] font-semibold text-[#1570ef]">Historial de estados</h2>
+            <p className="mb-6 text-[13px] text-[#8890a8]">Último movimiento destacado</p>
+
+            <div className="space-y-0">
               {historial.length > 0 ? (
                 historial.map((item, index) => {
-                  // El último item (más reciente) debe estar resaltado
                   const isLast = index === historial.length - 1
                   return (
                     <div key={item.id} className="flex gap-4">
-                      <div className="flex flex-col items-center">
-                        <div className={`w-4 h-4 rounded-full ${isLast ? "bg-green-500" : "bg-gray-300"}`}></div>
-                        {index < historial.length - 1 && (
-                          <div className="w-0.5 h-12 bg-gray-300 mt-2"></div>
-                        )}
+                      <div className="flex flex-col items-center pt-1">
+                        <span
+                          className={cn(
+                            "h-3 w-3 shrink-0 rounded-full ring-4",
+                            isLast ? "bg-[#1459e9] ring-[#dbeafe]" : "bg-[#c5cad8] ring-[#eef1f8]"
+                          )}
+                          aria-hidden
+                        />
+                        {index < historial.length - 1 ? (
+                          <span className="my-1 min-h-[28px] w-px flex-1 bg-[#e6eaf4]" aria-hidden />
+                        ) : null}
                       </div>
-                      <div className="flex-1 pb-4">
-                        <p className={`font-medium ${isLast ? "text-gray-800" : "text-gray-600"}`}>{item.estado}</p>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {item.fecha} {item.horaEstimada && `- ${item.horaEstimada}`}
+                      <div className={cn("min-w-0 flex-1 pb-6", index === historial.length - 1 && "pb-0")}>
+                        <p className={cn("text-[15px] font-semibold", isLast ? "text-[#1f2433]" : "text-[#5d6578]")}>
+                          {item.estado}
+                        </p>
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[13px] text-[#8890a8]">
+                          <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                          {item.fecha}
+                          {item.horaEstimada ? ` · ${item.horaEstimada}` : ""}
+                          {item.quien ? (
+                            <span className="text-[12px] text-[#b0b6c4]">· {item.quien}</span>
+                          ) : null}
                         </p>
                       </div>
                     </div>
                   )
                 })
               ) : (
-                // Si no hay historial, mostrar solo el estado actual
                 <div className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                  <div className="flex flex-col items-center pt-1">
+                    <span className="h-3 w-3 shrink-0 rounded-full bg-[#1459e9] ring-4 ring-[#dbeafe]" aria-hidden />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-800">{estadoActual}</p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {envio.fechaLlegue 
-                        ? new Date(envio.fechaLlegue).toLocaleDateString("es-AR") + " - " + new Date(envio.fechaLlegue).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
-                        : new Date().toLocaleDateString("es-AR") + " - " + new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
-                      }
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-semibold text-[#1f2433]">{estadoActual}</p>
+                    <p className="mt-1 flex items-center gap-2 text-[13px] text-[#8890a8]">
+                      <Clock className="h-3.5 w-3.5" aria-hidden />
+                      {envio.fechaLlegue
+                        ? `${new Date(envio.fechaLlegue).toLocaleDateString("es-AR")} · ${new Date(envio.fechaLlegue).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`
+                        : `${new Date().toLocaleDateString("es-AR")} · ${new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`}
                     </p>
                   </div>
                 </div>
               )}
             </div>
-          </div>
+          </section>
 
-          {/* Right Column - Map */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Ubicación de entrega</h2>
-            <div className="border-2 border-gray-200 rounded-lg overflow-hidden" style={{ height: "400px" }}>
-              <div ref={mapRef} className="w-full h-full" />
+          {/* Mapa */}
+          <section className={cn(cardClass, "lg:col-span-4")}>
+            <h2 className="mb-4 text-[18px] font-semibold text-[#1570ef]">Ubicación en mapa</h2>
+            <div className="overflow-hidden rounded-xl border border-[#e6eaf4] bg-[#fafbff]" style={{ height: "380px" }}>
+              <div ref={mapRef} className="h-full w-full min-h-[280px]" />
             </div>
-            {!geolocalizacionEncontrada && envio.direccion && (
-              <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-sm text-red-700">Dirección sin geolocalización</p>
+            {geoLookupStatus === "fail" && envio.direccion ? (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] font-medium text-amber-900">
+                No pudimos ubicar la dirección exacta en el mapa. Mostramos una vista aproximada.
               </div>
-            )}
-            {envio.direccion && (
-              <div className="mt-4 space-y-2 text-sm">
-                <div>
-                  <p className="font-medium text-gray-800">Dirección:</p>
-                  <p className="text-gray-600">{envio.direccion}</p>
-                  {envio.localidad && (
-                    <p className="text-gray-600">{envio.localidad}</p>
-                  )}
-                  {envio.codigoPostal && (
-                    <p className="text-gray-600">CP: {envio.codigoPostal}</p>
-                  )}
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">Recibe:</p>
-                  <p className="text-gray-600">{envio.nombreDestinatario}</p>
-                </div>
-                {envio.telefono && (
-                  <div>
-                    <p className="font-medium text-gray-800">Tel:</p>
-                    <p className="text-gray-600">{envio.telefono}</p>
-                  </div>
-                )}
-                {envio.email && (
-                  <div>
-                    <p className="font-medium text-gray-800">Email:</p>
-                    <p className="text-gray-600">{envio.email}</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+            ) : null}
+            <div className="mt-5 space-y-3 border-t border-[#eef1f8] pt-5 text-[14px] text-[#4d5571]">
+              <p className="text-[12px] font-semibold uppercase tracking-wide text-[#5d6578]">Resumen</p>
+              <p>
+                <span className="font-semibold text-[#1f2433]">Dirección: </span>
+                {envio.direccion}
+                {envio.localidad ? `, ${envio.localidad}` : ""}
+                {envio.codigoPostal ? ` (CP ${envio.codigoPostal})` : ""}
+              </p>
+              <p>
+                <span className="font-semibold text-[#1f2433]">Recibe: </span>
+                {envio.nombreDestinatario}
+              </p>
+            </div>
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   )
 }
-
