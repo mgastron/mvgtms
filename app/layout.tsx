@@ -4,8 +4,8 @@ import { RouteGuardClient } from "@/components/route-guard-client"
 import { Toaster } from "sonner"
 
 export const metadata: Metadata = {
-  title: "TMS Llegue - Sistema de Gestión de Transporte",
-  description: "Sistema de gestión de transporte y logística",
+  title: "Nexo",
+  description: "Gestión de transporte y logística",
 }
 
 export default function RootLayout({
