@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Montserrat } from "next/font/google"
 import { ModernHeader } from "@/components/modern-header"
-import { Clock, Inbox } from "lucide-react"
+import { Clock, Home, Inbox, Package } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { errorDev } from "@/lib/logger"
@@ -23,23 +23,20 @@ export default function CierrePage() {
   const [soloFlex, setSoloFlex] = useState<boolean>(false)
   const [choferes, setChoferes] = useState<ChoferCierre[]>([])
   const [loading, setLoading] = useState<boolean>(false)
-  const [tiempoRestante, setTiempoRestante] = useState<string>("")
-  const [cierreCerrado, setCierreCerrado] = useState<boolean>(false)
+  const [tiempoVisita, setTiempoVisita] = useState("")
+  const [visitaCerrada, setVisitaCerrada] = useState(false)
+  const [tiempoEntrega, setTiempoEntrega] = useState("")
+  const [entregaCerrada, setEntregaCerrada] = useState(false)
 
   useEffect(() => {
     loadChoferes()
   }, [soloFlex])
 
-  // Calcular tiempo restante hasta las 23:00 hora Argentina (GMT-3)
+  /** Cuenta regresiva hasta una hora de corte en Buenos Aires (AR = UTC-3 → +3 en Date.UTC). */
   useEffect(() => {
     const ZONA_ARGENTINA = "America/Argentina/Buenos_Aires"
-    const HORA_CIERRE = 23
-    const MINUTO_CIERRE = 0
-    const SEGUNDO_CIERRE = 0
 
-    const calcularTiempoRestante = () => {
-      const ahora = new Date()
-
+    const tickCierre = (ahora: Date, horaCorteAr: number) => {
       const arParts = new Intl.DateTimeFormat("en-CA", {
         timeZone: ZONA_ARGENTINA,
         hour: "numeric",
@@ -59,36 +56,39 @@ export default function CierrePage() {
       const monthAr = parseInt(getPart(arDateParts, "month"), 10) - 1
       const dayAr = parseInt(getPart(arDateParts, "day"), 10)
 
-      if (horaAr >= HORA_CIERRE) {
-        setCierreCerrado(true)
-        setTiempoRestante("")
-        return
+      if (horaAr >= horaCorteAr) {
+        return { cerrado: true, tiempo: "" as const }
       }
 
-      setCierreCerrado(false)
-
-      const cierreAr = new Date(Date.UTC(yearAr, monthAr, dayAr, HORA_CIERRE + 3, MINUTO_CIERRE, SEGUNDO_CIERRE))
-      const diferenciaMs = cierreAr.getTime() - ahora.getTime()
+      const cierreUtc = new Date(Date.UTC(yearAr, monthAr, dayAr, horaCorteAr + 3, 0, 0))
+      const diferenciaMs = cierreUtc.getTime() - ahora.getTime()
 
       if (diferenciaMs <= 0) {
-        setCierreCerrado(true)
-        setTiempoRestante("")
-        return
+        return { cerrado: true, tiempo: "" as const }
       }
 
       const horasRestantes = Math.floor(diferenciaMs / (1000 * 60 * 60))
       const minutosRestantes = Math.floor((diferenciaMs % (1000 * 60 * 60)) / (1000 * 60))
       const segundosRestantes = Math.floor((diferenciaMs % (1000 * 60)) / 1000)
+      const tiempo = [horasRestantes, minutosRestantes, segundosRestantes]
+        .map((n) => n.toString().padStart(2, "0"))
+        .join(":")
 
-      setTiempoRestante(
-        [horasRestantes, minutosRestantes, segundosRestantes]
-          .map((n) => n.toString().padStart(2, "0"))
-          .join(":")
-      )
+      return { cerrado: false, tiempo }
     }
 
-    calcularTiempoRestante()
-    const interval = setInterval(calcularTiempoRestante, 1000)
+    const calcular = () => {
+      const ahora = new Date()
+      const v = tickCierre(ahora, 21)
+      const e = tickCierre(ahora, 23)
+      setVisitaCerrada(v.cerrado)
+      setTiempoVisita(v.tiempo)
+      setEntregaCerrada(e.cerrado)
+      setTiempoEntrega(e.tiempo)
+    }
+
+    calcular()
+    const interval = setInterval(calcular, 1000)
     return () => clearInterval(interval)
   }, [])
 
@@ -125,36 +125,73 @@ export default function CierrePage() {
             </p>
           </div>
 
-          {cierreCerrado ? (
-            <div
-              className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm"
-              role="status"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/80">
-                <Clock className="h-5 w-5 text-red-600" aria-hidden />
+          <div className="space-y-3">
+            {visitaCerrada ? (
+              <div
+                className="flex items-start gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-5 shadow-sm"
+                role="status"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/90">
+                  <Home className="h-5 w-5 text-orange-700" aria-hidden />
+                </div>
+                <div>
+                  <p className="text-[16px] font-semibold text-orange-950">Cierre para visitar domicilio</p>
+                  <p className="mt-0.5 text-[14px] text-orange-900/85">El plazo de hoy finalizó a las 21:00 (Buenos Aires).</p>
+                </div>
               </div>
-              <div>
-                <p className="text-[16px] font-semibold text-red-900">Cierre de Flex finalizado</p>
-                <p className="mt-0.5 text-[14px] text-red-800/90">El período de cierre de hoy ya concluyó (después de las 23:00 AR).</p>
+            ) : (
+              <div
+                className="flex flex-wrap items-center gap-4 rounded-2xl border border-[#e8d4a8] bg-[#fff8e8] p-5 shadow-sm"
+                role="status"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#e8d4a8] bg-white">
+                  <Home className="h-5 w-5 text-[#a16207]" aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-semibold text-[#713f12]">
+                    Tiempo restante hasta el cierre de Flex para visitar domicilio
+                  </p>
+                  <p className="mt-1 text-[13px] text-[#854d0e]/90">Corte a las 21:00 (Buenos Aires)</p>
+                </div>
+                <div className="rounded-xl border border-[#e8d4a8]/90 bg-white px-4 py-2 font-mono text-[22px] font-bold tabular-nums tracking-wide text-[#92400e] shadow-sm">
+                  {tiempoVisita}
+                </div>
               </div>
-            </div>
-          ) : (
-            <div
-              className="flex flex-wrap items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50/90 p-5 shadow-sm"
-              role="status"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-white">
-                <Clock className="h-5 w-5 text-amber-700" aria-hidden />
+            )}
+
+            {entregaCerrada ? (
+              <div
+                className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm"
+                role="status"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/80">
+                  <Package className="h-5 w-5 text-red-600" aria-hidden />
+                </div>
+                <div>
+                  <p className="text-[16px] font-semibold text-red-900">Cierre para entregar pedidos</p>
+                  <p className="mt-0.5 text-[14px] text-red-800/90">El plazo de hoy finalizó a las 23:00 (Buenos Aires).</p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-medium text-amber-900">Tiempo restante hasta el cierre de Flex</p>
-                <p className="mt-1 text-[13px] text-amber-800/90">Corte a las 23:00 (Buenos Aires)</p>
+            ) : (
+              <div
+                className="flex flex-wrap items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50/90 p-5 shadow-sm"
+                role="status"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-white">
+                  <Clock className="h-5 w-5 text-amber-700" aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-semibold text-amber-900">
+                    Tiempo restante hasta el cierre de Flex para entregar pedidos
+                  </p>
+                  <p className="mt-1 text-[13px] text-amber-800/90">Corte a las 23:00 (Buenos Aires)</p>
+                </div>
+                <div className="rounded-xl border border-amber-200/80 bg-white px-4 py-2 font-mono text-[22px] font-bold tabular-nums tracking-wide text-[#b45309] shadow-sm">
+                  {tiempoEntrega}
+                </div>
               </div>
-              <div className="rounded-xl border border-amber-200/80 bg-white px-4 py-2 font-mono text-[22px] font-bold tabular-nums tracking-wide text-[#b45309] shadow-sm">
-                {tiempoRestante}
-              </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
             <h2 className="mb-4 text-[18px] font-semibold text-[#4f46ce]">Filtros</h2>
