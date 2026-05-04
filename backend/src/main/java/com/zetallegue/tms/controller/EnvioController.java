@@ -61,9 +61,9 @@ public class EnvioController {
         return ResponseEntity.ok(envio);
     }
 
-    @GetMapping("/buscar-por-tracking/{tracking}")
-    public ResponseEntity<Map<String, String>> buscarPorTracking(@PathVariable String tracking) {
-        java.util.Optional<com.zetallegue.tms.model.Envio> envioOpt = envioService.findByTracking(tracking);
+    @GetMapping("/buscar-por-id-nx/{idNx}")
+    public ResponseEntity<Map<String, String>> buscarPorIdNx(@PathVariable String idNx) {
+        java.util.Optional<com.zetallegue.tms.model.Envio> envioOpt = envioService.findForBuscadorPorIdNx(idNx);
         if (envioOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -231,6 +231,18 @@ public class EnvioController {
     @PutMapping("/{id}")
     public ResponseEntity<EnvioDTO> actualizarEnvio(@PathVariable Long id, @RequestBody EnvioDTO envioDTO) {
         EnvioDTO envio = envioService.actualizarEnvio(id, envioDTO);
+        return ResponseEntity.ok(envio);
+    }
+
+    @PatchMapping("/{id}/geolocalizacion")
+    public ResponseEntity<EnvioDTO> actualizarGeolocalizacion(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        Double lat = body.get("lat") != null ? ((Number) body.get("lat")).doubleValue() : null;
+        Double lng = body.get("lng") != null ? ((Number) body.get("lng")).doubleValue() : null;
+        String direccion = body.get("direccion") != null ? body.get("direccion").toString() : null;
+        if (lat == null || lng == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        EnvioDTO envio = envioService.actualizarGeolocalizacion(id, lat, lng, direccion);
         return ResponseEntity.ok(envio);
     }
 

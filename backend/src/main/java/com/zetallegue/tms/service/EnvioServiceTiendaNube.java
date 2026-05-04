@@ -94,11 +94,11 @@ public class EnvioServiceTiendaNube {
                              pedidoJson.has("id") ? pedidoJson.get("id").asText() : 
                              String.valueOf(System.currentTimeMillis());
         
-        // Tracking = el que viene del envío (TN + número). ID_MVG = código único para búsqueda.
+        // Tracking = el que viene del envío (TN + número). ID_NX = código único para búsqueda.
         String trackingOriginal = "TN-" + numeroPedido;
         String idMvg = envioService.generarTrackingUnico("TN-" + numeroPedido);
         
-        log.info("Envío Tienda Nube - Tracking: {}, ID_MVG: {}", trackingOriginal, idMvg);
+        log.info("Envío Tienda Nube - Tracking: {}, ID_NX: {}", trackingOriginal, idMvg);
         
         List<Envio> enviosPorIdMvg = envioRepository.findByIdMvgAndEliminadoFalse(idMvg);
         Envio envioExistentePorTracking = enviosPorIdMvg.stream()
@@ -107,7 +107,7 @@ public class EnvioServiceTiendaNube {
             .orElse(null);
         
         if (envioExistentePorTracking != null) {
-            log.info("Envío de Tienda Nube con ID_MVG {} ya existe, retornando existente con ID {}", idMvg, envioExistentePorTracking.getId());
+            log.info("Envío de Tienda Nube con ID_NX {} ya existe, retornando existente con ID {}", idMvg, envioExistentePorTracking.getId());
             return toDTO(envioExistentePorTracking);
         }
         
@@ -267,7 +267,7 @@ public class EnvioServiceTiendaNube {
             }
         }
         
-        // Generar QR Data para el envío (usar ID_MVG para escaneo)
+        // Generar QR Data para el envío (usar ID_NX para escaneo)
         envioDTO.setQrData(idMvg);
         
         // Establecer fechaUltimoMovimiento

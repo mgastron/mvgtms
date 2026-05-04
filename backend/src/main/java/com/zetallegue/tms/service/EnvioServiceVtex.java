@@ -46,7 +46,7 @@ public class EnvioServiceVtex {
         Cliente cliente = clienteRepository.findById(clienteId)
             .orElseThrow(() -> new RuntimeException("Cliente no encontrado con id: " + clienteId));
         
-        // Tracking = el que viene del envío (VTEX + orderId). ID_MVG = código único para búsqueda.
+        // Tracking = el que viene del envío (VTEX + orderId). ID_NX = código único para búsqueda.
         String orderId = pedidoJson.has("orderId") ? pedidoJson.get("orderId").asText() : 
                         pedidoJson.has("id") ? pedidoJson.get("id").asText() : 
                         String.valueOf(System.currentTimeMillis());
@@ -231,7 +231,7 @@ public class EnvioServiceVtex {
             envioDTO.setCostoEnvio(null);
         }
         
-        // Generar QR Data (usar ID_MVG para escaneo)
+        // Generar QR Data (usar ID_NX para escaneo)
         envioDTO.setQrData(idMvg);
         
         // Establecer fechaUltimoMovimiento

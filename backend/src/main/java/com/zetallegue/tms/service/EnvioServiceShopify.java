@@ -122,11 +122,11 @@ public class EnvioServiceShopify {
             }
         }
         
-        // Tracking = el que viene del envío (Shopify: prefijo + número de pedido). ID_MVG = código único para búsqueda.
+        // Tracking = el que viene del envío (Shopify: prefijo + número de pedido). ID_NX = código único para búsqueda.
         String trackingOriginal = "SHOPIFY-" + numeroPedido;
         String idMvg = envioService.generarTrackingUnico("SHOPIFY-" + numeroPedido);
         
-        log.info("Envío Shopify - Tracking: {}, ID_MVG: {}", trackingOriginal, idMvg);
+        log.info("Envío Shopify - Tracking: {}, ID_NX: {}", trackingOriginal, idMvg);
         
         List<Envio> enviosPorIdMvg = envioRepository.findByIdMvgAndEliminadoFalse(idMvg);
         Envio envioExistentePorTracking = enviosPorIdMvg.stream()
@@ -135,7 +135,7 @@ public class EnvioServiceShopify {
             .orElse(null);
         
         if (envioExistentePorTracking != null) {
-            log.info("Envío de Shopify con ID_MVG {} ya existe, retornando existente con ID {}", idMvg, envioExistentePorTracking.getId());
+            log.info("Envío de Shopify con ID_NX {} ya existe, retornando existente con ID {}", idMvg, envioExistentePorTracking.getId());
             return toDTO(envioExistentePorTracking);
         }
         
@@ -372,7 +372,7 @@ public class EnvioServiceShopify {
             }
         }
         
-        // Generar QR Data (usar ID_MVG para escaneo)
+        // Generar QR Data (usar ID_NX para escaneo)
         envioDTO.setQrData(idMvg);
         
         // Establecer fechaUltimoMovimiento

@@ -24,14 +24,14 @@ const montserrat = Montserrat({
 })
 
 export default function BuscadorPedidosPage() {
-  const [tracking, setTracking] = useState("")
+  const [idNx, setIdNx] = useState("")
   const [loading, setLoading] = useState(false)
   const [showNotFound, setShowNotFound] = useState(false)
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!tracking.trim()) {
+    if (!idNx.trim()) {
       return
     }
 
@@ -40,7 +40,7 @@ export default function BuscadorPedidosPage() {
 
     try {
       const apiBaseUrl = getApiBaseUrl()
-      const response = await fetch(`${apiBaseUrl}/envios/buscar-por-tracking/${encodeURIComponent(tracking.trim())}`)
+      const response = await fetch(`${apiBaseUrl}/envios/buscar-por-id-nx/${encodeURIComponent(idNx.trim())}`)
       
       if (response.ok) {
         const data = await response.json()
@@ -51,7 +51,7 @@ export default function BuscadorPedidosPage() {
           const baseUrl = typeof window !== "undefined" ? window.location.origin : ""
           window.open(`${baseUrl}/tracking/${trackingToken}`, "_blank")
           // Limpiar el campo de búsqueda después de abrir
-          setTracking("")
+          setIdNx("")
         } else {
           setShowNotFound(true)
         }
@@ -81,17 +81,17 @@ export default function BuscadorPedidosPage() {
               <div className="p-5 sm:p-6">
                 <form onSubmit={handleSearch} className="space-y-4">
                   <div className="space-y-2">
-                    <label htmlFor="buscador-tracking" className="block text-[14px] font-medium text-[#4d5571]">
-                      ID_MVG o tracking
+                    <label htmlFor="buscador-id-nx" className="block text-[14px] font-medium text-[#4d5571]">
+                      ID_NX
                     </label>
                     <div className="relative">
                       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8890a8]" aria-hidden />
                       <Input
-                        id="buscador-tracking"
+                        id="buscador-id-nx"
                         type="text"
-                        placeholder="Ingresá ID_MVG o tracking…"
-                        value={tracking}
-                        onChange={(e) => setTracking(e.target.value)}
+                        placeholder="Ingresá el ID_NX del envío…"
+                        value={idNx}
+                        onChange={(e) => setIdNx(e.target.value)}
                         disabled={loading}
                         className="h-11 rounded-xl border border-[#e6eaf4] bg-white pl-10 pr-3 text-[15px] font-medium text-[#1f2433] shadow-sm placeholder:font-normal placeholder:text-[#8890a8] focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/25 focus-visible:ring-offset-0"
                       />
@@ -99,7 +99,7 @@ export default function BuscadorPedidosPage() {
                   </div>
                   <Button
                     type="submit"
-                    disabled={loading || !tracking.trim()}
+                    disabled={loading || !idNx.trim()}
                     className="h-11 w-full rounded-xl bg-[#1459e9] px-6 text-[14px] font-semibold text-white shadow-md transition-shadow hover:bg-[#114bce] hover:shadow-lg disabled:pointer-events-none disabled:opacity-50 sm:w-auto sm:min-w-[140px]"
                   >
                     {loading ? (
@@ -128,7 +128,7 @@ export default function BuscadorPedidosPage() {
                   </p>
                   <p className="flex gap-3 text-[13px] leading-snug text-[#5d6578]">
                     <Package className="mt-0.5 h-4 w-4 shrink-0 text-[#1570ef]" aria-hidden />
-                    <span>Podés pegar el valor tal como sale en la etiqueta o en la grilla de Envíos.</span>
+                    <span>Podés pegar el ID_NX tal como figura en la grilla de Envíos o en la etiqueta.</span>
                   </p>
                 </div>
               </div>
@@ -152,9 +152,9 @@ export default function BuscadorPedidosPage() {
               <div className="space-y-3 pt-1 text-center text-[14px] leading-relaxed text-[#5d6578]">
                 <p>
                   No se encontró ningún envío con{" "}
-                  <span className="font-semibold text-[#1f2433]">{tracking || "ese dato"}</span>.
+                  <span className="font-semibold text-[#1f2433]">{idNx || "ese dato"}</span>.
                 </p>
-                <p>Verificá el ID_MVG o el tracking e intentá de nuevo.</p>
+                <p>Verificá el ID_NX e intentá de nuevo.</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -162,7 +162,7 @@ export default function BuscadorPedidosPage() {
             <AlertDialogAction
               onClick={() => {
                 setShowNotFound(false)
-                setTracking("")
+                setIdNx("")
               }}
               className="rounded-xl bg-[#1459e9] px-6 text-[14px] font-semibold text-white hover:bg-[#114bce]"
             >

@@ -159,10 +159,10 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         // Si no vino en el envío, pedirlo al backend (que lo genera si falta).
         let token = envio.trackingToken
         if (!token) {
-          const lookup = (envio.idMvg || envio.tracking || "").trim()
+          const lookup = (envio.idMvg || "").trim()
           if (lookup) {
             const apiBaseUrl = getApiBaseUrl()
-            const resp = await fetch(`${apiBaseUrl}/envios/buscar-por-tracking/${encodeURIComponent(lookup)}`)
+            const resp = await fetch(`${apiBaseUrl}/envios/buscar-por-id-nx/${encodeURIComponent(lookup)}`)
             if (resp.ok) {
               const data = await resp.json()
               token = data?.trackingToken || ""
@@ -1073,7 +1073,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             <div className="col-span-2 space-y-3">
               {activeTab === "general" && (
                 <div className="space-y-3">
-                  {/* Fila 1: IDML, Tracking, ID_MVG, Cliente */}
+                  {/* Fila 1: IDML, Tracking, ID_NX, Cliente */}
                   <div className="grid grid-cols-4 gap-4">
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">IDML</label>
@@ -1088,8 +1088,8 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                       <Input value={normalizeValue(envio.tracking)} className="h-9 text-sm border-gray-300 bg-white font-mono shadow-sm" readOnly />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">ID_MVG</label>
-                      <Input value={normalizeValue(envio.idMvg ?? envio.tracking)} className="h-9 text-sm border-gray-300 bg-white font-mono font-semibold shadow-sm" readOnly />
+                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">ID_NX</label>
+                      <Input value={normalizeValue(envio.idMvg)} className="h-9 text-sm border-gray-300 bg-white font-mono font-semibold shadow-sm" readOnly />
                     </div>
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Cliente</label>

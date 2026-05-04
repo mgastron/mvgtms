@@ -67,7 +67,7 @@ public class Envio {
     @Column(name = "tracking", length = 100)
     private String tracking;
 
-    /** Código alfanumérico único generado por MVG (ID_MVG); usado para búsqueda/filtro. */
+    /** Código alfanumérico único (ID_NX, columna id_mvg); usado para búsqueda/filtro. */
     @Column(name = "id_mvg", length = 100)
     private String idMvg;
 
@@ -165,5 +165,24 @@ public class Envio {
     // Token único para el link público de tracking
     @Column(name = "tracking_token", length = 100, unique = true)
     private String trackingToken;
+
+    /** Latitud del destino (cuando el chofer geolocaliza desde la app). Si no es null, la dirección se considera geolocalizable. */
+    @Column(name = "lat_destino")
+    private Double latDestino;
+
+    /** Longitud del destino (cuando el chofer geolocaliza desde la app). */
+    @Column(name = "lng_destino")
+    private Double lngDestino;
+
+    /** Total a cobrar no puede ser negativo: si es número negativo, se guarda "0". Aplica a cualquier origen (Excel, API, etc.). */
+    @PrePersist
+    @PreUpdate
+    private void normalizarTotalACobrar() {
+        if (this.totalACobrar == null || this.totalACobrar.trim().isEmpty()) return;
+        try {
+            double n = Double.parseDouble(this.totalACobrar.trim().replace(",", "."));
+            if (n < 0) this.totalACobrar = "0";
+        } catch (NumberFormatException ignored) { }
+    }
 }
 

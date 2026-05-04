@@ -58,14 +58,38 @@ public class EnvioService {
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     
-    /** Busca por tracking o por ID_MVG (el código que usa el buscador de pedidos). */
+    /**
+     * Busca envío existente por número de tracking del carrier (p. ej. sincronización Mercado Libre).
+     * No usar para el buscador web: el tracking puede repetirse entre clientes distintos.
+     */
     @Transactional
     public java.util.Optional<Envio> findByTracking(String tracking) {
-        List<Envio> envios = envioRepository.findByTrackingOrIdMvgAndEliminadoFalse(tracking);
+        if (tracking == null || tracking.trim().isEmpty()) {
+            return java.util.Optional.empty();
+        }
+        List<Envio> envios = envioRepository.findByTrackingAndEliminadoFalse(tracking.trim());
         if (envios.isEmpty()) {
             return java.util.Optional.empty();
         }
-        Envio envio = envios.get(0);
+        Envio envio = ensurePublicTrackingToken(envios.get(0));
+        return java.util.Optional.of(envio);
+    }
+
+    /** Buscador de pedidos: solo por ID_NX (columna {@code id_mvg}), nunca por tracking. */
+    @Transactional
+    public java.util.Optional<Envio> findForBuscadorPorIdNx(String idNx) {
+        if (idNx == null || idNx.trim().isEmpty()) {
+            return java.util.Optional.empty();
+        }
+        List<Envio> envios = envioRepository.findByIdMvgAndEliminadoFalse(idNx.trim());
+        if (envios.isEmpty()) {
+            return java.util.Optional.empty();
+        }
+        Envio envio = ensurePublicTrackingToken(envios.get(0));
+        return java.util.Optional.of(envio);
+    }
+
+    private Envio ensurePublicTrackingToken(Envio envio) {
         if (envio.getTrackingToken() == null || envio.getTrackingToken().trim().isEmpty()) {
             String base = (envio.getIdMvg() != null && !envio.getIdMvg().trim().isEmpty())
                     ? envio.getIdMvg()
@@ -77,7 +101,7 @@ public class EnvioService {
             envio = envioRepository.save(envio);
             log.info("Tracking token regenerado para envío {}: {}", envio.getId(), trackingToken);
         }
-        return java.util.Optional.of(envio);
+        return envio;
     }
 
     @Transactional(readOnly = true)
@@ -151,7 +175,7 @@ public class EnvioService {
             if (envioDTO.getQrData() == null || envioDTO.getQrData().equals(semilla)) {
                 envioDTO.setQrData(idMvg);
             }
-            log.info("ID_MVG generado para envío Directo - Semilla: {}, ID_MVG: {}", semilla, idMvg);
+            log.info("ID_NX generado para envío Directo - Semilla: {}, ID_NX: {}", semilla, idMvg);
         }
         
         // Calcular costo de envío si es un envío directo y tiene cliente y código postal
@@ -526,7 +550,7 @@ public class EnvioService {
             return toDTO(porToken.get(0));
         }
         
-        // 4) Buscar por idMvg o tracking (mismo valor que usa el buscador de pedidos)
+        // 4) Buscar por id_mvg (ID_NX) o tracking (QR / valor pegado; el buscador web solo usa ID_NX)
         List<Envio> porTrackingOIdMvg = envioRepository.findByTrackingOrIdMvgAndEliminadoFalse(input);
         if (!porTrackingOIdMvg.isEmpty()) {
             log.info("Envío encontrado por tracking/idMvg: {}", input);
@@ -893,13 +917,13 @@ public class EnvioService {
         if (envioDTO.getLocalidad() != null) envio.setLocalidad(envioDTO.getLocalidad());
         if (envioDTO.getCodigoPostal() != null) envio.setCodigoPostal(envioDTO.getCodigoPostal());
         if (envioDTO.getObservaciones() != null) envio.setObservaciones(envioDTO.getObservaciones());
-        // Para Flex, asegurar que ID_MVG no sea igual al tracking
+        // Para Flex, asegurar que ID_NX no sea igual al tracking
         asegurarIdMvgParaFlex(envio);
         return envio;
     }
 
     /**
-     * Regla de negocio Flex: ID_MVG debe ser un código único de MVG y no copiar el tracking de ML.
+     * Regla de negocio Flex: ID_NX debe ser un código único y no copiar el tracking de ML.
      */
     private void asegurarIdMvgParaFlex(Envio envio) {
         if (envio == null || !"Flex".equals(envio.getOrigen())) return;
@@ -911,7 +935,7 @@ public class EnvioService {
             String semilla = !tracking.isEmpty() ? "FLEX-" + tracking : "FLEX-" + System.currentTimeMillis();
             String nuevoIdMvg = generarTrackingUnico(semilla);
             envio.setIdMvg(nuevoIdMvg);
-            log.info("ID_MVG regenerado para Flex (tracking={}): {}", tracking, nuevoIdMvg);
+            log.info("ID_NX regenerado para Flex (tracking={}): {}", tracking, nuevoIdMvg);
         }
     }
 
@@ -1029,7 +1053,7 @@ public class EnvioService {
 
     @Transactional
     public List<EnvioDTO> crearEnviosMasivos(List<EnvioDTO> enviosDTO) {
-        // Para cada envío Directo con tracking: generar ID_MVG único (alfanumérico), igual que en crearEnvio
+        // Para cada envío Directo con tracking: generar ID_NX único (alfanumérico), igual que en crearEnvio
         for (int i = 0; i < enviosDTO.size(); i++) {
             EnvioDTO dto = enviosDTO.get(i);
             if ("Directo".equals(dto.getOrigen()) && dto.getTracking() != null && !dto.getTracking().trim().isEmpty()) {
@@ -1039,7 +1063,7 @@ public class EnvioService {
                 if (dto.getQrData() == null || dto.getQrData().equals(dto.getTracking())) {
                     dto.setQrData(idMvg);
                 }
-                log.info("ID_MVG generado para envío Directo masivo [{}] - Semilla: {}, ID_MVG: {}", i, dto.getTracking(), idMvg);
+                log.info("ID_NX generado para envío Directo masivo [{}] - Semilla: {}, ID_NX: {}", i, dto.getTracking(), idMvg);
             }
         }
         // Calcular costo de envío para envíos directos antes de guardar
@@ -1188,7 +1212,7 @@ public class EnvioService {
                 }
             }
 
-            // Filtro por tracking o ID_MVG (buscador)
+            // Filtro por tracking o ID_NX (columna id_mvg)
             if (filter.getTracking() != null && !filter.getTracking().trim().isEmpty()) {
                 String term = "%" + filter.getTracking().toLowerCase() + "%";
                 predicates.add(cb.or(
@@ -1197,7 +1221,7 @@ public class EnvioService {
                 ));
             }
 
-            // Filtro por ID venta (buscar en tracking o ID_MVG)
+            // Filtro por ID venta (buscar en tracking o ID_NX)
             if (filter.getIdVenta() != null && !filter.getIdVenta().trim().isEmpty()) {
                 String term = "%" + filter.getIdVenta().toLowerCase() + "%";
                 predicates.add(cb.or(

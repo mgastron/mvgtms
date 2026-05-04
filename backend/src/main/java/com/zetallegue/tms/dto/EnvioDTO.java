@@ -23,7 +23,7 @@ public class EnvioDTO {
     private LocalDateTime fechaUltimoMovimiento;
     private String origen;
     private String tracking;
-    /** ID_MVG: código alfanumérico único generado por MVG; usado para búsqueda/filtro. */
+    /** ID_NX: código alfanumérico único (API/columna idMvg); usado para búsqueda/filtro. */
     private String idMvg;
     private String cliente;
     private String direccion;
@@ -53,5 +53,9 @@ public class EnvioDTO {
     private LocalDateTime deadline;
     private String mlShipmentId;
     private String trackingToken;
+    /** Latitud del destino (geolocalización desde app chofer). */
+    private Double latDestino;
+    /** Longitud del destino (geolocalización desde app chofer). */
+    private Double lngDestino;
 }
 

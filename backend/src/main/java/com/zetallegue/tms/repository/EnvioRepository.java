@@ -46,7 +46,7 @@ public interface EnvioRepository extends JpaRepository<Envio, Long>, JpaSpecific
     // Buscar por id_mvg (para evitar duplicados y para búsqueda)
     List<Envio> findByIdMvgAndEliminadoFalse(String idMvg);
 
-    // Buscar por tracking o id_mvg (buscador de pedidos)
+    // Buscar por tracking o id_mvg (p. ej. QR colector; el buscador web solo usa id_mvg)
     @Query("SELECT e FROM Envio e WHERE (e.tracking = :param OR e.idMvg = :param) AND e.eliminado = false")
     List<Envio> findByTrackingOrIdMvgAndEliminadoFalse(@Param("param") String param);
     
@@ -110,9 +110,16 @@ public interface EnvioRepository extends JpaRepository<Envio, Long>, JpaSpecific
         @Param("destinatario") String destinatario
     );
 
-    /** Envíos colectados (fechaColecta no nula) en el rango de fechas, no eliminados. */
-    @Query("SELECT e FROM Envio e WHERE e.eliminado = false AND e.fechaColecta IS NOT NULL " +
-           "AND e.fechaColecta >= :desde AND e.fechaColecta <= :hasta ORDER BY e.fechaColecta, e.id")
+    /**
+     * Envíos colectados en el rango de fechas, no eliminados.
+     * Incluye: (1) con fechaColecta en rango; (2) colectado=true sin fechaColecta pero con fechaUltimoMovimiento en rango
+     * (envíos pasados a Retirado desde la web antes de que se guardara fechaColecta).
+     */
+    @Query("SELECT e FROM Envio e WHERE e.eliminado = false AND (" +
+           "(e.fechaColecta IS NOT NULL AND e.fechaColecta >= :desde AND e.fechaColecta <= :hasta) " +
+           "OR (e.colectado = true AND e.fechaColecta IS NULL AND e.fechaUltimoMovimiento IS NOT NULL " +
+           "AND e.fechaUltimoMovimiento >= :desde AND e.fechaUltimoMovimiento <= :hasta)) " +
+           "ORDER BY e.id")
     List<Envio> findEnviosColectadosEntreFechas(
         @Param("desde") LocalDateTime desde,
         @Param("hasta") LocalDateTime hasta
