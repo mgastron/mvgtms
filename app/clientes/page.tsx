@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation"
 import { Montserrat } from "next/font/google"
 import { ModernHeader } from "@/components/modern-header"
 import { ClientsTable } from "@/components/clients-table"
-import { FilterSection } from "@/components/filter-section"
 import { NewClientModal } from "@/components/new-client-modal"
 import { UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
 
@@ -16,6 +17,14 @@ const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
 })
+
+const filterAsideInputClass =
+  "h-9 rounded-lg border border-slate-200 bg-slate-50/80 text-[13px] font-medium text-slate-800 shadow-none placeholder:font-normal placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:ring-1 focus-visible:ring-slate-300 focus-visible:ring-offset-0"
+
+interface GrupoOpt {
+  id: number
+  nombre: string
+}
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,6 +67,23 @@ export default function ClientsPage() {
     open: false,
     message: "",
   })
+  const [grupos, setGrupos] = useState<GrupoOpt[]>([])
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch(`${getApiBaseUrl()}/grupos`)
+        if (res.ok) {
+          const data = await res.json()
+          setGrupos(Array.isArray(data) ? data : [])
+        }
+      } catch (e) {
+        warnDev("No se pudieron cargar grupos para el filtro:", e)
+        setGrupos([])
+      }
+    }
+    load()
+  }, [])
 
   const handleFilterChange = (field: string, value: string) => {
     setFilters((prev) => ({ ...prev, [field]: value }))
@@ -165,15 +191,19 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8fc]" suppressHydrationWarning>
+    <div className="min-h-screen bg-slate-100/80" suppressHydrationWarning>
       <ModernHeader />
 
-      <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
-        <div className="mx-auto w-full max-w-[1700px] space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Vendedores</h1>
+      <main className={`px-4 pb-8 pt-4 ${montserrat.className}`}>
+        <div className="mx-auto w-full max-w-[1700px]">
+          <div className="mb-5 flex flex-col gap-3 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Catálogo</p>
+              <h1 className="mt-0.5 text-[28px] font-semibold tracking-tight text-slate-900">Vendedores</h1>
+              <p className="mt-1 max-w-xl text-[13px] text-slate-600">Cuentas comerciales y datos de integración.</p>
+            </div>
             <Button
-              className="h-10 gap-2 rounded-xl bg-[#1459e9] px-5 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce]"
+              className="h-10 shrink-0 gap-2 rounded-lg border border-slate-800 bg-slate-900 px-5 text-[13px] font-semibold text-white shadow-sm hover:bg-slate-800"
               onClick={() => {
                 setEditingClient(null)
                 setIsModalOpen(true)
@@ -184,28 +214,80 @@ export default function ClientsPage() {
             </Button>
           </div>
 
-          <FilterSection
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            onClearFilters={handleClearFilters}
-          />
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,260px)_1fr] lg:items-start">
+            <aside className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Refinar listado</p>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-slate-600">Nombre</label>
+                  <Input
+                    value={filters.nombreFantasia}
+                    onChange={(e) => handleFilterChange("nombreFantasia", e.target.value)}
+                    placeholder="Nombre…"
+                    className={filterAsideInputClass}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-slate-600">Grupo</label>
+                  <Select
+                    value={filters.grupoId || "todos"}
+                    onValueChange={(v) => handleFilterChange("grupoId", v === "todos" ? "" : v)}
+                  >
+                    <SelectTrigger className="h-9 rounded-lg border-slate-200 bg-slate-50/80 text-[13px] font-medium text-slate-800 shadow-none">
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos los grupos</SelectItem>
+                      {grupos.map((g) => (
+                        <SelectItem key={g.id} value={String(g.id)}>
+                          {g.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-slate-600">Integración</label>
+                  <Select value={filters.integraciones} onValueChange={(v) => handleFilterChange("integraciones", v)}>
+                    <SelectTrigger className="h-9 rounded-lg border-slate-200 bg-slate-50/80 text-[13px] font-medium text-slate-800 shadow-none">
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todas</SelectItem>
+                      <SelectItem value="flex">Flex</SelectItem>
+                      <SelectItem value="tiendanube">Tienda Nube</SelectItem>
+                      <SelectItem value="shopify">Shopify</SelectItem>
+                      <SelectItem value="vtex">VTEX</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleClearFilters}
+                  className="h-9 w-full rounded-lg border-slate-200 text-[13px] font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Limpiar filtros
+                </Button>
+              </div>
+            </aside>
 
-          {/* Table */}
-          <ClientsTable
-            filters={filters}
-            newClient={newClient}
-            onClientAdded={() => setNewClient(null)}
-            refreshTrigger={refreshKey}
-            onClientError={(error) => {
-              setErrorDialog({ open: true, message: error })
-              // Limpiar newClient después de un pequeño delay para evitar el error de React
-              setTimeout(() => setNewClient(null), 0)
-            }}
-            onEditClient={(client) => {
-              setEditingClient(client)
-              setIsModalOpen(true)
-            }}
-          />
+            <ClientsTable
+              tone="slate"
+              filters={filters}
+              newClient={newClient}
+              onClientAdded={() => setNewClient(null)}
+              refreshTrigger={refreshKey}
+              onClientError={(error) => {
+                setErrorDialog({ open: true, message: error })
+                setTimeout(() => setNewClient(null), 0)
+              }}
+              onEditClient={(client) => {
+                setEditingClient(client)
+                setIsModalOpen(true)
+              }}
+            />
+          </div>
 
           {/* New Client Modal */}
           <NewClientModal

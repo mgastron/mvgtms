@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useState, useMemo, useEffect } from "react"
+import { cn } from "@/lib/utils"
 
 import type { FiltroIntegracionCliente } from "@/components/filter-section"
 
@@ -101,6 +102,8 @@ interface ClientsTableProps {
   refreshTrigger?: number
   onClientError?: (error: string) => void
   onEditClient?: (client: Client) => void
+  /** Misma línea visual que la tabla de Usuarios (filtros laterales + slate). */
+  tone?: "default" | "slate"
 }
 
 export function ClientsTable({
@@ -110,7 +113,9 @@ export function ClientsTable({
   refreshTrigger,
   onClientError,
   onEditClient,
+  tone = "default",
 }: ClientsTableProps) {
+  const slate = tone === "slate"
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [clients, setClients] = useState<Client[]>([])
@@ -401,39 +406,88 @@ export function ClientsTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:px-5">
-        <h3 className="text-[16px] font-semibold text-[#1f2433]">Listado</h3>
-        <div className="flex items-center gap-2 rounded-full border border-[#e6eaf4] bg-white px-3 py-1 text-[13px] font-medium text-[#5d6578]">
-          <span className="text-[#1570ef]">{totalRecords}</span>
-          <span>{totalRecords === 1 ? "vendedor" : "vendedores"}</span>
-        </div>
+    <div
+      className={cn(
+        "overflow-hidden shadow-sm",
+        slate ? "rounded-xl border border-slate-200 bg-white" : "rounded-2xl border border-[#e6eaf4] bg-white"
+      )}
+    >
+      <div
+        className={cn(
+          "flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3 sm:px-5",
+          slate ? "border-slate-100" : "border-[#e6eaf4] bg-[#fafbff]"
+        )}
+      >
+        <h3 className={cn("font-semibold", slate ? "text-[15px] text-slate-900" : "text-[16px] text-[#1f2433]")}>
+          Vendedores
+        </h3>
+        <span
+          className={cn(
+            "rounded-md px-2 py-0.5 text-[12px] font-medium tabular-nums",
+            slate ? "bg-slate-100 text-slate-600" : "flex items-center gap-2 rounded-full border border-[#e6eaf4] bg-white px-3 py-1 text-[13px] text-[#5d6578]"
+          )}
+        >
+          {slate ? (
+            <>
+              {totalRecords} registro{totalRecords !== 1 ? "s" : ""}
+            </>
+          ) : (
+            <>
+              <span className="text-[#1570ef]">{totalRecords}</span>
+              <span>{totalRecords === 1 ? "vendedor" : "vendedores"}</span>
+            </>
+          )}
+        </span>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className={cn("w-full", slate && "min-w-[520px] text-left text-[13px]")}>
           <thead>
-            <tr className="border-b border-[#e6eaf4] bg-[#f7f8fc]">
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
+            <tr className={cn("border-b", slate ? "border-slate-200 bg-slate-50/90" : "border-[#e6eaf4] bg-[#f7f8fc]")}>
+              <th
+                className={cn(
+                  "px-4 py-3 text-left sm:px-5",
+                  slate ? "py-2.5 font-semibold text-slate-600" : "text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]"
+                )}
+              >
                 Nombre
               </th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
+              <th
+                className={cn(
+                  "px-4 py-3 text-left sm:px-5",
+                  slate ? "py-2.5 font-semibold text-slate-600" : "text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]"
+                )}
+              >
                 Grupo
               </th>
-              <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
+              <th
+                className={cn(
+                  "px-4 py-3 text-center sm:px-5",
+                  slate ? "py-2.5 font-semibold text-slate-600" : "text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]"
+                )}
+              >
                 Acciones
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#eef1f8]">
+          <tbody className={cn(!slate && "divide-y divide-[#eef1f8]")}>
             {paginatedClients.length === 0 ? (
               <tr>
                 <td colSpan={3} className="px-5 py-14 text-center">
                   <div className="mx-auto flex max-w-md flex-col items-center">
-                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#eef4ff]">
-                      <Inbox className="h-6 w-6 text-[#1570ef]" aria-hidden />
+                    <div
+                      className={cn(
+                        "mb-3 flex h-12 w-12 items-center justify-center rounded-full",
+                        slate ? "bg-slate-100" : "bg-[#eef4ff]"
+                      )}
+                    >
+                      <Inbox className={cn("h-6 w-6", slate ? "text-slate-500" : "text-[#1570ef]")} aria-hidden />
                     </div>
-                    <p className="text-[14px] font-semibold text-[#1f2433]">No se encontraron vendedores</p>
-                    <p className="mt-2 text-[13px] text-[#8890a8]">Probá cambiar los filtros</p>
+                    <p className={cn("text-[14px] font-semibold", slate ? "text-slate-800" : "text-[#1f2433]")}>
+                      No se encontraron vendedores
+                    </p>
+                    <p className={cn("mt-2 text-[13px]", slate ? "text-slate-500" : "text-[#8890a8]")}>
+                      Probá cambiar los filtros
+                    </p>
                   </div>
                 </td>
               </tr>
@@ -441,23 +495,39 @@ export function ClientsTable({
               paginatedClients.map((client, index) => (
                 <tr
                   key={client.id != null ? `c-${client.id}` : client.codigo}
-                  className={`transition-colors hover:bg-[#f7faff] ${index % 2 === 0 ? "bg-white" : "bg-[#fafbff]"}`}
+                  className={cn(
+                    "border-b transition-colors",
+                    slate
+                      ? "border-slate-100 hover:bg-slate-50/80"
+                      : `hover:bg-[#f7faff] ${index % 2 === 0 ? "bg-white" : "bg-[#fafbff]"}`
+                  )}
                 >
-                  <td className="px-4 py-3 text-[14px] text-[#1f2433] sm:px-5">
+                  <td className={cn("px-4 py-3 sm:px-5", slate ? "py-2.5 text-slate-900" : "text-[14px] text-[#1f2433]")}>
                     <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eef4ff] text-[12px] font-bold text-[#1459e9]">
+                      <div
+                        className={cn(
+                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[12px] font-bold",
+                          slate ? "bg-slate-100 text-slate-700" : "bg-[#eef4ff] text-[#1459e9]"
+                        )}
+                      >
                         {(client.nombreFantasia || "?").charAt(0).toUpperCase()}
                       </div>
                       <span className="font-medium">{client.nombreFantasia || "—"}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-[14px] text-[#5d6578] sm:px-5">{client.grupoNombre || "—"}</td>
+                  <td className={cn("px-4 py-3 sm:px-5", slate ? "py-2.5 text-slate-600" : "text-[14px] text-[#5d6578]")}>
+                    {client.grupoNombre || "—"}
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3 sm:px-5">
                     <div className="flex items-center justify-center gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 rounded-lg text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1570ef]"
+                        className={cn(
+                          slate
+                            ? "h-8 w-8 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                            : "h-9 w-9 rounded-lg text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1570ef]"
+                        )}
                         onClick={() => onEditClient && onEditClient(client)}
                       >
                         <Pencil className="h-4 w-4" />
@@ -465,7 +535,11 @@ export function ClientsTable({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 rounded-lg text-[#5d6578] hover:bg-red-50 hover:text-red-600"
+                        className={cn(
+                          slate
+                            ? "h-8 w-8 rounded-md text-slate-500 hover:bg-red-50 hover:text-red-600"
+                            : "h-9 w-9 rounded-lg text-[#5d6578] hover:bg-red-50 hover:text-red-600"
+                        )}
                         onClick={() => handleDeleteClick(client)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -479,28 +553,55 @@ export function ClientsTable({
         </table>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-        <div className="flex flex-wrap items-center gap-3 text-[13px] text-[#5d6578]">
+      <div
+        className={cn(
+          "flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5",
+          slate ? "border-slate-100 bg-slate-50/60" : "border-[#e6eaf4] bg-[#fafbff]"
+        )}
+      >
+        <div className={cn("flex flex-wrap items-center gap-3 text-[13px]", slate ? "text-slate-600" : "text-[#5d6578]")}>
           <div className="flex items-center gap-1.5">
             <span className="font-medium">Total</span>
-            <span className="rounded-md bg-[#eef4ff] px-2 py-0.5 font-semibold text-[#1459e9]">{totalRecords}</span>
+            <span
+              className={cn(
+                "rounded-md px-2 py-0.5 font-semibold",
+                slate ? "bg-white text-slate-800 ring-1 ring-slate-200/80" : "bg-[#eef4ff] text-[#1459e9]"
+              )}
+            >
+              {totalRecords}
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="font-medium">Páginas</span>
-            <span className="rounded-md border border-[#e6eaf4] bg-white px-2 py-0.5 font-semibold text-[#4d5571]">
+            <span
+              className={cn(
+                "rounded-md px-2 py-0.5 font-semibold",
+                slate ? "border border-slate-200 bg-white text-slate-700" : "border border-[#e6eaf4] bg-white text-[#4d5571]"
+              )}
+            >
               {totalPages || 1}
             </span>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-0.5 rounded-xl border border-[#e6eaf4] bg-white p-0.5">
+          <div
+            className={cn(
+              "flex items-center gap-0.5 rounded-xl p-0.5",
+              slate ? "border border-slate-200 bg-white" : "border border-[#e6eaf4] bg-white"
+            )}
+          >
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setCurrentPage(1)}
               disabled={currentPage === 1}
-              className="h-8 px-2.5 text-[13px] text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9] disabled:opacity-40"
+              className={cn(
+                "h-8 px-2.5 text-[13px] disabled:opacity-40",
+                slate
+                  ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  : "text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9]"
+              )}
             >
               &lt;&lt;
             </Button>
@@ -523,11 +624,16 @@ export function ClientsTable({
                   variant="ghost"
                   size="sm"
                   onClick={() => setCurrentPage(pageNum)}
-                  className={`h-8 min-w-[2rem] px-2 text-[13px] font-medium ${
+                  className={cn(
+                    "h-8 min-w-[2rem] px-2 text-[13px] font-medium",
                     currentPage === pageNum
-                      ? "bg-[#1459e9] text-white shadow-sm hover:bg-[#114bce] hover:text-white"
-                      : "text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9]"
-                  }`}
+                      ? slate
+                        ? "bg-slate-800 text-white shadow-sm hover:bg-slate-800 hover:text-white"
+                        : "bg-[#1459e9] text-white shadow-sm hover:bg-[#114bce] hover:text-white"
+                      : slate
+                        ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        : "text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9]"
+                  )}
                 >
                   {pageNum}
                 </Button>
@@ -539,14 +645,24 @@ export function ClientsTable({
               size="sm"
               onClick={() => setCurrentPage(totalPages)}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="h-8 px-2.5 text-[13px] text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9] disabled:opacity-40"
+              className={cn(
+                "h-8 px-2.5 text-[13px] disabled:opacity-40",
+                slate
+                  ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  : "text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9]"
+              )}
             >
               &gt;&gt;
             </Button>
           </div>
 
-          <div className="flex items-center gap-2 rounded-xl border border-[#e6eaf4] bg-white px-2.5 py-1">
-            <span className="text-[13px] font-medium text-[#4d5571]">Por página</span>
+          <div
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-2.5 py-1",
+              slate ? "border border-slate-200 bg-white" : "border border-[#e6eaf4] bg-white"
+            )}
+          >
+            <span className={cn("text-[13px] font-medium", slate ? "text-slate-600" : "text-[#4d5571]")}>Por página</span>
             <Select
               value={itemsPerPage.toString()}
               onValueChange={(value) => {
@@ -554,7 +670,12 @@ export function ClientsTable({
                 setCurrentPage(1)
               }}
             >
-              <SelectTrigger className="h-8 w-14 border-0 bg-transparent text-[13px] font-semibold text-[#1459e9] shadow-none focus:ring-0">
+              <SelectTrigger
+                className={cn(
+                  "h-8 w-14 border-0 bg-transparent text-[13px] font-semibold shadow-none focus:ring-0",
+                  slate ? "text-slate-800" : "text-[#1459e9]"
+                )}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

@@ -11,6 +11,7 @@ import jsPDF from "jspdf"
 import QRCode from "qrcode"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev, errorDev } from "@/lib/logger"
+import { cn } from "@/lib/utils"
 import { Montserrat } from "next/font/google"
 
 const montserrat = Montserrat({
@@ -534,179 +535,233 @@ export default function SubirIndividualPage() {
     })
   }
 
-  const inputFieldClass =
-    "h-10 rounded-xl border border-[#e6eaf4] bg-white text-[14px] font-medium text-[#1f2433] shadow-sm placeholder:font-normal placeholder:text-[#8890a8] focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"
+  const labelClass = isEmbed ? "block text-[13px] font-medium text-[#4d5571]" : "block text-[14px] font-medium text-[#4d5571]"
+  const inputFieldClass = cn(
+    "rounded-xl border border-[#e6eaf4] bg-white font-medium text-[#1f2433] shadow-sm placeholder:font-normal placeholder:text-[#8890a8] focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0",
+    isEmbed ? "h-9 text-[13px]" : "h-10 text-[14px]"
+  )
+  const selectTriggerClass = cn(
+    "rounded-xl border border-[#e6eaf4] bg-white font-medium text-[#1f2433] shadow-sm focus:ring-[#1570ef]/20",
+    isEmbed ? "h-9 text-[13px]" : "h-10 text-[14px]"
+  )
+
+  const trackingVendedorRow = (
+    <div className="grid gap-2 sm:grid-cols-2 sm:gap-3">
+      <div className="space-y-1 sm:space-y-1.5">
+        <label className={labelClass}>Tracking *</label>
+        <Input
+          value={formData.tracking}
+          onChange={(e) => handleInputChange("tracking", e.target.value)}
+          required
+          placeholder="Código de seguimiento del pedido"
+          className={inputFieldClass}
+        />
+      </div>
+      <div className="space-y-1 sm:space-y-1.5">
+        <label className={labelClass}>Vendedor{userProfile === "Cliente" ? " *" : ""}</label>
+        {userProfile === "Cliente" ? (
+          <Input value={formData.cliente} disabled className={cn(inputFieldClass, "bg-[#f5f7fb] text-[#1f2433]")} />
+        ) : (
+          <Select
+            value={formData.cliente}
+            onValueChange={(value) => {
+              const clienteSeleccionado = clientes.find((c) => c.codigo === value)
+              setFormData((prev) => ({
+                ...prev,
+                cliente: value,
+                clienteNombre: clienteSeleccionado?.nombreFantasia || "",
+              }))
+            }}
+          >
+            <SelectTrigger className={selectTriggerClass}>
+              <SelectValue placeholder="Seleccionar vendedor" />
+            </SelectTrigger>
+            <SelectContent>
+              {clientes.map((cliente) => (
+                <SelectItem key={cliente.id} value={cliente.codigo}>
+                  {cliente.nombreFantasia}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+    </div>
+  )
+
+  const destinatarioBlock = (
+    <div className={cn("rounded-xl border border-[#eef1f8] bg-[#fafbff]", isEmbed ? "p-2.5" : "p-4")}>
+      <p className={cn("font-semibold uppercase tracking-wide text-[#5d6578]", isEmbed ? "mb-1.5 text-[10px]" : "mb-3 text-[12px]")}>
+        Destinatario
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2 sm:gap-3">
+        <div className="space-y-1 sm:space-y-1.5 sm:col-span-2">
+          <label className={labelClass}>Nombre y apellido *</label>
+          <Input
+            value={formData.destinatarioNombre}
+            onChange={(e) => handleInputChange("destinatarioNombre", e.target.value)}
+            required
+            placeholder="Nombre completo"
+            className={inputFieldClass}
+          />
+        </div>
+        <div className="space-y-1 sm:space-y-1.5">
+          <label className={labelClass}>Teléfono *</label>
+          <Input
+            value={formData.destinatarioTelefono}
+            onChange={(e) => handleInputChange("destinatarioTelefono", e.target.value)}
+            required
+            placeholder="Incluir código de área"
+            className={inputFieldClass}
+          />
+        </div>
+        <div className="space-y-1 sm:space-y-1.5">
+          <label className={labelClass}>Correo electrónico</label>
+          <Input
+            type="email"
+            value={formData.destinatarioEmail}
+            onChange={(e) => handleInputChange("destinatarioEmail", e.target.value)}
+            placeholder="Opcional"
+            className={inputFieldClass}
+          />
+        </div>
+      </div>
+    </div>
+  )
+
+  const direccionBlock = (
+    <div className="space-y-1 sm:space-y-1.5">
+      <label className={labelClass}>Dirección de entrega *</label>
+      <GooglePlacesAutocomplete
+        value={formData.direccion}
+        onChange={(value, localidad, codigoPostal) => {
+          setFormData((prev) => ({
+            ...prev,
+            direccion: value,
+            localidad: localidad || prev.localidad,
+            codigoPostal: codigoPostal || prev.codigoPostal,
+          }))
+        }}
+      />
+    </div>
+  )
+
+  const obsTotalesBlock = (
+    <div className="grid gap-2 sm:grid-cols-2 sm:items-start sm:gap-3">
+      <div className="space-y-1 sm:space-y-1.5">
+        <label className={labelClass}>Observaciones</label>
+        <textarea
+          value={formData.observaciones}
+          onChange={(e) => handleInputChange("observaciones", e.target.value)}
+          className={cn(
+            "w-full resize-none rounded-xl border border-[#e6eaf4] bg-white px-2.5 py-1.5 font-medium text-[#1f2433] shadow-sm outline-none placeholder:font-normal placeholder:text-[#8890a8] focus:border-[#1570ef] focus:ring-2 focus:ring-[#1570ef]/20",
+            isEmbed ? "min-h-[44px] text-[13px]" : "min-h-[56px] px-3 py-2 text-[14px] sm:min-h-[72px]"
+          )}
+          rows={isEmbed ? 2 : 3}
+          placeholder="Indicaciones de entrega, horario, etc."
+        />
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 sm:gap-2">
+        <div className="space-y-1 sm:space-y-1.5">
+          <label className={labelClass}>Total a cobrar</label>
+          <Input
+            type="number"
+            value={formData.totalACobrar}
+            onChange={(e) => handleInputChange("totalACobrar", e.target.value)}
+            placeholder="0.00"
+            className={inputFieldClass}
+          />
+        </div>
+        <div className="space-y-1 sm:space-y-1.5">
+          <label className={labelClass}>Cambio / Retiro</label>
+          <Select
+            value={formData.cambioRetiro === "" ? "__none__" : formData.cambioRetiro}
+            onValueChange={(v) => handleInputChange("cambioRetiro", v === "__none__" ? "" : v)}
+          >
+            <SelectTrigger className={selectTriggerClass}>
+              <SelectValue placeholder="Seleccionar" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">Seleccionar</SelectItem>
+              <SelectItem value="Cambio">Cambio</SelectItem>
+              <SelectItem value="Retiro">Retiro</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    </div>
+  )
+
+  const footerBlock = (
+    <div
+      className={cn(
+        "flex flex-col border-t border-[#e6eaf4] sm:flex-row sm:items-center sm:justify-between",
+        isEmbed ? "gap-2 pt-2" : "gap-3 pt-3 sm:pt-4"
+      )}
+    >
+      <p className={cn("text-[#8890a8]", isEmbed ? "text-[11px]" : "text-[12px]")}>Los campos con (*) son obligatorios.</p>
+      <div className="flex flex-wrap gap-2 sm:justify-end">
+        <Button
+          type="button"
+          onClick={handleClear}
+          className={cn(
+            "rounded-xl border border-[#e6eaf4] bg-white font-semibold text-[#1570ef] shadow-sm hover:bg-[#f7faff]",
+            isEmbed ? "h-9 px-4 text-[13px]" : "h-10 px-5 text-[14px]"
+          )}
+        >
+          Limpiar
+        </Button>
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className={cn(
+            "min-w-[148px] rounded-xl bg-[#1459e9] font-semibold text-white shadow-sm hover:bg-[#114bce] disabled:pointer-events-none disabled:opacity-60",
+            isEmbed ? "h-9 px-5 text-[13px]" : "h-10 px-6 text-[14px]"
+          )}
+        >
+          {isSubmitting ? "Registrando…" : "Registrar pedido"}
+        </Button>
+      </div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
       {!isEmbed && <ModernHeader />}
-      <main className={`px-4 pb-5 pt-3 ${montserrat.className}`}>
-        <div className={`mx-auto w-full ${isEmbed ? "max-w-[720px]" : "max-w-[1700px]"}`}>
+      <main className={cn(montserrat.className, isEmbed ? "px-3 pb-2 pt-2" : "px-4 pb-5 pt-3")}>
+        <div className={cn("mx-auto w-full", isEmbed ? "max-w-[1200px]" : "max-w-[1700px]")}>
           {!isEmbed && (
             <h1 className="mb-4 text-[34px] font-semibold tracking-tight text-[#1570ef]">Carga manual</h1>
           )}
 
           <div
-            className={`w-full rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm ${isEmbed ? "" : "ml-2 max-w-[960px]"}`}
+            className={cn(
+              "w-full rounded-2xl border border-[#e6eaf4] bg-white shadow-sm",
+              isEmbed ? "p-3" : "ml-2 max-w-[960px] p-5"
+            )}
           >
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-1.5">
-                <label className="block text-[14px] font-medium text-[#4d5571]">Tracking *</label>
-                <Input
-                  value={formData.tracking}
-                  onChange={(e) => handleInputChange("tracking", e.target.value)}
-                  required
-                  placeholder="Código de seguimiento del pedido"
-                  className={inputFieldClass}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-[14px] font-medium text-[#4d5571]">
-                  Vendedor{userProfile === "Cliente" ? " *" : ""}
-                </label>
-                {userProfile === "Cliente" ? (
-                  <Input
-                    value={formData.cliente}
-                    disabled
-                    className={`${inputFieldClass} bg-[#f5f7fb] text-[#1f2433]`}
-                  />
-                ) : (
-                  <Select
-                    value={formData.cliente}
-                    onValueChange={(value) => {
-                      const clienteSeleccionado = clientes.find((c) => c.codigo === value)
-                      setFormData((prev) => ({
-                        ...prev,
-                        cliente: value,
-                        clienteNombre: clienteSeleccionado?.nombreFantasia || "",
-                      }))
-                    }}
-                  >
-                    <SelectTrigger className="h-10 text-[14px] font-medium text-[#1f2433]">
-                      <SelectValue placeholder="Seleccionar vendedor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clientes.map((cliente) => (
-                        <SelectItem key={cliente.id} value={cliente.codigo}>
-                          {cliente.nombreFantasia}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-
-              <div className="rounded-xl border border-[#eef1f8] bg-[#fafbff] p-4">
-                <p className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-[#5d6578]">Destinatario</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <label className="block text-[14px] font-medium text-[#4d5571]">Nombre y apellido *</label>
-                    <Input
-                      value={formData.destinatarioNombre}
-                      onChange={(e) => handleInputChange("destinatarioNombre", e.target.value)}
-                      required
-                      placeholder="Nombre completo"
-                      className={inputFieldClass}
-                    />
+            <form onSubmit={handleSubmit} className={isEmbed ? "space-y-2" : "space-y-5"}>
+              {isEmbed ? (
+                <>
+                  <div className="grid gap-3 xl:grid-cols-2 xl:items-start xl:gap-4">
+                    <div className="min-w-0 space-y-2">
+                      {trackingVendedorRow}
+                      {destinatarioBlock}
+                      {direccionBlock}
+                    </div>
+                    <div className="min-w-0 space-y-2">{obsTotalesBlock}</div>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-[14px] font-medium text-[#4d5571]">Teléfono *</label>
-                    <Input
-                      value={formData.destinatarioTelefono}
-                      onChange={(e) => handleInputChange("destinatarioTelefono", e.target.value)}
-                      required
-                      placeholder="Incluir código de área"
-                      className={inputFieldClass}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-[14px] font-medium text-[#4d5571]">Correo electrónico</label>
-                    <Input
-                      type="email"
-                      value={formData.destinatarioEmail}
-                      onChange={(e) => handleInputChange("destinatarioEmail", e.target.value)}
-                      placeholder="Opcional"
-                      className={inputFieldClass}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-[14px] font-medium text-[#4d5571]">Dirección de entrega *</label>
-                <GooglePlacesAutocomplete
-                  value={formData.direccion}
-                  onChange={(value, localidad, codigoPostal) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      direccion: value,
-                      localidad: localidad || prev.localidad,
-                      codigoPostal: codigoPostal || prev.codigoPostal,
-                    }))
-                  }}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-[14px] font-medium text-[#4d5571]">Observaciones</label>
-                <textarea
-                  value={formData.observaciones}
-                  onChange={(e) => handleInputChange("observaciones", e.target.value)}
-                  className="min-h-[88px] w-full resize-y rounded-xl border border-[#e6eaf4] bg-white px-3 py-2 text-[14px] font-medium text-[#1f2433] shadow-sm outline-none placeholder:font-normal placeholder:text-[#8890a8] focus:border-[#1570ef] focus:ring-2 focus:ring-[#1570ef]/20"
-                  rows={3}
-                  placeholder="Indicaciones de entrega, horario, etc."
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Total a cobrar</label>
-                  <Input
-                    type="number"
-                    value={formData.totalACobrar}
-                    onChange={(e) => handleInputChange("totalACobrar", e.target.value)}
-                    placeholder="0.00"
-                    className={inputFieldClass}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Cambio / Retiro</label>
-                  <Select
-                    value={formData.cambioRetiro === "" ? "__none__" : formData.cambioRetiro}
-                    onValueChange={(v) => handleInputChange("cambioRetiro", v === "__none__" ? "" : v)}
-                  >
-                    <SelectTrigger className="h-10 text-[14px] font-medium text-[#1f2433]">
-                      <SelectValue placeholder="Seleccionar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Seleccionar</SelectItem>
-                      <SelectItem value="Cambio">Cambio</SelectItem>
-                      <SelectItem value="Retiro">Retiro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 border-t border-[#e6eaf4] pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-[12px] text-[#8890a8]">Los campos con (*) son obligatorios.</p>
-                <div className="flex flex-wrap gap-2 sm:justify-end">
-                  <Button
-                    type="button"
-                    onClick={handleClear}
-                    className="h-10 rounded-xl border border-[#e6eaf4] bg-white px-5 text-[14px] font-semibold text-[#1570ef] shadow-sm hover:bg-[#f7faff]"
-                  >
-                    Limpiar
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="h-10 min-w-[148px] rounded-xl bg-[#1459e9] px-6 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce] disabled:pointer-events-none disabled:opacity-60"
-                  >
-                    {isSubmitting ? "Registrando…" : "Registrar pedido"}
-                  </Button>
-                </div>
-              </div>
+                  {footerBlock}
+                </>
+              ) : (
+                <>
+                  {trackingVendedorRow}
+                  {destinatarioBlock}
+                  {direccionBlock}
+                  {obsTotalesBlock}
+                  {footerBlock}
+                </>
+              )}
             </form>
           </div>
         </div>

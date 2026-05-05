@@ -81,9 +81,9 @@ export default function CargarEnviosHubPage() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true">
-          <div className="h-[92vh] w-[96vw] max-w-[1400px] overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#eef1f8] bg-[#fafbff] px-4 py-2.5">
-              <p className="text-[15px] font-semibold tracking-tight text-[#1f2433]">{embedTitle}</p>
+          <div className="flex h-[92vh] w-[96vw] max-w-[1400px] flex-col overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-2xl">
+            <div className="flex shrink-0 items-center justify-between border-b border-[#eef1f8] bg-[#fafbff] px-4 py-3 sm:px-5">
+              <h2 className="text-[24px] font-semibold tracking-tight text-[#1570ef] sm:text-[28px]">{embedTitle}</h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -93,7 +93,7 @@ export default function CargarEnviosHubPage() {
                 <X className="h-5 w-5" aria-hidden />
               </button>
             </div>
-            <iframe title={embedTitle || "Formulario"} src={url} className="h-full w-full" />
+            <iframe title={embedTitle || "Formulario"} src={url} className="min-h-0 w-full flex-1 border-0" />
           </div>
         </div>
       )}

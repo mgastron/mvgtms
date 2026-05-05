@@ -25,7 +25,7 @@ const sistemaSubmenu = [
   { icon: Users, label: "Usuarios" },
   { icon: Layers, label: "Grupos" },
   { icon: FileBarChart, label: "Informes" },
-  { icon: DollarSign, label: "Lista Precios" },
+  { icon: DollarSign, label: "Tarifas" },
   { icon: FileCheck, label: "Estado Órdenes" },
 ]
 
@@ -48,14 +48,14 @@ export function Sidebar() {
     setUserProfile(profile)
   }, [])
   
-  // Coordinador no ve: Envíos > Lista de Precios; Sistema > Lista Precios, Estado Órdenes
+  // Coordinador no ve: Envíos > Lista de Precios; Sistema > Tarifas, Estado Órdenes
   const enviosSubmenuFiltered =
     userProfile === "Coordinador"
       ? enviosSubmenu.filter((s) => s.label !== "Lista de Precios")
       : enviosSubmenu
   const sistemaSubmenuFiltered =
     userProfile === "Coordinador"
-      ? sistemaSubmenu.filter((s) => s.label !== "Lista Precios" && s.label !== "Estado Órdenes")
+      ? sistemaSubmenu.filter((s) => s.label !== "Tarifas" && s.label !== "Estado Órdenes")
       : sistemaSubmenu
 
   // Filtrar elementos del menú según el perfil del usuario
@@ -80,7 +80,7 @@ export function Sidebar() {
     if (pathname?.includes("/usuarios")) return "Usuarios"
     if (pathname?.includes("/sistema/grupos")) return "Grupos"
     if (pathname?.includes("/sistema/informes")) return "Informes"
-    if (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) return "Lista Precios"
+    if (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) return "Tarifas"
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
     if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de Pedidos"
     if (pathname?.includes("/clientes")) return "Vendedores"
@@ -229,7 +229,7 @@ export function Sidebar() {
                             router.push("/sistema/grupos")
                           } else if (subItem.label === "Informes") {
                             router.push("/sistema/informes")
-                          } else if (subItem.label === "Lista Precios") {
+                          } else if (subItem.label === "Tarifas") {
                             router.push("/lista-precios")
                           } else if (subItem.label === "Estado Órdenes") {
                             router.push("/sistema/estado-ordenes")

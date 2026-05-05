@@ -33,7 +33,7 @@ const allMenuItems = [
       { icon: Users, label: "Usuarios", path: "/usuarios" },
       { icon: Layers, label: "Grupos", path: "/sistema/grupos" },
       { icon: FileBarChart, label: "Informes", path: "/sistema/informes" },
-      { icon: DollarSign, label: "Lista Precios", path: "/lista-precios" },
+      { icon: DollarSign, label: "Tarifas", path: "/lista-precios" },
       { icon: FileCheck, label: "Estado Órdenes", path: "/sistema/estado-ordenes" },
     ],
   },
@@ -65,7 +65,7 @@ export function ModernHeader() {
     setUserProfile(profile)
   }, [])
 
-  const coordinadorOcultarSubmenuLabels = ["Lista de precios", "Lista Precios", "Estado Órdenes"]
+  const coordinadorOcultarSubmenuLabels = ["Lista de precios", "Tarifas", "Estado Órdenes"]
 
   const getFilteredMenuItems = () => {
     if (userProfile === "Chofer") return allMenuItems.filter((item) => item.label !== "Repartidores")
@@ -87,7 +87,7 @@ export function ModernHeader() {
     if (pathname?.includes("/usuarios")) return "Usuarios"
     if (pathname?.includes("/sistema/grupos")) return "Grupos"
     if (pathname?.includes("/sistema/informes")) return "Informes"
-    if (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) return "Lista Precios"
+    if (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) return "Tarifas"
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
     if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de pedidos"
     if (pathname?.includes("/clientes")) return "Vendedores"

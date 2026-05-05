@@ -27,9 +27,8 @@ const montserrat = Montserrat({
   weight: ["400", "500", "600"],
 })
 
-const fieldLabelClass = "block text-[14px] font-medium text-[#4d5571]"
-const filterInputClass =
-  "h-10 rounded-xl border border-[#e6eaf4] bg-white text-[14px] font-medium text-[#1f2433] shadow-sm placeholder:font-normal placeholder:text-[#8890a8] focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"
+const filterAsideInputClass =
+  "h-9 rounded-lg border border-slate-200 bg-slate-50/80 text-[13px] font-medium text-slate-800 shadow-none placeholder:font-normal placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:ring-1 focus-visible:ring-slate-300 focus-visible:ring-offset-0"
 
 interface ListaPrecio {
   id: number
@@ -116,7 +115,7 @@ export default function ListaPreciosPage() {
       return
     }
 
-    // Coordinador no puede acceder a Lista Precios (Sistema)
+    // Coordinador no puede acceder a Tarifas (Sistema)
     if (userProfile === "Coordinador") {
       router.push("/envios")
       return
@@ -221,226 +220,222 @@ export default function ListaPreciosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8fc]">
+    <div className="min-h-screen bg-slate-100/80">
       <ModernHeader />
-      <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
-        <div className="mx-auto w-full max-w-[1700px] space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Lista Precios</h1>
+      <main className={`px-4 pb-8 pt-4 ${montserrat.className}`}>
+        <div className="mx-auto w-full max-w-[1700px]">
+          <div className="mb-5 flex flex-col gap-3 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Sistema</p>
+              <h1 className="mt-0.5 text-[28px] font-semibold tracking-tight text-slate-900">Tarifas</h1>
+              <p className="mt-1 max-w-xl text-[13px] text-slate-600">Listas por código, nombre y si usan zona propia.</p>
+            </div>
             <Button
-              className="h-10 gap-2 rounded-xl bg-[#1459e9] px-5 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce]"
+              className="h-10 shrink-0 gap-2 rounded-lg border border-slate-800 bg-slate-900 px-5 text-[13px] font-semibold text-white shadow-sm hover:bg-slate-800"
               onClick={() => {
                 setEditingListaPrecio(null)
                 setIsNewListaPrecioModalOpen(true)
               }}
             >
               <Plus className="h-4 w-4" />
-              Nuevo
+              Nueva tarifa
             </Button>
           </div>
 
-          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
-            <h2 className="mb-4 text-[18px] font-semibold text-[#4f46ce]">Filtros</h2>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div className="space-y-1.5">
-                <label className={fieldLabelClass}>Código</label>
-                <Input
-                  value={filters.codigo}
-                  onChange={(e) => handleFilterChange("codigo", e.target.value)}
-                  placeholder="Buscar por código…"
-                  className={filterInputClass}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className={fieldLabelClass}>Nombre</label>
-                <Input
-                  value={filters.nombre}
-                  onChange={(e) => handleFilterChange("nombre", e.target.value)}
-                  placeholder="Buscar por nombre…"
-                  className={filterInputClass}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className={fieldLabelClass}>Zona propia</label>
-                <Select value={filters.zonaPropia} onValueChange={(value) => handleFilterChange("zonaPropia", value)}>
-                  <SelectTrigger className="h-10 text-[14px] font-medium text-[#1f2433]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="TODOS">Todos</SelectItem>
-                    <SelectItem value="SI">Sí</SelectItem>
-                    <SelectItem value="NO">No</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:px-5">
-              <h3 className="text-[16px] font-semibold text-[#1f2433]">Listado</h3>
-              <div className="flex items-center gap-2 rounded-full border border-[#e6eaf4] bg-white px-3 py-1 text-[13px] font-medium text-[#5d6578]">
-                <span className="text-[#1570ef]">{totalRecords}</span>
-                <span>precios</span>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[#e6eaf4] bg-[#f7f8fc]">
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
-                      Código
-                    </th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
-                      Nombre
-                    </th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
-                      Zona propia
-                    </th>
-                    <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#eef1f8]">
-                  {paginatedListaPrecios.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-5 py-14 text-center">
-                        <div className="mx-auto flex max-w-md flex-col items-center">
-                          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#eef4ff]">
-                            <Inbox className="h-6 w-6 text-[#1570ef]" aria-hidden />
-                          </div>
-                          <p className="text-[14px] font-semibold text-[#1f2433]">No se encontraron listas de precios</p>
-                          <p className="mt-2 text-[13px] text-[#8890a8]">Probá cambiar los filtros</p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    paginatedListaPrecios.map((precio, index) => (
-                      <tr
-                        key={precio.id}
-                        className={`transition-colors hover:bg-[#f7faff] ${index % 2 === 0 ? "bg-white" : "bg-[#fafbff]"}`}
-                      >
-                        <td className="whitespace-nowrap px-4 py-3 text-[14px] text-[#1f2433] sm:px-5">{precio.codigo}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-[14px] text-[#1f2433] sm:px-5">{precio.nombre}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-[14px] text-[#5d6578] sm:px-5">
-                          {precio.zonaPropia ? "Sí" : "No"}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 sm:px-5">
-                          <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9 rounded-lg text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1570ef]"
-                              onClick={() => {
-                                setEditingListaPrecio(precio)
-                                setIsNewListaPrecioModalOpen(true)
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9 rounded-lg text-[#5d6578] hover:bg-red-50 hover:text-red-600"
-                              onClick={() => handleDeleteClick(precio)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex flex-col gap-3 border-t border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-              <div className="flex flex-wrap items-center gap-3 text-[13px] text-[#5d6578]">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-medium">Total</span>
-                  <span className="rounded-md bg-[#eef4ff] px-2 py-0.5 font-semibold text-[#1459e9]">{totalRecords}</span>
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,260px)_1fr] lg:items-start">
+            <aside className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Refinar listado</p>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-slate-600">Código</label>
+                  <Input
+                    value={filters.codigo}
+                    onChange={(e) => handleFilterChange("codigo", e.target.value)}
+                    placeholder="Código…"
+                    className={filterAsideInputClass}
+                  />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-medium">Páginas</span>
-                  <span className="rounded-md border border-[#e6eaf4] bg-white px-2 py-0.5 font-semibold text-[#4d5571]">
-                    {totalPages || 1}
-                  </span>
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-slate-600">Nombre</label>
+                  <Input
+                    value={filters.nombre}
+                    onChange={(e) => handleFilterChange("nombre", e.target.value)}
+                    placeholder="Nombre…"
+                    className={filterAsideInputClass}
+                  />
                 </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-0.5 rounded-xl border border-[#e6eaf4] bg-white p-0.5">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                    className="h-8 px-2.5 text-[13px] text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9] disabled:opacity-40"
-                  >
-                    &lt;&lt;
-                  </Button>
-
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum
-                    if (totalPages <= 5) {
-                      pageNum = i + 1
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i
-                    } else {
-                      pageNum = currentPage - 2 + i
-                    }
-
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`h-8 min-w-[2rem] px-2 text-[13px] font-medium ${
-                          currentPage === pageNum
-                            ? "bg-[#1459e9] text-white shadow-sm hover:bg-[#114bce] hover:text-white"
-                            : "text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9]"
-                        }`}
-                      >
-                        {pageNum}
-                      </Button>
-                    )
-                  })}
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                    className="h-8 px-2.5 text-[13px] text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1459e9] disabled:opacity-40"
-                  >
-                    &gt;&gt;
-                  </Button>
-                </div>
-
-                <div className="flex items-center gap-2 rounded-xl border border-[#e6eaf4] bg-white px-2.5 py-1">
-                  <span className="text-[13px] font-medium text-[#4d5571]">Por página</span>
-                  <Select
-                    value={itemsPerPage.toString()}
-                    onValueChange={(v) => {
-                      setItemsPerPage(Number(v))
-                      setCurrentPage(1)
-                    }}
-                  >
-                    <SelectTrigger className="h-8 w-14 border-0 bg-transparent text-[13px] font-semibold text-[#1459e9] shadow-none focus:ring-0">
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-slate-600">Zona propia</label>
+                  <Select value={filters.zonaPropia} onValueChange={(value) => handleFilterChange("zonaPropia", value)}>
+                    <SelectTrigger className="h-9 rounded-lg border-slate-200 bg-slate-50/80 text-[13px] font-medium text-slate-800 shadow-none">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="25">25</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
+                      <SelectItem value="TODOS">Todos</SelectItem>
+                      <SelectItem value="SI">Sí</SelectItem>
+                      <SelectItem value="NO">No</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+            </aside>
+
+            <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-100 px-4 py-3 sm:px-5">
+                <h2 className="text-[15px] font-semibold text-slate-900">Listas</h2>
+                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[12px] font-medium tabular-nums text-slate-600">
+                  {totalRecords} registro{totalRecords !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px] text-left text-[13px]">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50/90">
+                      <th className="px-4 py-2.5 font-semibold text-slate-600 sm:px-5">Código</th>
+                      <th className="px-4 py-2.5 font-semibold text-slate-600 sm:px-5">Nombre</th>
+                      <th className="px-4 py-2.5 font-semibold text-slate-600 sm:px-5">Zona propia</th>
+                      <th className="px-4 py-2.5 text-center font-semibold text-slate-600 sm:px-5">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedListaPrecios.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-5 py-14 text-center">
+                          <div className="mx-auto flex max-w-md flex-col items-center">
+                            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100">
+                              <Inbox className="h-5 w-5 text-slate-500" aria-hidden />
+                            </div>
+                            <p className="text-[14px] font-semibold text-slate-800">Sin coincidencias</p>
+                            <p className="mt-1 text-[13px] text-slate-500">Ajustá los criterios de la columna izquierda</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedListaPrecios.map((precio) => (
+                        <tr key={precio.id} className="border-b border-slate-100 transition-colors hover:bg-slate-50/80">
+                          <td className="whitespace-nowrap px-4 py-2.5 font-medium text-slate-900 sm:px-5">{precio.codigo}</td>
+                          <td className="whitespace-nowrap px-4 py-2.5 text-slate-800 sm:px-5">{precio.nombre}</td>
+                          <td className="whitespace-nowrap px-4 py-2.5 text-slate-600 sm:px-5">
+                            {precio.zonaPropia ? "Sí" : "No"}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-2.5 sm:px-5">
+                            <div className="flex items-center justify-center gap-0.5">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                                onClick={() => {
+                                  setEditingListaPrecio(precio)
+                                  setIsNewListaPrecioModalOpen(true)
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-md text-slate-500 hover:bg-red-50 hover:text-red-600"
+                                onClick={() => handleDeleteClick(precio)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                <div className="flex flex-wrap items-center gap-3 text-[13px] text-slate-600">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium">Total</span>
+                    <span className="rounded-md bg-white px-2 py-0.5 font-semibold text-slate-800 ring-1 ring-slate-200/80">
+                      {totalRecords}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium">Páginas</span>
+                    <span className="rounded-md border border-slate-200 bg-white px-2 py-0.5 font-semibold text-slate-700">
+                      {totalPages || 1}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-0.5 rounded-xl border border-slate-200 bg-white p-0.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                      className="h-8 px-2.5 text-[13px] text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-40"
+                    >
+                      &lt;&lt;
+                    </Button>
+
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum
+                      if (totalPages <= 5) {
+                        pageNum = i + 1
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i
+                      } else {
+                        pageNum = currentPage - 2 + i
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`h-8 min-w-[2rem] px-2 text-[13px] font-medium ${
+                            currentPage === pageNum
+                              ? "bg-slate-800 text-white shadow-sm hover:bg-slate-800 hover:text-white"
+                              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                          }`}
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                    })}
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages || totalPages === 0}
+                      className="h-8 px-2.5 text-[13px] text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-40"
+                    >
+                      &gt;&gt;
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1">
+                    <span className="text-[13px] font-medium text-slate-600">Por página</span>
+                    <Select
+                      value={itemsPerPage.toString()}
+                      onValueChange={(v) => {
+                        setItemsPerPage(Number(v))
+                        setCurrentPage(1)
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-14 border-0 bg-transparent text-[13px] font-semibold text-slate-800 shadow-none focus:ring-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="25">25</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -451,9 +446,9 @@ export default function ListaPreciosPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent className={montserrat.className}>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-lg font-semibold text-[#1f2433]">¿Eliminar lista de precios?</AlertDialogTitle>
+            <AlertDialogTitle className="text-lg font-semibold text-[#1f2433]">¿Eliminar esta tarifa?</AlertDialogTitle>
             <AlertDialogDescription className="text-[14px] leading-relaxed text-[#5d6578]">
-              ¿Estás seguro de que deseas eliminar la lista de precios{" "}
+              ¿Estás seguro de que deseas eliminar la tarifa{" "}
               <span className="font-semibold text-[#1f2433]">
                 {precioToDelete?.codigo} - {precioToDelete?.nombre}
               </span>
