@@ -95,7 +95,7 @@ function TiendaNubeCallbackContent() {
               onClick={() => router.push("/clientes")}
               className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white font-semibold py-2 px-6 rounded-lg transition-colors"
             >
-              Volver a Cuentas
+              Volver a Vendedores
             </button>
           </>
         )}

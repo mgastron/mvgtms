@@ -7,17 +7,17 @@ import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 
 const allMenuItems = [
-  { icon: Truck, label: "Envíos", active: false, hasSubmenu: true },
+  { icon: Truck, label: "Pedidos", active: false, hasSubmenu: true },
   { icon: Wrench, label: "Sistema", active: false, hasSubmenu: true },
-  { icon: Users, label: "Cuentas", active: true },
-  { icon: Route, label: "Choferes", active: false, hasSubmenu: true },
+  { icon: Users, label: "Vendedores", active: true },
+  { icon: Route, label: "Repartidores", active: false, hasSubmenu: true },
 ]
 
 const enviosSubmenu = [
-  { icon: Upload, label: "Cargar envíos" },
-  { icon: Truck, label: "Envios" },
+  { icon: Upload, label: "Cargar pedidos" },
+  { icon: Truck, label: "Pedidos" },
   { icon: DollarSign, label: "Lista de Precios" },
-  { icon: Printer, label: "Etiquetas NoFlex" },
+  { icon: Printer, label: "Reimpresión de etiquetas" },
   { icon: Search, label: "Buscador de Pedidos" },
 ]
 
@@ -65,7 +65,7 @@ export function Sidebar() {
     // Usuarios tipo "Cliente" no pueden ver "Sistema" ni "Clientes"
     if (userProfile === "Cliente") {
       return allMenuItems.filter(
-        (item) => item.label !== "Sistema" && item.label !== "Cuentas"
+        (item) => item.label !== "Sistema" && item.label !== "Vendedores"
       )
     }
     
@@ -83,11 +83,11 @@ export function Sidebar() {
     if (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) return "Lista Precios"
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
     if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de Pedidos"
-    if (pathname?.includes("/clientes")) return "Cuentas"
-    if (pathname?.includes("/reimprimir-noflex")) return "Etiquetas NoFlex"
-    if (pathname?.includes("/envios/subida") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) return "Cargar envíos"
+    if (pathname?.includes("/clientes")) return "Vendedores"
+    if (pathname?.includes("/reimprimir-noflex")) return "Reimpresión de etiquetas"
+    if (pathname?.includes("/envios/subida") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) return "Cargar pedidos"
     if (pathname?.includes("/envios/lista-precios")) return "Lista de Precios"
-    if (pathname?.includes("/envios")) return "Envios"
+    if (pathname?.includes("/envios")) return "Pedidos"
     if (pathname?.includes("/ruteate/geochoferes")) return "Ubicación"
     if (pathname?.includes("/ruteate/cierre")) return "Cierre"
     return null
@@ -121,8 +121,8 @@ export function Sidebar() {
         {menuItems.map((item) => {
           const Icon = item.icon
           const isSistema = item.label === "Sistema"
-          const isEnvios = item.label === "Envíos"
-          const isRuteate = item.label === "Choferes"
+          const isEnvios = item.label === "Pedidos"
+          const isRuteate = item.label === "Repartidores"
           const hasSubmenu = item.hasSubmenu || false
           
           return (
@@ -145,7 +145,7 @@ export function Sidebar() {
                     setSistemaOpen(false)
                     setEnviosOpen(false)
                     setRuteateOpen(false)
-                    if (item.label === "Cuentas") {
+                    if (item.label === "Vendedores") {
                       router.push("/clientes")
                     }
                   }
@@ -184,11 +184,11 @@ export function Sidebar() {
                       <button
                         key={subItem.label}
                         onClick={() => {
-                          if (subItem.label === "Cargar envíos") {
+                          if (subItem.label === "Cargar pedidos") {
                             router.push("/envios/subida")
-                          } else if (subItem.label === "Etiquetas NoFlex") {
+                          } else if (subItem.label === "Reimpresión de etiquetas") {
                             router.push("/reimprimir-noflex")
-                          } else if (subItem.label === "Envios") {
+                          } else if (subItem.label === "Pedidos") {
                             router.push("/envios")
                           } else if (subItem.label === "Lista de Precios") {
                             router.push("/envios/lista-precios")

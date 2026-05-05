@@ -541,94 +541,100 @@ export default function SubirIndividualPage() {
     <div className="min-h-screen bg-[#f7f8fc]">
       {!isEmbed && <ModernHeader />}
       <main className={`px-4 pb-5 pt-3 ${montserrat.className}`}>
-        <div className="mx-auto w-full max-w-[1700px]">
-          <h1 className="mb-4 text-[34px] font-semibold tracking-tight text-[#1570ef]">Carga manual</h1>
+        <div className={`mx-auto w-full ${isEmbed ? "max-w-[720px]" : "max-w-[1700px]"}`}>
+          {!isEmbed && (
+            <h1 className="mb-4 text-[34px] font-semibold tracking-tight text-[#1570ef]">Carga manual</h1>
+          )}
 
-          <div className="ml-2 w-full max-w-[960px] rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">
-                    Cuenta{userProfile === "Cliente" ? " *" : ""}
-                  </label>
-                  {userProfile === "Cliente" ? (
-                    <Input
-                      value={formData.cliente}
-                      disabled
-                      className={`${inputFieldClass} bg-[#f5f7fb] text-[#1f2433]`}
-                    />
-                  ) : (
-                    <Select
-                      value={formData.cliente}
-                      onValueChange={(value) => {
-                        const clienteSeleccionado = clientes.find((c) => c.codigo === value)
-                        setFormData((prev) => ({
-                          ...prev,
-                          cliente: value,
-                          clienteNombre: clienteSeleccionado?.nombreFantasia || "",
-                        }))
-                      }}
-                    >
-                      <SelectTrigger className="h-10 text-[14px] font-medium text-[#1f2433]">
-                        <SelectValue placeholder="Seleccionar cuenta" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clientes.map((cliente) => (
-                          <SelectItem key={cliente.id} value={cliente.codigo}>
-                            {cliente.nombreFantasia}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Tracking *</label>
-                  <Input
-                    value={formData.tracking}
-                    onChange={(e) => handleInputChange("tracking", e.target.value)}
-                    required
-                    placeholder="Ingresá el tracking"
-                    className={inputFieldClass}
-                  />
-                </div>
+          <div
+            className={`w-full rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm ${isEmbed ? "" : "ml-2 max-w-[960px]"}`}
+          >
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-[14px] font-medium text-[#4d5571]">Tracking *</label>
+                <Input
+                  value={formData.tracking}
+                  onChange={(e) => handleInputChange("tracking", e.target.value)}
+                  required
+                  placeholder="Código de seguimiento del pedido"
+                  className={inputFieldClass}
+                />
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-1.5">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Destinatario nombre *</label>
+              <div className="space-y-1.5">
+                <label className="block text-[14px] font-medium text-[#4d5571]">
+                  Vendedor{userProfile === "Cliente" ? " *" : ""}
+                </label>
+                {userProfile === "Cliente" ? (
                   <Input
-                    value={formData.destinatarioNombre}
-                    onChange={(e) => handleInputChange("destinatarioNombre", e.target.value)}
-                    required
-                    placeholder="Nombre del destinatario"
-                    className={inputFieldClass}
+                    value={formData.cliente}
+                    disabled
+                    className={`${inputFieldClass} bg-[#f5f7fb] text-[#1f2433]`}
                   />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Destinatario teléfono *</label>
-                  <Input
-                    value={formData.destinatarioTelefono}
-                    onChange={(e) => handleInputChange("destinatarioTelefono", e.target.value)}
-                    required
-                    placeholder="Teléfono del destinatario"
-                    className={inputFieldClass}
-                  />
-                </div>
-                <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Destinatario email</label>
-                  <Input
-                    type="email"
-                    value={formData.destinatarioEmail}
-                    onChange={(e) => handleInputChange("destinatarioEmail", e.target.value)}
-                    placeholder="Email del destinatario"
-                    className={inputFieldClass}
-                  />
+                ) : (
+                  <Select
+                    value={formData.cliente}
+                    onValueChange={(value) => {
+                      const clienteSeleccionado = clientes.find((c) => c.codigo === value)
+                      setFormData((prev) => ({
+                        ...prev,
+                        cliente: value,
+                        clienteNombre: clienteSeleccionado?.nombreFantasia || "",
+                      }))
+                    }}
+                  >
+                    <SelectTrigger className="h-10 text-[14px] font-medium text-[#1f2433]">
+                      <SelectValue placeholder="Seleccionar vendedor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientes.map((cliente) => (
+                        <SelectItem key={cliente.id} value={cliente.codigo}>
+                          {cliente.nombreFantasia}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-[#eef1f8] bg-[#fafbff] p-4">
+                <p className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-[#5d6578]">Destinatario</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className="block text-[14px] font-medium text-[#4d5571]">Nombre y apellido *</label>
+                    <Input
+                      value={formData.destinatarioNombre}
+                      onChange={(e) => handleInputChange("destinatarioNombre", e.target.value)}
+                      required
+                      placeholder="Nombre completo"
+                      className={inputFieldClass}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-[14px] font-medium text-[#4d5571]">Teléfono *</label>
+                    <Input
+                      value={formData.destinatarioTelefono}
+                      onChange={(e) => handleInputChange("destinatarioTelefono", e.target.value)}
+                      required
+                      placeholder="Incluir código de área"
+                      className={inputFieldClass}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-[14px] font-medium text-[#4d5571]">Correo electrónico</label>
+                    <Input
+                      type="email"
+                      value={formData.destinatarioEmail}
+                      onChange={(e) => handleInputChange("destinatarioEmail", e.target.value)}
+                      placeholder="Opcional"
+                      className={inputFieldClass}
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[14px] font-medium text-[#4d5571]">Dirección completa *</label>
+                <label className="block text-[14px] font-medium text-[#4d5571]">Dirección de entrega *</label>
                 <GooglePlacesAutocomplete
                   value={formData.direccion}
                   onChange={(value, localidad, codigoPostal) => {
@@ -642,17 +648,18 @@ export default function SubirIndividualPage() {
                 />
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Observaciones</label>
-                  <textarea
-                    value={formData.observaciones}
-                    onChange={(e) => handleInputChange("observaciones", e.target.value)}
-                    className="min-h-[68px] w-full resize-none rounded-xl border border-[#e6eaf4] bg-white px-3 py-2 text-[14px] font-medium text-[#1f2433] shadow-sm outline-none placeholder:font-normal placeholder:text-[#8890a8] focus:border-[#1570ef] focus:ring-2 focus:ring-[#1570ef]/20"
-                    rows={2}
-                    placeholder="Observaciones"
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <label className="block text-[14px] font-medium text-[#4d5571]">Observaciones</label>
+                <textarea
+                  value={formData.observaciones}
+                  onChange={(e) => handleInputChange("observaciones", e.target.value)}
+                  className="min-h-[88px] w-full resize-y rounded-xl border border-[#e6eaf4] bg-white px-3 py-2 text-[14px] font-medium text-[#1f2433] shadow-sm outline-none placeholder:font-normal placeholder:text-[#8890a8] focus:border-[#1570ef] focus:ring-2 focus:ring-[#1570ef]/20"
+                  rows={3}
+                  placeholder="Indicaciones de entrega, horario, etc."
+                />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className="block text-[14px] font-medium text-[#4d5571]">Total a cobrar</label>
                   <Input
@@ -681,7 +688,7 @@ export default function SubirIndividualPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 border-t border-[#e6eaf4] pt-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 border-t border-[#e6eaf4] pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-[12px] text-[#8890a8]">Los campos con (*) son obligatorios.</p>
                 <div className="flex flex-wrap gap-2 sm:justify-end">
                   <Button
@@ -694,9 +701,9 @@ export default function SubirIndividualPage() {
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="h-10 min-w-[128px] rounded-xl bg-[#1459e9] px-6 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce] disabled:pointer-events-none disabled:opacity-60"
+                    className="h-10 min-w-[148px] rounded-xl bg-[#1459e9] px-6 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce] disabled:pointer-events-none disabled:opacity-60"
                   >
-                    {isSubmitting ? "Registrando…" : "Registrar envío"}
+                    {isSubmitting ? "Registrando…" : "Registrar pedido"}
                   </Button>
                 </div>
               </div>

@@ -89,8 +89,8 @@ export function clientMatchesIntegracionFiltro(client: Client, modo: string): bo
 
 interface ClientsTableProps {
   filters: {
-    codigo: string
     nombreFantasia: string
+    grupoId: string
     integraciones?: string
     razonSocial?: string
     numeroDocumento?: string
@@ -214,14 +214,15 @@ export function ClientsTable({
         // Excluir el cliente actual si tiene ID (para evitar falsos positivos al actualizar)
         const exists = prevClients.some(
           (c) =>
-            c.id !== clientToAdd.id && // Excluir el mismo cliente si tiene ID
-            c.codigo.toLowerCase().trim() === clientToAdd.codigo.toLowerCase().trim()
+            c.id !== clientToAdd.id &&
+            c.grupoId === clientToAdd.grupoId &&
+            (c.nombreFantasia || "").trim().toLowerCase() === (clientToAdd.nombreFantasia || "").trim().toLowerCase()
         )
         if (exists) {
           // Si ya existe, programar la notificación de error después del render
           requestAnimationFrame(() => {
             if (onClientError) {
-              onClientError("Ya existe un cliente con ese código")
+              onClientError("Ya existe un vendedor con ese nombre en el mismo grupo.")
             }
             if (onClientAdded) {
               onClientAdded()
@@ -244,14 +245,14 @@ export function ClientsTable({
   // Filtrar clientes según los filtros aplicados y ordenar por código
   const filteredClients = useMemo(() => {
     const filtered = clients.filter((client) => {
-      if (filters.codigo && !client.codigo.toLowerCase().includes(filters.codigo.toLowerCase())) {
-        return false
-      }
-
       if (
         filters.nombreFantasia &&
         !client.nombreFantasia.toLowerCase().includes(filters.nombreFantasia.toLowerCase())
       ) {
+        return false
+      }
+
+      if (filters.grupoId && String(client.grupoId ?? "") !== filters.grupoId) {
         return false
       }
 
@@ -262,7 +263,7 @@ export function ClientsTable({
       return true
     })
     return [...filtered].sort((a, b) =>
-      a.codigo.localeCompare(b.codigo, "es", { sensitivity: "base" })
+      (a.nombreFantasia || "").localeCompare(b.nombreFantasia || "", "es", { sensitivity: "base" })
     )
   }, [filters, clients])
 
@@ -357,11 +358,11 @@ export function ClientsTable({
 
       // Siempre eliminar del estado local (funciona con o sin backend)
       setClients((prevClients) => {
-        const updatedClients = prevClients.filter((c) => c.codigo !== clientToDelete.codigo)
+        const updatedClients = prevClients.filter((c) => c.id !== clientToDelete.id)
         
         // Ajustar la página si es necesario
         const filteredAfterDelete = updatedClients.filter((client: Client) => {
-          if (filters.codigo && !client.codigo.toLowerCase().includes(filters.codigo.toLowerCase())) return false
+          if (filters.grupoId && String(client.grupoId ?? "") !== filters.grupoId) return false
           if (filters.nombreFantasia && !client.nombreFantasia.toLowerCase().includes(filters.nombreFantasia.toLowerCase())) return false
           if (filters.razonSocial && !client.razonSocial.toLowerCase().includes(filters.razonSocial.toLowerCase())) return false
           if (filters.numeroDocumento && !client.numDoc.includes(filters.numeroDocumento)) return false
@@ -386,14 +387,14 @@ export function ClientsTable({
         loadClientsFromBackend()
       } else {
         alert(
-          "El cliente se quitó de la lista pero no se pudo eliminar en el servidor. " +
-            "Al actualizar podría reaparecer. Comprobá que el backend esté accesible en api.mvgtms.com.ar"
+          "El vendedor se quitó de la lista pero no se pudo eliminar en el servidor. " +
+            "Al actualizar podría reaparecer. Comprobá que el backend esté accesible."
         )
         loadClientsFromBackend()
       }
     } catch (error) {
       errorDev("Error inesperado al eliminar cliente:", error)
-      alert("Error al eliminar el cliente. Por favor, intenta nuevamente.")
+      alert("Error al eliminar el vendedor. Por favor, intente nuevamente.")
     } finally {
       setIsDeleting(false)
     }
@@ -405,7 +406,7 @@ export function ClientsTable({
         <h3 className="text-[16px] font-semibold text-[#1f2433]">Listado</h3>
         <div className="flex items-center gap-2 rounded-full border border-[#e6eaf4] bg-white px-3 py-1 text-[13px] font-medium text-[#5d6578]">
           <span className="text-[#1570ef]">{totalRecords}</span>
-          <span>{totalRecords === 1 ? "cliente" : "clientes"}</span>
+          <span>{totalRecords === 1 ? "vendedor" : "vendedores"}</span>
         </div>
       </div>
       <div className="overflow-x-auto">
@@ -413,10 +414,7 @@ export function ClientsTable({
           <thead>
             <tr className="border-b border-[#e6eaf4] bg-[#f7f8fc]">
               <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
-                Código
-              </th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
-                Nombre fantasía
+                Nombre
               </th>
               <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
                 Grupo
@@ -429,12 +427,12 @@ export function ClientsTable({
           <tbody className="divide-y divide-[#eef1f8]">
             {paginatedClients.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-5 py-14 text-center">
+                <td colSpan={3} className="px-5 py-14 text-center">
                   <div className="mx-auto flex max-w-md flex-col items-center">
                     <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#eef4ff]">
                       <Inbox className="h-6 w-6 text-[#1570ef]" aria-hidden />
                     </div>
-                    <p className="text-[14px] font-semibold text-[#1f2433]">No se encontraron clientes</p>
+                    <p className="text-[14px] font-semibold text-[#1f2433]">No se encontraron vendedores</p>
                     <p className="mt-2 text-[13px] text-[#8890a8]">Probá cambiar los filtros</p>
                   </div>
                 </td>
@@ -445,15 +443,14 @@ export function ClientsTable({
                   key={client.id != null ? `c-${client.id}` : client.codigo}
                   className={`transition-colors hover:bg-[#f7faff] ${index % 2 === 0 ? "bg-white" : "bg-[#fafbff]"}`}
                 >
-                  <td className="whitespace-nowrap px-4 py-3 sm:px-5">
+                  <td className="px-4 py-3 text-[14px] text-[#1f2433] sm:px-5">
                     <div className="flex items-center gap-2">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eef4ff] text-[12px] font-bold text-[#1459e9]">
-                        {(client.codigo || "?").charAt(0).toUpperCase()}
+                        {(client.nombreFantasia || "?").charAt(0).toUpperCase()}
                       </div>
-                      <span className="text-[14px] font-medium text-[#1f2433]">{client.codigo}</span>
+                      <span className="font-medium">{client.nombreFantasia || "—"}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-[14px] text-[#1f2433] sm:px-5">{client.nombreFantasia || "—"}</td>
                   <td className="px-4 py-3 text-[14px] text-[#5d6578] sm:px-5">{client.grupoNombre || "—"}</td>
                   <td className="whitespace-nowrap px-4 py-3 sm:px-5">
                     <div className="flex items-center justify-center gap-1">

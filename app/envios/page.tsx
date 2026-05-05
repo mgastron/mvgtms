@@ -371,7 +371,7 @@ export default function EnviosPage() {
       return false
     }
     if (userProfile !== "Administrativo" && userProfile !== "Chofer") {
-      toast.error("No tenés permiso para cambiar el estado de los envíos")
+      toast.error("No tenés permiso para cambiar el estado de los pedidos")
       return false
     }
 
@@ -589,7 +589,7 @@ export default function EnviosPage() {
         "Método de envío",
         "Cod.Cuenta",
         "Razon Social",
-        "Nombre Fantasia",
+        "Nombre vendedor",
         "Nombre Destinatario",
         "Tel. Destinatario",
         "Email Destinatario",
@@ -606,7 +606,6 @@ export default function EnviosPage() {
         "Cadete",
         "Fecha de asignación",
         "Zonas",
-        "ZonasCosto",
         "Origen",
         "Observaciones"
       ]
@@ -657,7 +656,7 @@ export default function EnviosPage() {
       }
       
       if (filters.nombreFantasia) {
-        filtrosAplicados.push(`Nombre Fantasía: ${filters.nombreFantasia}`)
+        filtrosAplicados.push(`Vendedor (nombre): ${filters.nombreFantasia}`)
       }
       
       if (filters.destinoNombre) {
@@ -673,7 +672,7 @@ export default function EnviosPage() {
       }
       
       if (userProfile === "Cliente" && userCodigoCliente) {
-        filtrosAplicados.push(`Código de cuenta: ${userCodigoCliente}`)
+        filtrosAplicados.push(`Cuenta interna: ${userCodigoCliente}`)
       }
       
       // Mapear todos los envíos a filas del Excel
@@ -753,7 +752,6 @@ export default function EnviosPage() {
           envio.choferAsignadoNombre || "",
           formatFechaExcel(envio.fechaAsignacion),
           envio.zonaEntrega || "",
-          envio.zonaEntrega || "", // ZonasCosto - usando zonaEntrega como aproximación
           envio.origen || "",
           envio.observaciones || ""
         ])
@@ -768,7 +766,7 @@ export default function EnviosPage() {
       
       // Agregar worksheet al workbook
       const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, "Envios")
+      XLSX.utils.book_append_sheet(wb, ws, "Pedidos")
       
       // Descargar archivo
       const fecha = new Date().toISOString().split("T")[0]
@@ -814,7 +812,7 @@ export default function EnviosPage() {
       <main className={`px-4 pb-6 pt-4 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
           <div className="mb-5 flex items-center justify-between">
-            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Envíos</h1>
+            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Pedidos</h1>
             <Button
               onClick={handleDescargarExcel}
               className="h-12 rounded-xl bg-[#eef4ff] px-6 text-[15px] font-semibold text-[#1570ef] hover:bg-[#e3edff]"
@@ -871,7 +869,7 @@ export default function EnviosPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Estados del envío</label>
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Estado del pedido</label>
                   <Select
                     value={filters.estado}
                     onValueChange={(value) => handleFilterChange("estado", value)}
@@ -982,7 +980,7 @@ export default function EnviosPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-[14px] font-medium text-[#4d5571]">Envío turbo</label>
+                      <label className="block text-[14px] font-medium text-[#4d5571]">Pedido turbo</label>
                       <Select
                         value={filters.envioTurbo}
                         onValueChange={(value) => handleFilterChange("envioTurbo", value)}
@@ -1036,7 +1034,7 @@ export default function EnviosPage() {
 
                     {userProfile !== "Cliente" ? (
                       <div className="space-y-1">
-                        <label className="block text-[14px] font-medium text-[#4d5571]">Nombre fantasía</label>
+                        <label className="block text-[14px] font-medium text-[#4d5571]">Vendedor (nombre)</label>
                         <Input
                           value={filters.nombreFantasia}
                           onChange={(e) => handleFilterChange("nombreFantasia", e.target.value)}
@@ -1118,29 +1116,28 @@ export default function EnviosPage() {
             {/* Table */}
           <div className="mt-4 rounded-xl border border-[#e6eaf4] bg-white overflow-hidden">
               <div className="overflow-x-auto" suppressHydrationWarning>
-                <table className="w-full border-collapse table-fixed" style={{ tableLayout: 'fixed', minWidth: '1220px' }}>
+                <table className="w-full border-collapse table-fixed" style={{ tableLayout: 'fixed', minWidth: '1120px' }}>
                   <thead>
                     <tr className="bg-white border-b border-[#edf0f7]">
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Estado</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Tracking</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>ID_NX</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '60px' }}>Origen</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '130px' }}>Cuenta</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '130px' }}>Vendedor</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '105px' }}>IDML</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Fecha de venta</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '125px' }}>Fecha de llegada</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '130px' }}>Destino nombre</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '70px' }}>CP</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '90px' }}>Zona</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Zona Costo</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Chofer</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Repartidor</th>
                       <th className="px-2 py-3 text-right text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '44px' }}>QR</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedEnvios.length === 0 ? (
                       <tr>
-                        <td colSpan={14} className="px-3 py-8 text-center text-sm text-gray-500">
+                        <td colSpan={13} className="px-3 py-8 text-center text-sm text-gray-500">
                           Sin resultados para los filtros aplicados.
                         </td>
                       </tr>
@@ -1205,7 +1202,6 @@ export default function EnviosPage() {
                               {envio.zonaEntrega || "Sin Zona"}
                             </span>
                           </td>
-                          <td className="px-2 py-3 text-sm text-gray-500 whitespace-normal break-words">Sin Zona</td>
                           <td className="px-2 py-3 text-sm text-gray-700 font-medium whitespace-normal break-words">
                             {envio.choferAsignadoNombre || "-"}
                           </td>

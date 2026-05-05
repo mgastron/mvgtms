@@ -39,6 +39,85 @@ public class ClienteService {
     private final EnvioService envioService;
     private final Environment environment;
 
+    /** Path del callback de Tienda Nube. NUNCA concatenar con nada que contenga "mercadolibre". */
+    private static final String TIENDANUBE_CALLBACK_PATH = "/auth/tiendanube/callback";
+
+    /**
+     * Devuelve siempre el origen del frontend (protocolo + host, sin path).
+     * Lee FRONTEND_BASE_URL, frontend.base.url, MERCADOLIBRE_REDIRECT_URI o mercadolibre.redirect.uri,
+     * parsea la URL y devuelve solo origen para no concatenar paths por error (ej. .../auth/mercadolibre/callback + /auth/tiendanube/callback).
+     */
+    private String getFrontendOrigin() {
+        String raw = System.getenv("FRONTEND_BASE_URL");
+        if (raw == null || raw.isEmpty()) {
+            raw = environment.getProperty("frontend.base.url");
+        }
+        if (raw == null || raw.isEmpty()) {
+            raw = System.getenv("MERCADOLIBRE_REDIRECT_URI");
+        }
+        if (raw == null || raw.isEmpty()) {
+            raw = environment.getProperty("mercadolibre.redirect.uri");
+        }
+        if (raw != null && !raw.isEmpty()) {
+            try {
+                java.net.URL url = new java.net.URL(raw.trim());
+                String origin = url.getProtocol() + "://" + url.getHost();
+                if (url.getPort() != -1 && url.getPort() != 80 && url.getPort() != 443) {
+                    origin += ":" + url.getPort();
+                }
+                return origin;
+            } catch (Exception e) {
+                log.warn("No se pudo parsear URL de frontend '{}', usando localhost", raw);
+            }
+        }
+        return "http://localhost:3000";
+    }
+
+    /**
+     * Origen del frontend SOLO para Tienda Nube: usa únicamente FRONTEND_BASE_URL o frontend.base.url.
+     * No lee nunca MERCADOLIBRE_REDIRECT_URI ni mercadolibre.redirect.uri, para que la redirect de TN
+     * no pueda verse contaminada por configuración de ML.
+     */
+    private String getFrontendOriginForTiendaNube() {
+        String raw = System.getenv("FRONTEND_BASE_URL");
+        if (raw == null || raw.isEmpty()) {
+            raw = environment.getProperty("frontend.base.url");
+        }
+        if (raw != null && !raw.isEmpty()) {
+            try {
+                java.net.URL url = new java.net.URL(raw.trim());
+                String origin = url.getProtocol() + "://" + url.getHost();
+                if (url.getPort() != -1 && url.getPort() != 80 && url.getPort() != 443) {
+                    origin += ":" + url.getPort();
+                }
+                // Nunca devolver un origen que contenga "mercadolibre" (por si raw era una URL de ML)
+                if (origin != null && !origin.toLowerCase().contains("mercadolibre")) {
+                    return origin;
+                }
+            } catch (Exception e) {
+                log.warn("getFrontendOriginForTiendaNube: no se pudo parsear '{}', usando default", raw);
+            }
+        }
+        return "https://mvgtms.com.ar";
+    }
+
+    /**
+     * Normaliza una URL a solo origen (protocolo + host). Si falla el parseo, devuelve null.
+     */
+    private String normalizeToOrigin(String urlString) {
+        if (urlString == null || urlString.isEmpty()) return null;
+        try {
+            java.net.URL url = new java.net.URL(urlString.trim());
+            String origin = url.getProtocol() + "://" + url.getHost();
+            if (url.getPort() != -1 && url.getPort() != 80 && url.getPort() != 443) {
+                origin += ":" + url.getPort();
+            }
+            return origin;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @Transactional(readOnly = true)
     public PageResponseDTO<ClienteDTO> buscarClientes(ClienteFilterDTO filter) {
         Specification<Cliente> spec = buildSpecification(filter);
@@ -67,9 +146,6 @@ public class ClienteService {
 
     @Transactional
     public ClienteDTO crearCliente(ClienteDTO clienteDTO) {
-        if (clienteRepository.existsByCodigo(clienteDTO.getCodigo())) {
-            throw new RuntimeException("Ya existe un cliente con el código: " + clienteDTO.getCodigo());
-        }
         // Si se indica nuevo grupo, crearlo primero
         if (clienteDTO.getNuevoGrupoNombre() != null && !clienteDTO.getNuevoGrupoNombre().trim().isEmpty()) {
             com.zetallegue.tms.model.Grupo grupo = new com.zetallegue.tms.model.Grupo();
@@ -80,6 +156,21 @@ public class ClienteService {
         if (clienteDTO.getGrupoId() == null) {
             throw new RuntimeException("El cliente debe estar asignado a un grupo. Elegí un grupo existente o creá uno nuevo.");
         }
+        String nombre = normalizarNombreFantasia(clienteDTO.getNombreFantasia());
+        if (nombre.isEmpty()) {
+            throw new RuntimeException("El nombre del vendedor es obligatorio.");
+        }
+        clienteDTO.setNombreFantasia(nombre);
+        asegurarNombreUnicoEnGrupo(clienteDTO.getGrupoId(), nombre, null);
+
+        String codigo = clienteDTO.getCodigo() == null ? "" : clienteDTO.getCodigo().trim();
+        if (codigo.isEmpty()) {
+            codigo = generarCodigoInternoUnico();
+        } else if (clienteRepository.existsByCodigo(codigo)) {
+            throw new RuntimeException("Ya existe un cliente con el código: " + codigo);
+        }
+        clienteDTO.setCodigo(codigo);
+
         Cliente cliente = toEntity(clienteDTO);
         cliente = clienteRepository.save(cliente);
         return toDTO(cliente);
@@ -90,14 +181,33 @@ public class ClienteService {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado con id: " + id));
 
-        // Verificar si el código ya existe en otro cliente
-        if (!cliente.getCodigo().equals(clienteDTO.getCodigo()) &&
-            clienteRepository.existsByCodigo(clienteDTO.getCodigo())) {
-            throw new RuntimeException("Ya existe un cliente con el código: " + clienteDTO.getCodigo());
+        // Si se indica nuevo grupo (crear y asignar), crearlo primero
+        if (clienteDTO.getNuevoGrupoNombre() != null && !clienteDTO.getNuevoGrupoNombre().trim().isEmpty()) {
+            com.zetallegue.tms.model.Grupo grupo = new com.zetallegue.tms.model.Grupo();
+            grupo.setNombre(clienteDTO.getNuevoGrupoNombre().trim());
+            grupo = grupoRepository.save(grupo);
+            clienteDTO.setGrupoId(grupo.getId());
         }
 
-        cliente.setCodigo(clienteDTO.getCodigo());
-        cliente.setNombreFantasia(clienteDTO.getNombreFantasia());
+        Long grupoEfectivo = clienteDTO.getGrupoId() != null ? clienteDTO.getGrupoId() : cliente.getGrupoId();
+        if (grupoEfectivo == null) {
+            throw new RuntimeException("El cliente debe estar asignado a un grupo.");
+        }
+        String nombre = normalizarNombreFantasia(clienteDTO.getNombreFantasia());
+        if (nombre.isEmpty()) {
+            throw new RuntimeException("El nombre del vendedor es obligatorio.");
+        }
+        clienteDTO.setNombreFantasia(nombre);
+        asegurarNombreUnicoEnGrupo(grupoEfectivo, nombre, id);
+
+        String codigoDto = clienteDTO.getCodigo() == null ? "" : clienteDTO.getCodigo().trim();
+        String codigoFinal = codigoDto.isEmpty() ? cliente.getCodigo() : codigoDto;
+        if (!codigoFinal.equals(cliente.getCodigo()) && clienteRepository.existsByCodigo(codigoFinal)) {
+            throw new RuntimeException("Ya existe un cliente con el código: " + codigoFinal);
+        }
+
+        cliente.setCodigo(codigoFinal);
+        cliente.setNombreFantasia(nombre);
         cliente.setRazonSocial(clienteDTO.getRazonSocial());
         cliente.setNumeroDocumento(clienteDTO.getNumeroDocumento());
         cliente.setHabilitado(clienteDTO.getHabilitado());
@@ -150,7 +260,7 @@ public class ClienteService {
         cliente.setVtexToken(clienteDTO.getVtexToken());
         cliente.setVtexIdLogistica(clienteDTO.getVtexIdLogistica());
         cliente.setListaPreciosId(clienteDTO.getListaPreciosId());
-        cliente.setGrupoId(clienteDTO.getGrupoId());
+        cliente.setGrupoId(grupoEfectivo);
 
         cliente = clienteRepository.save(cliente);
         return toDTO(cliente);
@@ -190,22 +300,17 @@ public class ClienteService {
         // Generar un token único para esta solicitud de vinculación
         String token = clienteId + "_" + java.util.UUID.randomUUID().toString();
         
-        // Construir el link de autorización
-        String baseUrl = baseUrlParam;
-        if (baseUrl == null || baseUrl.isEmpty()) {
-            baseUrl = System.getenv("FRONTEND_BASE_URL");
+        // Construir el link de autorización: para TN NUNCA usar getFrontendOrigin() (lee ML); usar solo origen TN
+        String baseUrl = (baseUrlParam != null && !baseUrlParam.isEmpty())
+                ? normalizeToOrigin(baseUrlParam)
+                : null;
+        if (baseUrl == null) {
+            baseUrl = getFrontendOriginForTiendaNube();
         }
-        if (baseUrl == null || baseUrl.isEmpty()) {
-            baseUrl = "http://localhost:3000";
-        }
-        
-        // Construir la URL de autorización de Tienda Nube
-        // TODO: Investigar la URL correcta de OAuth de Tienda Nube
-        // Por ahora, generamos un link que apunta a nuestra página de autorización
         String authUrl = baseUrl + "/auth/tiendanube?token=" + token + "&clienteId=" + clienteId;
         
-        log.info("Link de vinculación Tienda Nube generado para cliente {}: {}", clienteId, authUrl);
-        
+        log.debug("Link vinculación Tienda Nube cliente {}: {}", clienteId, authUrl);
+
         return authUrl;
     }
 
@@ -234,37 +339,11 @@ public class ClienteService {
             throw new RuntimeException("TIENDANUBE_CLIENT_ID no configurado. Por favor, configure las credenciales de Tienda Nube en variables de entorno (TIENDANUBE_CLIENT_ID) o application.properties (tiendanube.client.id).");
         }
         
-        String redirectUri = System.getenv("TIENDANUBE_REDIRECT_URI");
-        if (redirectUri == null || redirectUri.isEmpty()) {
-            // Leer desde application.properties como fallback
-            redirectUri = environment.getProperty("tiendanube.redirect.uri");
-        }
-        if (redirectUri == null || redirectUri.isEmpty()) {
-            // Intentar construir desde la URL base del frontend
-            String frontendBaseUrl = System.getenv("FRONTEND_BASE_URL");
-            if (frontendBaseUrl == null || frontendBaseUrl.isEmpty()) {
-                frontendBaseUrl = environment.getProperty("frontend.base.url");
-            }
-            if (frontendBaseUrl == null || frontendBaseUrl.isEmpty()) {
-                // Intentar extraer de la URL del túnel si está configurada
-                String mercadolibreRedirectUri = System.getenv("MERCADOLIBRE_REDIRECT_URI");
-                if (mercadolibreRedirectUri == null || mercadolibreRedirectUri.isEmpty()) {
-                    mercadolibreRedirectUri = environment.getProperty("mercadolibre.redirect.uri");
-                }
-                if (mercadolibreRedirectUri != null && !mercadolibreRedirectUri.isEmpty()) {
-                    try {
-                        java.net.URL url = new java.net.URL(mercadolibreRedirectUri);
-                        frontendBaseUrl = url.getProtocol() + "://" + url.getHost();
-                    } catch (Exception e) {
-                        frontendBaseUrl = "http://localhost:3000";
-                    }
-                } else {
-                    frontendBaseUrl = "http://localhost:3000";
-                }
-            }
-            redirectUri = frontendBaseUrl + "/auth/tiendanube/callback";
-        }
-        
+        // NUNCA leer TIENDANUBE_REDIRECT_URI ni tiendanube.redirect.uri aquí: podrían estar mal (ej. con path de ML).
+        // Siempre construir desde origen TN para que la URL sea solo origen + TIENDANUBE_CALLBACK_PATH.
+        String originTn = getFrontendOriginForTiendaNube();
+        String redirectUri = originTn + TIENDANUBE_CALLBACK_PATH;
+
         // Construir la URL de autorización de Tienda Nube
         // La URL debe ser: {tiendanubeUrl}/admin/apps/{appId}/authorize
         // Ejemplo: https://mitienda.mitiendanube.com/admin/apps/25636/authorize
@@ -284,16 +363,7 @@ public class ClienteService {
         
         // Construir la URL con los parámetros OAuth
         String redirectUriEncoded = java.net.URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
-        
-        log.info("=== CONFIGURACIÓN DE AUTORIZACIÓN TIENDA NUBE ===");
-        log.info("Client ID: {}", clientId);
-        log.info("Redirect URI (sin codificar): {}", redirectUri);
-        log.info("Redirect URI (codificado): {}", redirectUriEncoded);
-        log.info("State: {}", token);
-        log.info("Scopes: {}", scopes);
-        log.info("IMPORTANTE: El redirect_uri debe coincidir EXACTAMENTE con el configurado en el Portal de Socios");
-        log.info("Portal: https://partners.tiendanube.com/applications/details/{}", clientId);
-        
+
         String authUrl = String.format(
             "%s?response_type=code&client_id=%s&redirect_uri=%s&state=%s&scope=%s",
             baseAuthUrl,
@@ -303,8 +373,8 @@ public class ClienteService {
             scopes
         );
         
-        log.info("URL de autorización Tienda Nube generada para cliente {}: {}", clienteId, authUrl);
-        
+        log.debug("Auth URL Tienda Nube cliente {}", clienteId);
+
         return authUrl;
     }
 
@@ -319,33 +389,13 @@ public class ClienteService {
         // Incluimos el clienteId en el token para poder recuperarlo después
         String token = clienteId + "_" + java.util.UUID.randomUUID().toString();
         
-        // Construir el link de autorización
-        // Prioridad: Parámetro > Variable de entorno > Extraer de redirect_uri > localhost
-        String baseUrl = baseUrlParam;
-        if (baseUrl == null || baseUrl.isEmpty()) {
-            baseUrl = System.getenv("FRONTEND_BASE_URL");
+        // Construir el link de autorización: siempre usar solo origen para no concatenar paths
+        String baseUrl = (baseUrlParam != null && !baseUrlParam.isEmpty())
+                ? normalizeToOrigin(baseUrlParam)
+                : null;
+        if (baseUrl == null) {
+            baseUrl = getFrontendOrigin();
         }
-        
-        if (baseUrl == null || baseUrl.isEmpty()) {
-            // Intentar extraer de la URL de redirect (sin el path)
-            String redirectUri = System.getenv("MERCADOLIBRE_REDIRECT_URI");
-            if (redirectUri != null && !redirectUri.isEmpty()) {
-                try {
-                    java.net.URL url = new java.net.URL(redirectUri);
-                    baseUrl = url.getProtocol() + "://" + url.getHost();
-                    // Si tiene puerto, agregarlo (aunque Cloudflare no lo usa)
-                    if (url.getPort() != -1 && url.getPort() != 80 && url.getPort() != 443) {
-                        baseUrl += ":" + url.getPort();
-                    }
-                } catch (Exception e) {
-                    // Si falla, usar localhost como fallback
-                    baseUrl = "http://localhost:3000";
-                }
-            } else {
-                baseUrl = "http://localhost:3000";
-            }
-        }
-        
         String link = baseUrl + "/auth/mercadolibre?clienteId=" + clienteId + "&token=" + token;
         
         return link;
@@ -369,8 +419,7 @@ public class ClienteService {
         
         String redirectUri = System.getenv("MERCADOLIBRE_REDIRECT_URI");
         if (redirectUri == null || redirectUri.isEmpty()) {
-            // URL del túnel Cloudflare (actualizar cuando cambie)
-            redirectUri = "https://outcome-supreme-preview-invest.trycloudflare.com/auth/mercadolibre/callback";
+            redirectUri = environment.getProperty("mercadolibre.redirect.uri", "https://mvgtms.com.ar/auth/mercadolibre/callback");
         }
         
         // Construir la URL de autorización de MercadoLibre
@@ -447,7 +496,7 @@ public class ClienteService {
             
             String redirectUri = System.getenv("MERCADOLIBRE_REDIRECT_URI");
             if (redirectUri == null || redirectUri.isEmpty()) {
-                redirectUri = "https://outcome-supreme-preview-invest.trycloudflare.com/auth/mercadolibre/callback";
+                redirectUri = environment.getProperty("mercadolibre.redirect.uri", "https://mvgtms.com.ar/auth/mercadolibre/callback");
             }
             
             // Intercambiar código por tokens
@@ -666,6 +715,39 @@ public class ClienteService {
         }
     }
 
+    private static String normalizarNombreFantasia(String nombre) {
+        if (nombre == null) {
+            return "";
+        }
+        return nombre.trim().replaceAll("\\s+", " ");
+    }
+
+    private void asegurarNombreUnicoEnGrupo(Long grupoId, String nombreNormalizado, Long excludeClienteId) {
+        if (excludeClienteId == null) {
+            if (clienteRepository.existsByGrupoIdAndNombreFantasiaIgnoreCase(grupoId, nombreNormalizado)) {
+                throw new RuntimeException("Ya existe un vendedor con ese nombre en el mismo grupo.");
+            }
+        } else {
+            if (clienteRepository.existsByGrupoIdAndNombreFantasiaIgnoreCaseAndIdNot(grupoId, nombreNormalizado, excludeClienteId)) {
+                throw new RuntimeException("Ya existe un vendedor con ese nombre en el mismo grupo.");
+            }
+        }
+    }
+
+    private String generarCodigoInternoUnico() {
+        String c;
+        int intentos = 0;
+        do {
+            String u = java.util.UUID.randomUUID().toString().replace("-", "");
+            c = ("NX" + u).substring(0, Math.min(50, 2 + u.length()));
+            intentos++;
+        } while (clienteRepository.existsByCodigo(c) && intentos < 50);
+        if (clienteRepository.existsByCodigo(c)) {
+            throw new RuntimeException("No se pudo generar un código interno único. Reintente.");
+        }
+        return c;
+    }
+
     private Specification<Cliente> buildSpecification(ClienteFilterDTO filter) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -675,6 +757,10 @@ public class ClienteService {
                         cb.lower(root.get("codigo")),
                         "%" + filter.getCodigo().toLowerCase() + "%"
                 ));
+            }
+
+            if (filter.getGrupoId() != null) {
+                predicates.add(cb.equal(root.get("grupoId"), filter.getGrupoId()));
             }
 
             if (filter.getNombreFantasia() != null && !filter.getNombreFantasia().trim().isEmpty()) {
@@ -825,36 +911,6 @@ public class ClienteService {
                 throw new RuntimeException("TIENDANUBE_CLIENT_SECRET no configurado. Por favor, configure las credenciales de Tienda Nube en variables de entorno (TIENDANUBE_CLIENT_SECRET) o application.properties (tiendanube.client.secret).");
             }
             
-            String redirectUri = System.getenv("TIENDANUBE_REDIRECT_URI");
-            if (redirectUri == null || redirectUri.isEmpty()) {
-                redirectUri = environment.getProperty("tiendanube.redirect.uri");
-            }
-            if (redirectUri == null || redirectUri.isEmpty()) {
-                // Intentar construir desde la URL base del frontend
-                String frontendBaseUrl = System.getenv("FRONTEND_BASE_URL");
-                if (frontendBaseUrl == null || frontendBaseUrl.isEmpty()) {
-                    frontendBaseUrl = environment.getProperty("frontend.base.url");
-                }
-                if (frontendBaseUrl == null || frontendBaseUrl.isEmpty()) {
-                    // Intentar extraer de la URL del túnel si está configurada
-                    String mercadolibreRedirectUri = System.getenv("MERCADOLIBRE_REDIRECT_URI");
-                    if (mercadolibreRedirectUri == null || mercadolibreRedirectUri.isEmpty()) {
-                        mercadolibreRedirectUri = environment.getProperty("mercadolibre.redirect.uri");
-                    }
-                    if (mercadolibreRedirectUri != null && !mercadolibreRedirectUri.isEmpty()) {
-                        try {
-                            java.net.URL url = new java.net.URL(mercadolibreRedirectUri);
-                            frontendBaseUrl = url.getProtocol() + "://" + url.getHost();
-                        } catch (Exception e) {
-                            frontendBaseUrl = "http://localhost:3000";
-                        }
-                    } else {
-                        frontendBaseUrl = "http://localhost:3000";
-                    }
-                }
-                redirectUri = frontendBaseUrl + "/auth/tiendanube/callback";
-            }
-            
             // Intercambiar código por tokens
             // Según la documentación de Tienda Nube, el request debe ser JSON y NO incluir redirect_uri
             String tokenUrl = "https://www.tiendanube.com/apps/authorize/token";
@@ -869,10 +925,6 @@ public class ClienteService {
             // NOTA: Tienda Nube NO requiere redirect_uri en el token exchange
             
             String requestBody = mapper.writeValueAsString(requestData);
-            
-            log.info("Intercambiando código por tokens en Tienda Nube...");
-            log.info("Token URL: {}", tokenUrl);
-            log.info("Request body: {}", requestBody.replace(clientSecret, "***"));
             
             URL url = new URL(tokenUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -902,8 +954,6 @@ public class ClienteService {
             while ((line = reader.readLine()) != null) {
                 response.append(line);
             }
-            
-            log.info("Respuesta de Tienda Nube (token exchange): {}", response.toString().replace(clientSecret, "***"));
             
             // Usar el mapper ya declarado arriba
             JsonNode jsonResponse = mapper.readTree(response.toString());
@@ -975,7 +1025,7 @@ public class ClienteService {
             }
             cliente = clienteRepository.save(cliente);
             
-            log.info("Cuenta de Tienda Nube vinculada exitosamente para cliente {}", clienteId);
+            log.debug("Tienda Nube vinculada cliente {}", clienteId);
             
             return toDTO(cliente);
         } catch (Exception e) {
@@ -1004,16 +1054,13 @@ public class ClienteService {
         // Generar un token único para esta solicitud de vinculación
         String token = clienteId + "_" + java.util.UUID.randomUUID().toString();
         
-        // Construir el link de autorización
-        String baseUrl = baseUrlParam;
-        if (baseUrl == null || baseUrl.isEmpty()) {
-            baseUrl = System.getenv("FRONTEND_BASE_URL");
+        // Construir el link de autorización: siempre usar solo origen para no concatenar paths
+        String baseUrl = (baseUrlParam != null && !baseUrlParam.isEmpty())
+                ? normalizeToOrigin(baseUrlParam)
+                : null;
+        if (baseUrl == null) {
+            baseUrl = getFrontendOrigin();
         }
-        if (baseUrl == null || baseUrl.isEmpty()) {
-            baseUrl = "http://localhost:3000";
-        }
-        
-        // Construir la URL de autorización de Shopify
         String authUrl = baseUrl + "/auth/shopify?token=" + token + "&clienteId=" + clienteId;
         
         log.info("Link de vinculación Shopify generado para cliente {}: {}", clienteId, authUrl);

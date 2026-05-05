@@ -15,13 +15,13 @@ const montserrat = Montserrat({
 const allMenuItems = [
   {
     icon: Truck,
-    label: "Envíos",
+    label: "Pedidos",
     hasSubmenu: true,
     submenu: [
-      { icon: Truck, label: "Envíos", path: "/envios" },
-      { icon: Upload, label: "Cargar envíos", path: "/envios/subida" },
+      { icon: Truck, label: "Pedidos", path: "/envios" },
+      { icon: Upload, label: "Cargar pedidos", path: "/envios/subida" },
       { icon: DollarSign, label: "Lista de precios", path: "/envios/lista-precios" },
-      { icon: Printer, label: "Etiquetas no flex", path: "/reimprimir-noflex" },
+      { icon: Printer, label: "Reimpresión de etiquetas", path: "/reimprimir-noflex" },
       { icon: Search, label: "Buscador de pedidos", path: "/sistema/buscador-pedidos" },
     ],
   },
@@ -39,13 +39,13 @@ const allMenuItems = [
   },
   {
     icon: Users,
-    label: "Cuentas",
+    label: "Vendedores",
     hasSubmenu: false,
     path: "/clientes",
   },
   {
     icon: Route,
-    label: "Choferes",
+    label: "Repartidores",
     hasSubmenu: true,
     submenu: [
       { icon: Route, label: "Ubicación", path: "/ruteate/geochoferes" },
@@ -68,7 +68,7 @@ export function ModernHeader() {
   const coordinadorOcultarSubmenuLabels = ["Lista de precios", "Lista Precios", "Estado Órdenes"]
 
   const getFilteredMenuItems = () => {
-    if (userProfile === "Chofer") return allMenuItems.filter((item) => item.label !== "Choferes")
+    if (userProfile === "Chofer") return allMenuItems.filter((item) => item.label !== "Repartidores")
     if (userProfile === "Coordinador") {
       return allMenuItems.map((item) => {
         if (!item.hasSubmenu || !item.submenu) return item
@@ -90,23 +90,23 @@ export function ModernHeader() {
     if (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) return "Lista Precios"
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
     if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de pedidos"
-    if (pathname?.includes("/clientes")) return "Cuentas"
-    if (pathname?.includes("/reimprimir-noflex")) return "Etiquetas no flex"
+    if (pathname?.includes("/clientes")) return "Vendedores"
+    if (pathname?.includes("/reimprimir-noflex")) return "Reimpresión de etiquetas"
     if (pathname?.includes("/envios/subida") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) {
-      return "Cargar envíos"
+      return "Cargar pedidos"
     }
     if (pathname?.includes("/envios/lista-precios")) return "Lista de precios"
-    if (pathname?.includes("/envios")) return "Envíos"
+    if (pathname?.includes("/envios")) return "Pedidos"
     if (pathname?.includes("/ruteate/geochoferes")) return "Ubicación"
     if (pathname?.includes("/ruteate/cierre")) return "Cierre"
     return null
   }
 
   const getActiveMainItem = () => {
-    if (pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir") || pathname?.includes("/envios") || pathname?.includes("/sistema/buscador-pedidos")) return "Envíos"
+    if (pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir") || pathname?.includes("/envios") || pathname?.includes("/sistema/buscador-pedidos")) return "Pedidos"
     if (pathname?.includes("/usuarios") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes") || (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) || pathname?.includes("/sistema/estado-ordenes")) return "Sistema"
-    if (pathname?.includes("/clientes")) return "Cuentas"
-    if (pathname?.includes("/ruteate")) return "Choferes"
+    if (pathname?.includes("/clientes")) return "Vendedores"
+    if (pathname?.includes("/ruteate")) return "Repartidores"
     return null
   }
 

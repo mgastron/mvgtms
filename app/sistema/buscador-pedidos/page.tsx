@@ -128,7 +128,7 @@ export default function BuscadorPedidosPage() {
                   </p>
                   <p className="flex gap-3 text-[13px] leading-snug text-[#5d6578]">
                     <Package className="mt-0.5 h-4 w-4 shrink-0 text-[#1570ef]" aria-hidden />
-                    <span>Podés pegar el ID_NX tal como figura en la grilla de Envíos o en la etiqueta.</span>
+                    <span>Podés pegar el ID_NX tal como figura en la grilla de Pedidos o en la etiqueta.</span>
                   </p>
                 </div>
               </div>

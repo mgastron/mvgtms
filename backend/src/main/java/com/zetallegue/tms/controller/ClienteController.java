@@ -30,6 +30,7 @@ public class ClienteController {
     @GetMapping
     public ResponseEntity<PageResponseDTO<ClienteDTO>> buscarClientes(
             @RequestParam(required = false) String codigo,
+            @RequestParam(required = false) Long grupoId,
             @RequestParam(required = false) String nombreFantasia,
             @RequestParam(required = false) String razonSocial,
             @RequestParam(required = false) String numeroDocumento,
@@ -40,6 +41,7 @@ public class ClienteController {
     ) {
         ClienteFilterDTO filter = new ClienteFilterDTO();
         filter.setCodigo(codigo);
+        filter.setGrupoId(grupoId);
         filter.setNombreFantasia(nombreFantasia);
         filter.setRazonSocial(razonSocial);
         filter.setNumeroDocumento(numeroDocumento);

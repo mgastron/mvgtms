@@ -214,7 +214,7 @@ export default function GeochoferesPage() {
           content: `
             <div style="padding: 8px;">
               <strong>${chofer.nombreCompleto}</strong><br/>
-              Envíos: ${chofer.cantidadEnvios}
+              Pedidos: ${chofer.cantidadEnvios}
             </div>
           `,
         })
@@ -276,7 +276,7 @@ export default function GeochoferesPage() {
           content: `
             <div style="padding: 8px;">
               <strong>${chofer.nombreCompleto}</strong><br/>
-              Envíos: ${chofer.cantidadEnvios}
+              Pedidos: ${chofer.cantidadEnvios}
             </div>
           `,
         })

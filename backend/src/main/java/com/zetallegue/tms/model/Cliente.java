@@ -1,7 +1,6 @@
 package com.zetallegue.tms.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,8 +16,8 @@ public class Cliente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Código interno (legado / integraciones). Se genera automáticamente si no se informa. */
     @Column(name = "codigo", unique = true, nullable = false, length = 50)
-    @NotBlank(message = "El código es obligatorio")
     private String codigo;
 
     @Column(name = "nombre_fantasia", length = 200)

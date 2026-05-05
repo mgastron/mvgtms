@@ -242,8 +242,8 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
   }
 
   const handleSave = async () => {
-    if (!formData.codigo.trim()) {
-      alert("El código es obligatorio")
+    if (!formData.nombreFantasia?.trim()) {
+      alert("El nombre es obligatorio.")
       return
     }
     if (!formData.listaPreciosId) {
@@ -252,7 +252,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
     }
     if (formData.grupoModo === "existente") {
       if (!formData.grupoId) {
-        alert(editingClient ? "Elegí un grupo para el cliente." : "Elegí un grupo existente o creá uno nuevo en la solapa Grupo.")
+        alert(editingClient ? "Elegí un grupo para el vendedor." : "Elegí un grupo existente o creá uno nuevo en la solapa Grupo.")
         return
       }
     } else {
@@ -266,8 +266,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
     try {
       const clientDataToSave: any = {
         id: editingClient?.id,
-        codigo: formData.codigo,
-        nombreFantasia: formData.nombreFantasia,
+        nombreFantasia: formData.nombreFantasia.trim(),
         habilitado: true,
         integraciones: formData.tokenApi && formData.tokenApi.trim() !== "" ? formData.tokenApi : null,
         listaPreciosId: formData.listaPreciosId ? Number(formData.listaPreciosId) : null,
@@ -290,6 +289,9 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
       }
       if (editingClient && formData.grupoId) {
         clientDataToSave.grupoId = Number(formData.grupoId)
+      }
+      if (editingClient?.id) {
+        clientDataToSave.codigo = clienteCompleto?.codigo ?? editingClient?.codigo ?? ""
       }
       logDev("Guardando cliente (datos no logueados en producción)")
       await onSave(clientDataToSave)
@@ -343,7 +345,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
 
         {/* Title */}
         <div className="border-b px-8 pt-6 pb-4">
-          <h2 className="text-2xl font-bold text-gray-800">{isEditing ? "EDITAR CLIENTE" : "NUEVO CLIENTE"}</h2>
+          <h2 className="text-2xl font-bold text-gray-800">{isEditing ? "Editar vendedor" : "Nuevo vendedor"}</h2>
         </div>
 
         {/* Tabs */}
@@ -370,7 +372,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
               activeTab === "cuentas" ? "bg-[#6B46FF] text-white" : "border-2 border-[#6B46FF] bg-white text-[#6B46FF]"
             }`}
           >
-            CUENTAS
+            Integraciones
           </button>
         </div>
 
@@ -378,20 +380,9 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
         <div className="max-h-[600px] overflow-y-auto px-8 py-6">
           {activeTab === "general" && (
             <div className="space-y-5">
-              {/* Row 1: Código, Nombre fantasía */}
               <div className="grid grid-cols-12 gap-4">
-                <div className="col-span-4">
-                  <label className="mb-1.5 block text-xs text-gray-500">Código</label>
-                  <input
-                    type="text"
-                    value={formData.codigo}
-                    onChange={(e) => handleInputChange("codigo", e.target.value)}
-                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-[#6B46FF] focus:outline-none"
-                    required
-                  />
-                </div>
-                <div className="col-span-8">
-                  <label className="mb-1.5 block text-xs text-gray-500">Nombre fantasía</label>
+                <div className="col-span-12">
+                  <label className="mb-1.5 block text-xs text-gray-500">Nombre</label>
                   <input
                     type="text"
                     value={formData.nombreFantasia}
@@ -689,7 +680,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
                               // Guardar inmediatamente en el backend
                               const clientDataToSave = {
                                 id: editingClient.id,
-                                codigo: formData.codigo,
+                                codigo: clienteCompleto?.codigo ?? editingClient?.codigo ?? "",
                                 nombreFantasia: formData.nombreFantasia,
                                 habilitado: true,
                                 integraciones: formData.tokenApi && formData.tokenApi.trim() !== "" ? formData.tokenApi : null,

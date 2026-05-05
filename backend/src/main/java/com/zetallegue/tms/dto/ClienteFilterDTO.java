@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ClienteFilterDTO {
     private String codigo;
+    /** Filtro exacto por grupo (ID de grupo) */
+    private Long grupoId;
     private String nombreFantasia;
     private String razonSocial;
     private String numeroDocumento;

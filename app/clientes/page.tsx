@@ -46,8 +46,8 @@ export default function ClientsPage() {
     }
   }, [router])
   const [filters, setFilters] = useState({
-    codigo: "",
     nombreFantasia: "",
+    grupoId: "",
     integraciones: "todos",
   })
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -65,8 +65,8 @@ export default function ClientsPage() {
 
   const handleClearFilters = () => {
     setFilters({
-      codigo: "",
       nombreFantasia: "",
+      grupoId: "",
       integraciones: "todos",
     })
   }
@@ -133,85 +133,33 @@ export default function ClientsPage() {
         })
       }
     } else {
-      // Crear nuevo cliente
-      // Verificar si el código ya existe en el backend
-      let codeExists = false
-      let backendAvailable = false
-
       try {
-        const checkResponse = await fetch(
-          `${getApiBaseUrl()}/clientes?codigo=${encodeURIComponent(clientData.codigo)}&size=1`
-        )
-        if (checkResponse.ok) {
-          backendAvailable = true
-          const checkData = await checkResponse.json()
-          if (checkData.content && checkData.content.length > 0) {
-            codeExists = true
-          }
+        const apiBaseUrl = getApiBaseUrl()
+        const payload = { ...clientData }
+        if (!payload.codigo || !String(payload.codigo).trim()) {
+          delete payload.codigo
         }
-      } catch (checkError) {
-        // Backend no disponible, se verificará en la lista local
-        warnDev("Backend no disponible para verificar código")
-      }
+        const response = await fetch(`${apiBaseUrl}/clientes`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        })
 
-      // Si el código ya existe en el backend, lanzar error
-      if (codeExists) {
-        throw new Error("Ya existe un cliente con ese código")
-      }
-
-      // Si el backend está disponible, intentar crear
-      if (backendAvailable) {
-        try {
-          const apiBaseUrl = getApiBaseUrl()
-          const response = await fetch(`${apiBaseUrl}/clientes`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(clientData),
-          })
-
-          if (response.ok) {
-            const createdClient = await response.json()
-            setNewClient(createdClient)
-            return
-          } else {
-            const errorData = await response.json().catch(() => ({}))
-            // Si el error es por código duplicado
-            if (response.status === 400 || response.status === 409) {
-              throw new Error("Ya existe un cliente con ese código")
-            }
-            throw new Error(errorData.message || `Error del servidor: ${response.status}`)
-          }
-        } catch (fetchError: any) {
-          // Si el error es por código duplicado, relanzarlo
-          if (fetchError.message && fetchError.message.includes("código")) {
-            throw fetchError
-          }
+        if (response.ok) {
+          const createdClient = await response.json()
+          setNewClient(createdClient)
+          return
+        }
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `Error del servidor: ${response.status}`)
+      } catch (fetchError: any) {
+        if (fetchError.message && !fetchError.message.includes("Failed to fetch")) {
           throw fetchError
         }
-      } else {
-        // Si el backend no está disponible, pasar el cliente a la tabla para que verifique localmente
-        // La tabla verificará si el código ya existe antes de agregarlo
-        setNewClient({
-          codigo: clientData.codigo,
-          nombreFantasia: clientData.nombreFantasia || "",
-          razonSocial: "",
-          numDoc: "",
-          habilitado: clientData.habilitado !== undefined ? clientData.habilitado : true,
-          integraciones: clientData.integraciones || null,
-          listaPreciosId: clientData.listaPreciosId || null,
-          // Campos de integraciones
-          flexIdVendedor: clientData.flexIdVendedor || null,
-          flexUsername: clientData.flexUsername || null,
-          tiendanubeUrl: clientData.tiendanubeUrl || null,
-          shopifyUrl: clientData.shopifyUrl || null,
-          shopifyClaveUnica: clientData.shopifyClaveUnica || null,
-          vtexUrl: clientData.vtexUrl || null,
-          vtexKey: clientData.vtexKey || null,
-          vtexToken: clientData.vtexToken || null,
-          vtexIdLogistica: clientData.vtexIdLogistica || null,
-        })
+        warnDev("Backend no disponible para crear vendedor:", fetchError)
+        throw new Error("No se pudo conectar con el servidor. Intente nuevamente.")
       }
     }
   }
@@ -223,7 +171,7 @@ export default function ClientsPage() {
       <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px] space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Cuentas</h1>
+            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Vendedores</h1>
             <Button
               className="h-10 gap-2 rounded-xl bg-[#1459e9] px-5 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce]"
               onClick={() => {
@@ -232,7 +180,7 @@ export default function ClientsPage() {
               }}
             >
               <UserPlus className="h-4 w-4" />
-              Nueva cuenta
+              Nuevo vendedor
             </Button>
           </div>
 
@@ -277,7 +225,7 @@ export default function ClientsPage() {
             <AlertDialogContent className={montserrat.className}>
               <AlertDialogHeader>
                 <AlertDialogTitle className="text-lg font-semibold text-[#1f2433]">
-                  Error al crear cliente
+                  Error al guardar vendedor
                 </AlertDialogTitle>
                 <AlertDialogDescription className="text-[14px] leading-relaxed text-[#5d6578]">
                   {errorDialog.message}

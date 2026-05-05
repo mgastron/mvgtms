@@ -468,8 +468,10 @@ export default function SubirEnvioPage() {
       {!isEmbed && <ModernHeader />}
       <main className={`px-4 pb-6 pt-4 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
-          <div className="mb-5 flex items-center justify-between">
-            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Carga por modelo</h1>
+          <div className={`mb-5 flex items-center ${isEmbed ? "justify-end" : "justify-between"}`}>
+            {!isEmbed && (
+              <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Carga por modelo</h1>
+            )}
             <Button
               onClick={handleDescargarModelo}
               className="h-11 rounded-xl bg-white px-5 text-[16px] font-semibold text-[#1570ef] shadow-sm border border-[#e6eaf4] hover:bg-[#f7faff]"
@@ -482,7 +484,7 @@ export default function SubirEnvioPage() {
           <div className="ml-2 max-w-[560px] rounded-2xl border border-[#e6eaf4] bg-white p-6 shadow-sm min-h-[500px]">
             <div className="space-y-5">
               <div className="space-y-2">
-                <label className="block text-[14px] font-medium text-[#4d5571]">Cuenta</label>
+                <label className="block text-[14px] font-medium text-[#4d5571]">Vendedor</label>
                 {userProfile === "Cliente" ? (
                   <Input
                     value={clientes.find(c => c.codigo === formData.cliente)?.nombreFantasia || ""}

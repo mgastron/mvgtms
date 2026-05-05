@@ -95,7 +95,7 @@ function MercadoLibreCallbackContent() {
               onClick={() => router.push("/clientes")}
               className="bg-[#1B4F9C] hover:bg-[#153d7a] text-white font-semibold py-2 px-6 rounded-lg transition-colors"
             >
-              Volver a Cuentas
+              Volver a Vendedores
             </button>
           </>
         )}

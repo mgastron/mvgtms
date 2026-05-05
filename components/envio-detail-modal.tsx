@@ -1047,7 +1047,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         <div className="border-b border-gray-200 bg-white">
           <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">Envío</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">Pedido</p>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="text-[18px] font-semibold text-[#1f2433]">{envio.tracking}</span>
                 <span className="text-[13px] font-semibold text-[#1459e9]">{envio.estado || "A retirar"}</span>
@@ -1172,37 +1172,47 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-6 bg-gradient-to-br from-gray-50/30 to-white">
-          <div className="grid grid-cols-3 gap-6">
-            {/* Left Column - Form Fields (según orden de imagen) */}
-            <div className="col-span-2 space-y-3">
+          <div
+            className={
+              activeTab === "general"
+                ? "flex flex-col gap-6 xl:flex-row xl:items-start"
+                : "mx-auto max-w-5xl"
+            }
+          >
+            <div
+              className={
+                activeTab === "general"
+                  ? "min-w-0 flex-1 space-y-4 xl:max-w-[min(100%,640px)]"
+                  : "w-full space-y-4"
+              }
+            >
               {activeTab === "general" && (
-                <div className="space-y-3">
-                  {/* Fila 1: IDML, Tracking, ID_NX, Cuenta */}
-                  <div className="grid grid-cols-4 gap-4">
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Tracking</label>
+                    <Input value={normalizeValue(envio.tracking)} className="h-9 text-sm border-gray-300 bg-white font-mono shadow-sm" readOnly />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">IDML</label>
-                      <Input 
-                        value={normalizeValue(envio.idml)} 
-                        className="h-9 text-sm border-gray-300 bg-white shadow-sm" 
-                        readOnly 
+                      <Input
+                        value={normalizeValue(envio.idml)}
+                        className="h-9 text-sm border-gray-300 bg-white shadow-sm"
+                        readOnly
                       />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Tracking</label>
-                      <Input value={normalizeValue(envio.tracking)} className="h-9 text-sm border-gray-300 bg-white font-mono shadow-sm" readOnly />
                     </div>
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">ID_NX</label>
                       <Input value={normalizeValue(envio.idMvg)} className="h-9 text-sm border-gray-300 bg-white font-mono font-semibold shadow-sm" readOnly />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Cuenta</label>
-                      <Input value={normalizeValue(envio.cliente)} className="h-9 text-sm border-gray-300 bg-white font-semibold shadow-sm" readOnly />
-                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Vendedor</label>
+                    <Input value={normalizeValue(envio.cliente)} className="h-9 text-sm border-gray-300 bg-white font-semibold shadow-sm" readOnly />
                   </div>
 
                   {/* Fila 2: fecha ingreso, fecha venta, fecha despacho */}
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Fecha Ingreso</label>
                       <Input
@@ -1230,7 +1240,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                   </div>
 
                   {/* Fila 3: valor declarado del paquete, deadline, cant. bultos */}
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Valor declarado del paquete</label>
                       <Input 
@@ -1267,7 +1277,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                   </div>
 
                   {/* Fila 4: Peso total, metodo de envio, costo de envío (oculto para Coordinador) y recibido por */}
-                  <div className={userProfile === "Coordinador" ? "grid grid-cols-3 gap-4" : "grid grid-cols-4 gap-4"}>
+                  <div className={userProfile === "Coordinador" ? "grid gap-4 sm:grid-cols-2" : "grid gap-4 sm:grid-cols-2 lg:grid-cols-4"}>
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Peso total</label>
                       <Input 
@@ -1302,21 +1312,14 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                     </div>
                   </div>
 
-                  {/* Notas y link público (QR pasa a columna derecha) */}
-                  <div className="pt-3 border-t border-gray-200">
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Link público</label>
-                        <Input value={publicLink} className="h-9 text-sm border-gray-300 bg-white font-mono text-xs shadow-sm" readOnly />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Observaciones</label>
-                        <Input value={normalizeValue(envio.observaciones)} className="h-9 text-sm border-gray-300 bg-white shadow-sm" readOnly />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Referencia de domicilio</label>
-                        <Input value={normalizeValue(envio.cambioRetiro)} className="h-9 text-sm border-gray-300 bg-white shadow-sm" readOnly />
-                      </div>
+                  <div className="space-y-3 border-t border-gray-200 pt-3">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Observaciones</label>
+                      <Input value={normalizeValue(envio.observaciones)} className="h-9 text-sm border-gray-300 bg-white shadow-sm" readOnly />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Referencia de domicilio</label>
+                      <Input value={normalizeValue(envio.cambioRetiro)} className="h-9 text-sm border-gray-300 bg-white shadow-sm" readOnly />
                     </div>
                   </div>
                 </div>
@@ -1589,8 +1592,8 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
               )}
             </div>
 
-            {/* Right Column - QR + Map */}
-            <div className="space-y-3">
+            {activeTab === "general" && (
+            <aside className="w-full shrink-0 space-y-3 xl:sticky xl:top-2 xl:w-[380px] xl:self-start">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">QR público</label>
@@ -1615,7 +1618,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
 
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Mapa</label>
-                <div className="border-2 border-gray-200 rounded-xl overflow-hidden shadow-lg" style={{ height: "320px" }}>
+                <div className="border-2 border-gray-200 rounded-xl overflow-hidden shadow-lg" style={{ height: "260px" }}>
                   <div ref={mapRef} className="w-full h-full" />
                 </div>
                 {!geolocalizacionEncontrada && envio.direccion && (
@@ -1626,9 +1629,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                 )}
               </div>
 
-              {/* Address Details */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2.5 bg-gray-50/50 rounded-xl p-3.5 border border-gray-200">
+              <div className="space-y-2.5 bg-gray-50/50 rounded-xl p-3.5 border border-gray-200">
                   <div className="space-y-1">
                     <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Dirección</label>
                     <Input value={normalizeValue(envio.direccion)} className="h-8 text-xs border-gray-300 bg-white shadow-sm" readOnly />
@@ -1663,8 +1664,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="space-y-2.5 bg-gray-50/50 rounded-xl p-3.5 border border-gray-200">
+              <div className="space-y-2.5 bg-gray-50/50 rounded-xl p-3.5 border border-gray-200">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">Acciones</p>
                   <div className="space-y-2">
                     <Button
@@ -1678,7 +1678,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                         onClick={handleReimprimirNoflex}
                         className="w-full bg-green-600 hover:bg-green-700 text-white h-9 text-xs font-semibold shadow-md hover:shadow-lg transition-all"
                       >
-                        Etiqueta no flex
+                        Reimpresión de etiqueta
                       </Button>
                     )}
                     <Button
@@ -1690,9 +1690,9 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                     </Button>
                   </div>
                 </div>
-              </div>
 
-            </div>
+            </aside>
+            )}
           </div>
         </div>
       </div>
@@ -1703,7 +1703,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Deseas eliminar el envío con tracking <strong>{envio?.tracking}</strong>? Esta acción no se puede deshacer.
+              ¿Desea eliminar el pedido con tracking <strong>{envio?.tracking}</strong>? Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

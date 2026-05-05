@@ -949,7 +949,7 @@ export default function ReimprimirNoflexPage() {
       <main className="px-3 pb-4 pt-3">
         <div className="mx-auto w-full max-w-[1700px]">
           <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Etiquetas no flex</h1>
+            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Reimpresión de etiquetas</h1>
             <Button
               onClick={() => loadEnvios()}
               disabled={isLoading}

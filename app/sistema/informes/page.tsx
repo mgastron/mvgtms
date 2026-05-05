@@ -164,7 +164,7 @@ export default function InformesPage() {
       return
     }
     if (tipoDestinatario === TIPO_DESTINATARIO.CUENTAS && idsCuentas.length === 0) {
-      setError("Seleccione al menos una cuenta.")
+      setError("Seleccione al menos un vendedor.")
       return
     }
 
@@ -279,9 +279,9 @@ export default function InformesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={TIPO_DESTINATARIO.GRUPOS}>Grupos</SelectItem>
-                  <SelectItem value={TIPO_DESTINATARIO.CUENTAS}>Cuentas</SelectItem>
+                  <SelectItem value={TIPO_DESTINATARIO.CUENTAS}>Vendedores</SelectItem>
                   <SelectItem value={TIPO_DESTINATARIO.TODOS_GRUPOS}>Todos los grupos</SelectItem>
-                  <SelectItem value={TIPO_DESTINATARIO.TODAS_CUENTAS}>Todas las cuentas</SelectItem>
+                  <SelectItem value={TIPO_DESTINATARIO.TODAS_CUENTAS}>Todos los vendedores</SelectItem>
                 </SelectContent>
               </Select>
               {tipoDestinatario === TIPO_DESTINATARIO.GRUPOS && (
@@ -305,11 +305,11 @@ export default function InformesPage() {
               )}
               {tipoDestinatario === TIPO_DESTINATARIO.CUENTAS && (
                 <div className="mt-3 rounded-xl border border-[#e6eaf4] bg-[#fafbff] p-3">
-                  <p className="mb-2 text-[12px] font-medium text-[#5d6578]">Seleccioná una o más cuentas (clientes)</p>
+                  <p className="mb-2 text-[12px] font-medium text-[#5d6578]">Seleccioná uno o más vendedores</p>
                   {loadingClientes ? (
-                    <p className="text-[14px] text-[#8890a8]">Cargando clientes…</p>
+                    <p className="text-[14px] text-[#8890a8]">Cargando vendedores…</p>
                   ) : clientes.length === 0 ? (
-                    <p className="text-[14px] text-[#8890a8]">No hay clientes.</p>
+                    <p className="text-[14px] text-[#8890a8]">No hay vendedores.</p>
                   ) : (
                     <>
                       <div className="relative mb-2">
@@ -320,13 +320,13 @@ export default function InformesPage() {
                           onChange={(e) => setFiltroCuentas(e.target.value)}
                           placeholder="Buscar por código o nombre…"
                           autoComplete="off"
-                          aria-label="Filtrar lista de clientes"
+                          aria-label="Filtrar vendedores"
                           className={cn(inputClass, "mt-0 pl-9")}
                         />
                       </div>
                       <div className="max-h-48 space-y-2 overflow-y-auto pr-0.5">
                         {clientesFiltrados.length === 0 ? (
-                          <p className="text-[14px] text-[#8890a8]">Ningún cliente coincide con la búsqueda.</p>
+                          <p className="text-[14px] text-[#8890a8]">Ningún vendedor coincide con la búsqueda.</p>
                         ) : (
                           clientesFiltrados.map((c) => (
                             <label
@@ -362,7 +362,7 @@ export default function InformesPage() {
             </div>
 
             <div className="space-y-2 border-t border-[#eef1f8] pt-5">
-              <label className={fieldLabelClass}>Tomar envíos</label>
+              <label className={fieldLabelClass}>Tomar pedidos</label>
               <Select value={tomarEnvios} onValueChange={setTomarEnvios}>
                 <SelectTrigger className="h-10 min-h-[2.75rem] whitespace-normal py-2 text-left text-[14px] font-medium leading-snug text-[#1f2433] sm:min-h-10 sm:whitespace-nowrap">
                   <SelectValue />
