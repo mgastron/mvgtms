@@ -26,6 +26,7 @@ interface Cliente {
 
 export default function SubirIndividualPage() {
   const router = useRouter()
+  const isEmbed = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("embed") === "1"
   const [userProfile, setUserProfile] = useState<string | null>(null)
   const [userCodigoCliente, setUserCodigoCliente] = useState<string | null>(null)
   const [clientes, setClientes] = useState<Cliente[]>([])
@@ -538,7 +539,7 @@ export default function SubirIndividualPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
-      <ModernHeader />
+      {!isEmbed && <ModernHeader />}
       <main className={`px-4 pb-5 pt-3 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
           <h1 className="mb-4 text-[34px] font-semibold tracking-tight text-[#1570ef]">Subir individual</h1>

@@ -1615,7 +1615,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
 
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Mapa</label>
-                <div className="border-2 border-gray-200 rounded-xl overflow-hidden shadow-lg" style={{ height: "400px" }}>
+                <div className="border-2 border-gray-200 rounded-xl overflow-hidden shadow-lg" style={{ height: "320px" }}>
                   <div ref={mapRef} className="w-full h-full" />
                 </div>
                 {!geolocalizacionEncontrada && envio.direccion && (
@@ -1627,66 +1627,71 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
               </div>
 
               {/* Address Details */}
-              <div className="space-y-2.5 bg-gray-50/50 rounded-xl p-3.5 border border-gray-200">
-                {/* Dirección - Ocupa todo el ancho */}
-                <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Dirección</label>
-                  <Input value={normalizeValue(envio.direccion)} className="h-8 text-xs border-gray-300 bg-white shadow-sm" readOnly />
-                </div>
-                
-                {/* Resto de campos en 2 columnas */}
-                <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2.5 bg-gray-50/50 rounded-xl p-3.5 border border-gray-200">
                   <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">CP</label>
-                    <Input value={normalizeValue(envio.codigoPostal)} className="h-8 text-xs border-gray-300 bg-white font-mono shadow-sm" readOnly />
+                    <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Dirección</label>
+                    <Input value={normalizeValue(envio.direccion)} className="h-8 text-xs border-gray-300 bg-white shadow-sm" readOnly />
                   </div>
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Recibe</label>
-                    <Input value={normalizeValue(envio.nombreDestinatario)} className="h-8 text-xs border-gray-300 bg-white shadow-sm" readOnly />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Tel</label>
-                    <div className="flex items-center gap-2">
-                      <Input value={normalizeValue(envio.telefono)} className="h-8 text-xs border-gray-300 bg-white flex-1 font-mono shadow-sm" readOnly />
-                      <button
-                        onClick={handleWhatsApp}
-                        className="h-8 w-8 bg-green-500 hover:bg-green-600 rounded-lg flex items-center justify-center shadow-md hover:shadow-lg transition-all"
-                      >
-                        <span className="text-white text-xs font-bold">WA</span>
-                      </button>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">CP</label>
+                      <Input value={normalizeValue(envio.codigoPostal)} className="h-8 text-xs border-gray-300 bg-white font-mono shadow-sm" readOnly />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Recibe</label>
+                      <Input value={normalizeValue(envio.nombreDestinatario)} className="h-8 text-xs border-gray-300 bg-white shadow-sm" readOnly />
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Email</label>
-                    <Input value={normalizeValue(envio.email)} className="h-8 text-xs border-gray-300 bg-white shadow-sm" readOnly />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Tel</label>
+                      <div className="flex items-center gap-2">
+                        <Input value={normalizeValue(envio.telefono)} className="h-8 text-xs border-gray-300 bg-white flex-1 font-mono shadow-sm" readOnly />
+                        <button
+                          onClick={handleWhatsApp}
+                          className="h-8 w-8 bg-green-500 hover:bg-green-600 rounded-lg flex items-center justify-center shadow-md hover:shadow-lg transition-all"
+                        >
+                          <span className="text-white text-xs font-bold">WA</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Email</label>
+                      <Input value={normalizeValue(envio.email)} className="h-8 text-xs border-gray-300 bg-white shadow-sm" readOnly />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-2.5 bg-gray-50/50 rounded-xl p-3.5 border border-gray-200">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">Acciones</p>
+                  <div className="space-y-2">
+                    <Button
+                      onClick={handleDelete}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white h-9 text-xs font-semibold shadow-md hover:shadow-lg transition-all"
+                    >
+                      Eliminar
+                    </Button>
+                    {envio.origen !== "Flex" && (
+                      <Button
+                        onClick={handleReimprimirNoflex}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white h-9 text-xs font-semibold shadow-md hover:shadow-lg transition-all"
+                      >
+                        Etiqueta no flex
+                      </Button>
+                    )}
+                    <Button
+                      onClick={onClose}
+                      variant="outline"
+                      className="w-full border-2 border-gray-300 hover:border-gray-400 h-9 text-xs font-semibold"
+                    >
+                      Cerrar
+                    </Button>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="space-y-2 pt-1">
-                  <Button
-                    onClick={handleDelete}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white h-9 text-xs font-semibold shadow-md hover:shadow-lg transition-all"
-                  >
-                    Eliminar
-                  </Button>
-                {envio.origen !== "Flex" && (
-                  <Button
-                    onClick={handleReimprimirNoflex}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white h-9 text-xs font-semibold shadow-md hover:shadow-lg transition-all"
-                  >
-                      Etiqueta no flex
-                  </Button>
-                )}
-                  <Button
-                    onClick={onClose}
-                    variant="outline"
-                    className="w-full border-2 border-gray-300 hover:border-gray-400 h-9 text-xs font-semibold"
-                  >
-                    Cerrar
-                  </Button>
-              </div>
             </div>
           </div>
         </div>

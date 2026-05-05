@@ -15,6 +15,7 @@ const montserrat = Montserrat({
 
 export default function SubirFlexManualPage() {
   const router = useRouter()
+  const isEmbed = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("embed") === "1"
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -87,7 +88,7 @@ export default function SubirFlexManualPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
-      <ModernHeader />
+      {!isEmbed && <ModernHeader />}
       <main className={`px-4 pb-6 pt-4 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
           <h1 className="mb-5 text-[34px] font-semibold tracking-tight text-[#1570ef]">Subir Flex Manual</h1>

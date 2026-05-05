@@ -1185,13 +1185,13 @@ export default function EnviosPage() {
                               </span>
                             )}
                           </td>
+                          <td className="px-2 py-3 text-sm font-mono text-gray-700 whitespace-normal break-words">{envio.tracking}</td>
+                          <td className="px-2 py-3 text-sm font-mono text-gray-700 whitespace-normal break-words">{envio.idMvg ?? "—"}</td>
                           <td className="px-2 py-3 text-sm">
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                               {envio.origen}
                             </span>
                           </td>
-                          <td className="px-2 py-3 text-sm font-mono text-gray-700 whitespace-normal break-words">{envio.tracking}</td>
-                          <td className="px-2 py-3 text-sm font-mono text-gray-700 whitespace-normal break-words">{envio.idMvg ?? "—"}</td>
                           <td className="px-2 py-3 text-sm font-medium text-gray-900 whitespace-normal break-words">{envio.cliente}</td>
                           <td className="px-2 py-3 text-sm text-gray-500 whitespace-normal break-words">{envio.idml || "-"}</td>
                           <td className="px-2 py-3 text-sm text-gray-600 whitespace-normal break-words">{formatFecha(envio.fechaVenta || envio.fecha)}</td>

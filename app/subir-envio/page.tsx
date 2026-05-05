@@ -29,6 +29,7 @@ const montserrat = Montserrat({
 
 export default function SubirEnvioPage() {
   const router = useRouter()
+  const isEmbed = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("embed") === "1"
   const [userProfile, setUserProfile] = useState<string | null>(null)
   const [userCodigoCliente, setUserCodigoCliente] = useState<string | null>(null)
   const [clientes, setClientes] = useState<Cliente[]>([])
@@ -464,7 +465,7 @@ export default function SubirEnvioPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
-      <ModernHeader />
+      {!isEmbed && <ModernHeader />}
       <main className={`px-4 pb-6 pt-4 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
           <div className="mb-5 flex items-center justify-between">
