@@ -294,7 +294,7 @@ export default function GeochoferesPage() {
           className={`flex w-80 shrink-0 flex-col border-r border-[#e6eaf4] bg-white shadow-sm ${montserrat.className}`}
         >
           <div className="border-b border-[#e6eaf4] px-4 py-4">
-            <h1 className="mb-3 text-[18px] font-semibold tracking-tight text-[#1570ef]">Geochoferes</h1>
+            <h1 className="mb-3 text-[18px] font-semibold tracking-tight text-[#1570ef]">Ubicación</h1>
 
             <div className="flex items-center gap-2">
               <div className="relative min-w-0 flex-1">

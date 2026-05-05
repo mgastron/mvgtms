@@ -14,7 +14,7 @@ const allMenuItems = [
 ]
 
 const enviosSubmenu = [
-  { icon: Upload, label: "Subida de pedidos" },
+  { icon: Upload, label: "Cargar envíos" },
   { icon: Truck, label: "Envios" },
   { icon: DollarSign, label: "Lista de Precios" },
   { icon: Printer, label: "Etiquetas NoFlex" },
@@ -85,7 +85,7 @@ export function Sidebar() {
     if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de Pedidos"
     if (pathname?.includes("/clientes")) return "Cuentas"
     if (pathname?.includes("/reimprimir-noflex")) return "Etiquetas NoFlex"
-    if (pathname?.includes("/envios/subida") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) return "Subida de pedidos"
+    if (pathname?.includes("/envios/subida") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) return "Cargar envíos"
     if (pathname?.includes("/envios/lista-precios")) return "Lista de Precios"
     if (pathname?.includes("/envios")) return "Envios"
     if (pathname?.includes("/ruteate/geochoferes")) return "Ubicación"
@@ -184,7 +184,7 @@ export function Sidebar() {
                       <button
                         key={subItem.label}
                         onClick={() => {
-                          if (subItem.label === "Subida de pedidos") {
+                          if (subItem.label === "Cargar envíos") {
                             router.push("/envios/subida")
                           } else if (subItem.label === "Etiquetas NoFlex") {
                             router.push("/reimprimir-noflex")

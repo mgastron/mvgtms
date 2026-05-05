@@ -91,7 +91,7 @@ export default function SubirFlexManualPage() {
       {!isEmbed && <ModernHeader />}
       <main className={`px-4 pb-6 pt-4 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
-          <h1 className="mb-5 text-[34px] font-semibold tracking-tight text-[#1570ef]">Subir Flex Manual</h1>
+          <h1 className="mb-5 text-[34px] font-semibold tracking-tight text-[#1570ef]">Carga Flex manual</h1>
 
           <div className="ml-2 max-w-[560px] rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -145,7 +145,7 @@ export default function SubirFlexManualPage() {
                   disabled={loading}
                   className="h-10 w-full rounded-xl bg-[#eef4ff] text-[14px] font-semibold text-[#1570ef] hover:bg-[#e3edff] disabled:opacity-50"
                 >
-                  {loading ? "Subiendo…" : "Subir"}
+                  {loading ? "Registrando…" : "Registrar envío"}
                 </Button>
               </div>
             </form>

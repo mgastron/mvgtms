@@ -432,7 +432,7 @@ export default function SubirIndividualPage() {
         fechaVenta: fechaCarga ? new Date(fechaCarga).toISOString() : null,
         fechaLlegue: fechaCarga ? new Date(fechaCarga).toISOString() : null,
         fechaEntregado: null,
-        origen: "Directo", // Los envíos de "Subir individual" son siempre "Directo"
+        origen: "Directo", // Alta manual: origen siempre "Directo"
         tracking: trackingSemilla, // El backend usará esto como semilla para generar uno único
         cliente: clienteParaGuardar,
         direccion: formData.direccion,
@@ -542,7 +542,7 @@ export default function SubirIndividualPage() {
       {!isEmbed && <ModernHeader />}
       <main className={`px-4 pb-5 pt-3 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
-          <h1 className="mb-4 text-[34px] font-semibold tracking-tight text-[#1570ef]">Subir individual</h1>
+          <h1 className="mb-4 text-[34px] font-semibold tracking-tight text-[#1570ef]">Carga manual</h1>
 
           <div className="ml-2 w-full max-w-[960px] rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
             <form onSubmit={handleSubmit} className="space-y-3">
@@ -696,7 +696,7 @@ export default function SubirIndividualPage() {
                     disabled={isSubmitting}
                     className="h-10 min-w-[128px] rounded-xl bg-[#1459e9] px-6 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce] disabled:pointer-events-none disabled:opacity-60"
                   >
-                    {isSubmitting ? "Subiendo…" : "Subir envío"}
+                    {isSubmitting ? "Registrando…" : "Registrar envío"}
                   </Button>
                 </div>
               </div>

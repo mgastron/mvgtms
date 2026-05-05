@@ -19,7 +19,7 @@ const allMenuItems = [
     hasSubmenu: true,
     submenu: [
       { icon: Truck, label: "Envíos", path: "/envios" },
-      { icon: Upload, label: "Subida de pedidos", path: "/envios/subida" },
+      { icon: Upload, label: "Cargar envíos", path: "/envios/subida" },
       { icon: DollarSign, label: "Lista de precios", path: "/envios/lista-precios" },
       { icon: Printer, label: "Etiquetas no flex", path: "/reimprimir-noflex" },
       { icon: Search, label: "Buscador de pedidos", path: "/sistema/buscador-pedidos" },
@@ -93,7 +93,7 @@ export function ModernHeader() {
     if (pathname?.includes("/clientes")) return "Cuentas"
     if (pathname?.includes("/reimprimir-noflex")) return "Etiquetas no flex"
     if (pathname?.includes("/envios/subida") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) {
-      return "Subida de pedidos"
+      return "Cargar envíos"
     }
     if (pathname?.includes("/envios/lista-precios")) return "Lista de precios"
     if (pathname?.includes("/envios")) return "Envíos"
