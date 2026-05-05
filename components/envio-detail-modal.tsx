@@ -1302,40 +1302,20 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                     </div>
                   </div>
 
-                  {/* QR Code Section con campos a la derecha */}
+                  {/* Notas y link público (QR pasa a columna derecha) */}
                   <div className="pt-3 border-t border-gray-200">
-                    <div className="grid grid-cols-4 gap-4">
-                      {/* QR Code */}
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">QR Code</label>
-                        <div className="bg-white border-2 border-gray-200 rounded-xl p-4 flex items-center justify-center shadow-lg">
-                          {qrImageUrl ? (
-                            <img src={qrImageUrl} alt="QR Code" className="w-44 h-44" />
-                          ) : (
-                            <div className="w-44 h-44 bg-gray-100 rounded-lg flex items-center justify-center">
-                              <span className="text-gray-400 text-xs">Cargando QR...</span>
-                            </div>
-                          )}
-                        </div>
+                        <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Link público</label>
+                        <Input value={publicLink} className="h-9 text-sm border-gray-300 bg-white font-mono text-xs shadow-sm" readOnly />
                       </div>
-                      {/* Campos a la derecha del QR */}
-                      <div className="col-span-3 space-y-2.5">
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Link Publico</label>
-                          <Input value={publicLink} className="h-9 text-sm border-gray-300 bg-white font-mono text-xs shadow-sm" readOnly />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Observaciones</label>
-                          <Input value={normalizeValue(envio.observaciones)} className="h-9 text-sm border-gray-300 bg-white shadow-sm" readOnly />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Referencia domicilio</label>
-                          <Input 
-                            value={normalizeValue(envio.cambioRetiro)} 
-                            className="h-9 text-sm border-gray-300 bg-white shadow-sm" 
-                            readOnly 
-                          />
-                        </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Observaciones</label>
+                        <Input value={normalizeValue(envio.observaciones)} className="h-9 text-sm border-gray-300 bg-white shadow-sm" readOnly />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Referencia de domicilio</label>
+                        <Input value={normalizeValue(envio.cambioRetiro)} className="h-9 text-sm border-gray-300 bg-white shadow-sm" readOnly />
                       </div>
                     </div>
                   </div>
@@ -1609,17 +1589,39 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
               )}
             </div>
 
-            {/* Right Column - Map */}
+            {/* Right Column - QR + Map */}
             <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">QR público</label>
+                  <div className="bg-white border-2 border-gray-200 rounded-xl p-3 flex items-center justify-center shadow-lg">
+                    {qrImageUrl ? (
+                      <img src={qrImageUrl} alt="QR público" className="w-[150px] h-[150px]" />
+                    ) : (
+                      <div className="w-[150px] h-[150px] bg-gray-100 rounded-lg flex items-center justify-center">
+                        <span className="text-gray-400 text-xs">Cargando…</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Link público</label>
+                  <Input value={publicLink} className="h-9 text-sm border-gray-300 bg-white font-mono text-xs shadow-sm" readOnly />
+                  <p className="text-[11px] text-gray-500 leading-snug">
+                    Compartir este enlace o el QR para seguimiento público.
+                  </p>
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Mapa</label>
                 <div className="border-2 border-gray-200 rounded-xl overflow-hidden shadow-lg" style={{ height: "400px" }}>
                   <div ref={mapRef} className="w-full h-full" />
                 </div>
                 {!geolocalizacionEncontrada && envio.direccion && (
-                  <div className="bg-red-50 border-2 border-red-200 rounded-lg p-2.5 flex items-center gap-2">
-                    <div className="h-2 w-2 bg-red-500 rounded-full animate-pulse"></div>
-                    <p className="text-xs font-semibold text-red-700">Dirección sin geolocalización!!</p>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-center gap-2">
+                    <div className="h-2 w-2 bg-amber-500 rounded-full animate-pulse"></div>
+                    <p className="text-xs font-semibold text-amber-800">No fue posible geolocalizar la dirección.</p>
                   </div>
                 )}
               </div>
@@ -1663,27 +1665,27 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
 
               {/* Action Buttons */}
               <div className="space-y-2 pt-1">
-                <Button
-                  onClick={handleDelete}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white h-9 text-xs font-semibold shadow-md hover:shadow-lg transition-all"
-                >
-                  ELIMINAR
-                </Button>
+                  <Button
+                    onClick={handleDelete}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white h-9 text-xs font-semibold shadow-md hover:shadow-lg transition-all"
+                  >
+                    Eliminar
+                  </Button>
                 {envio.origen !== "Flex" && (
                   <Button
                     onClick={handleReimprimirNoflex}
                     className="w-full bg-green-600 hover:bg-green-700 text-white h-9 text-xs font-semibold shadow-md hover:shadow-lg transition-all"
                   >
-                    REIMPRIMIR NOFLEX
+                      Etiqueta no flex
                   </Button>
                 )}
-                <Button
-                  onClick={onClose}
-                  variant="outline"
-                  className="w-full border-2 border-gray-300 hover:border-gray-400 h-9 text-xs font-semibold"
-                >
-                  CERRAR
-                </Button>
+                  <Button
+                    onClick={onClose}
+                    variant="outline"
+                    className="w-full border-2 border-gray-300 hover:border-gray-400 h-9 text-xs font-semibold"
+                  >
+                    Cerrar
+                  </Button>
               </div>
             </div>
           </div>

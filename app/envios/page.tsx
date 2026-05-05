@@ -1121,7 +1121,6 @@ export default function EnviosPage() {
                 <table className="w-full border-collapse table-fixed" style={{ tableLayout: 'fixed', minWidth: '1220px' }}>
                   <thead>
                     <tr className="bg-white border-b border-[#edf0f7]">
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '44px' }}>QR</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Estado</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Tracking</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>ID_NX</th>
@@ -1135,6 +1134,7 @@ export default function EnviosPage() {
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '90px' }}>Zona</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Zona Costo</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Chofer</th>
+                      <th className="px-2 py-3 text-right text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '44px' }}>QR</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1155,9 +1155,6 @@ export default function EnviosPage() {
                             setIsDetailModalOpen(true)
                           }}
                         >
-                          <td className="px-2 py-3">
-                            <QRThumbnail qrData={envio.qrData} tracking={envio.tracking} size={32} />
-                          </td>
                           <td className="px-2 py-3">
                             {userProfile === "Cliente" ? (
                               <span className="text-xs text-gray-700 px-2 py-1 bg-gray-100 rounded border border-gray-300 inline-block max-w-[180px] truncate">
@@ -1211,6 +1208,11 @@ export default function EnviosPage() {
                           <td className="px-2 py-3 text-sm text-gray-500 whitespace-normal break-words">Sin Zona</td>
                           <td className="px-2 py-3 text-sm text-gray-700 font-medium whitespace-normal break-words">
                             {envio.choferAsignadoNombre || "-"}
+                          </td>
+                          <td className="px-2 py-3 text-right">
+                            <div className="inline-flex justify-end">
+                              <QRThumbnail qrData={envio.qrData} tracking={envio.tracking} size={32} />
+                            </div>
                           </td>
                         </tr>
                       ))

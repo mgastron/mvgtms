@@ -19,11 +19,9 @@ const allMenuItems = [
     hasSubmenu: true,
     submenu: [
       { icon: Truck, label: "Envíos", path: "/envios" },
-      { icon: Upload, label: "Subir envíos", path: "/subir-envio" },
+      { icon: Upload, label: "Subida de pedidos", path: "/envios/subida" },
       { icon: DollarSign, label: "Lista de precios", path: "/envios/lista-precios" },
-      { icon: Printer, label: "Reimprimir no flex", path: "/reimprimir-noflex" },
-      { icon: FileUp, label: "Subir individual", path: "/subir-individual" },
-      { icon: FileUp, label: "Subir Flex Manual", path: "/subir-flex-manual" },
+      { icon: Printer, label: "Etiquetas no flex", path: "/reimprimir-noflex" },
       { icon: Search, label: "Buscador de pedidos", path: "/sistema/buscador-pedidos" },
     ],
   },
@@ -47,10 +45,10 @@ const allMenuItems = [
   },
   {
     icon: Route,
-    label: "Ruteate",
+    label: "Choferes",
     hasSubmenu: true,
     submenu: [
-      { icon: Route, label: "Geochoferes", path: "/ruteate/geochoferes" },
+      { icon: Route, label: "Ubicación", path: "/ruteate/geochoferes" },
       { icon: FileCheck, label: "Cierre", path: "/ruteate/cierre" },
     ],
   },
@@ -70,7 +68,7 @@ export function ModernHeader() {
   const coordinadorOcultarSubmenuLabels = ["Lista de precios", "Lista Precios", "Estado Órdenes"]
 
   const getFilteredMenuItems = () => {
-    if (userProfile === "Chofer") return allMenuItems.filter((item) => item.label !== "Ruteate")
+    if (userProfile === "Chofer") return allMenuItems.filter((item) => item.label !== "Choferes")
     if (userProfile === "Coordinador") {
       return allMenuItems.map((item) => {
         if (!item.hasSubmenu || !item.submenu) return item
@@ -93,13 +91,13 @@ export function ModernHeader() {
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
     if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de pedidos"
     if (pathname?.includes("/clientes")) return "Cuentas"
-    if (pathname?.includes("/reimprimir-noflex")) return "Reimprimir no flex"
-    if (pathname?.includes("/subir-individual")) return "Subir individual"
-    if (pathname?.includes("/subir-envio")) return "Subir envíos"
-    if (pathname?.includes("/subir-flex-manual")) return "Subir Flex Manual"
+    if (pathname?.includes("/reimprimir-noflex")) return "Etiquetas no flex"
+    if (pathname?.includes("/envios/subida") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) {
+      return "Subida de pedidos"
+    }
     if (pathname?.includes("/envios/lista-precios")) return "Lista de precios"
     if (pathname?.includes("/envios")) return "Envíos"
-    if (pathname?.includes("/ruteate/geochoferes")) return "Geochoferes"
+    if (pathname?.includes("/ruteate/geochoferes")) return "Ubicación"
     if (pathname?.includes("/ruteate/cierre")) return "Cierre"
     return null
   }
@@ -108,7 +106,7 @@ export function ModernHeader() {
     if (pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir") || pathname?.includes("/envios") || pathname?.includes("/sistema/buscador-pedidos")) return "Envíos"
     if (pathname?.includes("/usuarios") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes") || (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) || pathname?.includes("/sistema/estado-ordenes")) return "Sistema"
     if (pathname?.includes("/clientes")) return "Cuentas"
-    if (pathname?.includes("/ruteate")) return "Ruteate"
+    if (pathname?.includes("/ruteate")) return "Choferes"
     return null
   }
 

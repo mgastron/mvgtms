@@ -10,16 +10,14 @@ const allMenuItems = [
   { icon: Truck, label: "Envíos", active: false, hasSubmenu: true },
   { icon: Wrench, label: "Sistema", active: false, hasSubmenu: true },
   { icon: Users, label: "Cuentas", active: true },
-  { icon: Route, label: "Ruteate", active: false, hasSubmenu: true },
+  { icon: Route, label: "Choferes", active: false, hasSubmenu: true },
 ]
 
 const enviosSubmenu = [
-  { icon: Upload, label: "Subir envio" },
+  { icon: Upload, label: "Subida de pedidos" },
   { icon: Truck, label: "Envios" },
   { icon: DollarSign, label: "Lista de Precios" },
-  { icon: Printer, label: "Reimprimir NoFlex" },
-  { icon: FileUp, label: "Subir individual" },
-  { icon: FileUp, label: "Subir Flex Manual" },
+  { icon: Printer, label: "Etiquetas NoFlex" },
   { icon: Search, label: "Buscador de Pedidos" },
 ]
 
@@ -32,7 +30,7 @@ const sistemaSubmenu = [
 ]
 
 const ruteateSubmenu = [
-  { icon: Route, label: "Geochoferes" },
+  { icon: Route, label: "Ubicación" },
   { icon: FileCheck, label: "Cierre" },
 ]
 
@@ -86,13 +84,11 @@ export function Sidebar() {
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
     if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de Pedidos"
     if (pathname?.includes("/clientes")) return "Cuentas"
-    if (pathname?.includes("/reimprimir-noflex")) return "Reimprimir NoFlex"
-    if (pathname?.includes("/subir-individual")) return "Subir individual"
-    if (pathname?.includes("/subir-envio")) return "Subir envio"
-    if (pathname?.includes("/subir-flex-manual")) return "Subir Flex Manual"
+    if (pathname?.includes("/reimprimir-noflex")) return "Etiquetas NoFlex"
+    if (pathname?.includes("/envios/subida") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) return "Subida de pedidos"
     if (pathname?.includes("/envios/lista-precios")) return "Lista de Precios"
     if (pathname?.includes("/envios")) return "Envios"
-    if (pathname?.includes("/ruteate/geochoferes")) return "Geochoferes"
+    if (pathname?.includes("/ruteate/geochoferes")) return "Ubicación"
     if (pathname?.includes("/ruteate/cierre")) return "Cierre"
     return null
   }
@@ -126,7 +122,7 @@ export function Sidebar() {
           const Icon = item.icon
           const isSistema = item.label === "Sistema"
           const isEnvios = item.label === "Envíos"
-          const isRuteate = item.label === "Ruteate"
+          const isRuteate = item.label === "Choferes"
           const hasSubmenu = item.hasSubmenu || false
           
           return (
@@ -188,18 +184,14 @@ export function Sidebar() {
                       <button
                         key={subItem.label}
                         onClick={() => {
-                          if (subItem.label === "Subir individual") {
-                            router.push("/subir-individual")
-                          } else if (subItem.label === "Reimprimir NoFlex") {
+                          if (subItem.label === "Subida de pedidos") {
+                            router.push("/envios/subida")
+                          } else if (subItem.label === "Etiquetas NoFlex") {
                             router.push("/reimprimir-noflex")
-                          } else if (subItem.label === "Subir envio") {
-                            router.push("/subir-envio")
                           } else if (subItem.label === "Envios") {
                             router.push("/envios")
                           } else if (subItem.label === "Lista de Precios") {
                             router.push("/envios/lista-precios")
-                          } else if (subItem.label === "Subir Flex Manual") {
-                            router.push("/subir-flex-manual")
                           } else if (subItem.label === "Buscador de Pedidos") {
                             router.push("/sistema/buscador-pedidos")
                           } else {
@@ -259,7 +251,7 @@ export function Sidebar() {
                 </div>
               )}
               
-              {/* Submenu de Ruteate */}
+              {/* Submenu de Choferes */}
               {isRuteate && ruteateOpen && (
                 <div className="bg-sidebar/80">
                   {ruteateSubmenu.map((subItem) => {
@@ -268,7 +260,7 @@ export function Sidebar() {
                       <button
                         key={subItem.label}
                         onClick={() => {
-                          if (subItem.label === "Geochoferes") {
+                          if (subItem.label === "Ubicación") {
                             router.push("/ruteate/geochoferes")
                           } else if (subItem.label === "Cierre") {
                             router.push("/ruteate/cierre")
