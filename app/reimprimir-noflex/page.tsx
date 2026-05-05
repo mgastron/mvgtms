@@ -1141,7 +1141,7 @@ export default function ReimprimirNoflexPage() {
                         Tracking
                       </th>
                       <th className="sticky top-0 z-10 bg-white px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight shadow-[0_1px_0_#edf0f7]">
-                        Cliente
+                        Cuenta
                       </th>
                       <th className="sticky top-0 z-10 bg-white px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight shadow-[0_1px_0_#edf0f7]">
                         Dirección

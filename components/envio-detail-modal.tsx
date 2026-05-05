@@ -1023,6 +1023,15 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
 
   if (!isOpen || !envio) return null
 
+  const section: "resumen" | "actividad" | "documentos" | "gestion" =
+    activeTab === "general"
+      ? "resumen"
+      : activeTab === "historial"
+        ? "actividad"
+        : activeTab === "observaciones" || activeTab === "imagenes"
+          ? "documentos"
+          : "gestion"
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 animate-in fade-in-0 backdrop-blur-sm"
@@ -1034,36 +1043,131 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         className="bg-white rounded-2xl w-[95vw] h-[90vh] max-w-7xl flex flex-col animate-in zoom-in-95 shadow-2xl border border-gray-200/50 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Tabs */}
-        <div className="px-6 py-3 border-b border-gray-200 bg-gray-50/50 flex gap-6 items-center justify-between">
-          <div className="flex gap-6">
-            {[
-              { id: "general", label: "GENERAL" },
-              { id: "historial", label: "HISTORIAL" },
-              { id: "observaciones", label: "OBSERVACIO..." },
-              { id: "imagenes", label: "IMAGENES" },
-              { id: "asignacion", label: "ASIGNACION..." },
-              ...(envio?.estado === "Entregado" ? [{ id: "entregado", label: "ENTREGADO" }] : []),
-            ].map((tab) => (
+        {/* Header (Nexo) */}
+        <div className="border-b border-gray-200 bg-white">
+          <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">Envío</p>
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="text-[18px] font-semibold text-[#1f2433]">{envio.tracking}</span>
+                <span className="text-[13px] font-semibold text-[#1459e9]">{envio.estado || "A retirar"}</span>
+                <span className="text-[12px] text-gray-400">·</span>
+                <span className="text-[13px] font-medium text-[#4d5571]">{envio.cliente}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {userProfile && userProfile !== "Chofer" && userProfile !== "Cliente" && (
+                <>
+                  <Button
+                    type="button"
+                    onClick={handleAsignar}
+                    className="h-9 rounded-xl bg-[#1459e9] px-4 text-[13px] font-semibold text-white hover:bg-[#114bce]"
+                  >
+                    Asignar
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleOpenAddEstado}
+                    className="h-9 rounded-xl bg-white px-4 text-[13px] font-semibold text-[#1459e9] border border-[#e6eaf4] hover:bg-[#f7faff]"
+                  >
+                    Actualizar estado
+                  </Button>
+                </>
+              )}
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`py-2 px-1 border-b-2 transition-all relative ${
-                  activeTab === tab.id
-                    ? "border-[#6B46FF] text-[#6B46FF] font-semibold"
-                    : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
-                }`}
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-1.5 transition-all"
+                aria-label="Cerrar"
               >
-                {tab.label}
+                <X className="h-5 w-5" />
               </button>
-            ))}
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-1.5 transition-all"
-          >
-            <X className="h-5 w-5" />
-          </button>
+
+          {/* Navegación por secciones */}
+          <div className="px-6 pb-3 flex flex-wrap items-center gap-2">
+            {[
+              { id: "general", label: "Resumen" },
+              { id: "historial", label: "Actividad" },
+              { id: "observaciones", label: "Documentos" },
+              { id: "asignacion", label: "Gestión" },
+            ].map((item) => {
+              const isActive =
+                (item.id === "general" && section === "resumen") ||
+                (item.id === "historial" && section === "actividad") ||
+                (item.id === "observaciones" && section === "documentos") ||
+                (item.id === "asignacion" && section === "gestion")
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id as any)}
+                  className={
+                    "h-9 rounded-full px-4 text-[13px] font-semibold transition-colors " +
+                    (isActive
+                      ? "bg-[#dbeafe] text-[#1459e9]"
+                      : "bg-white text-[#5d6578] border border-[#e6eaf4] hover:bg-[#f7faff] hover:text-[#1459e9]")
+                  }
+                >
+                  {item.label}
+                </button>
+              )
+            })}
+
+            {section === "documentos" && (
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab("observaciones")}
+                  className={
+                    "h-9 rounded-full px-4 text-[13px] font-semibold transition-colors " +
+                    (activeTab === "observaciones"
+                      ? "bg-[#eef4ff] text-[#1459e9]"
+                      : "bg-white text-[#5d6578] border border-[#e6eaf4] hover:bg-[#f7faff]")
+                  }
+                >
+                  Observaciones
+                </button>
+                <button
+                  onClick={() => setActiveTab("imagenes")}
+                  className={
+                    "h-9 rounded-full px-4 text-[13px] font-semibold transition-colors " +
+                    (activeTab === "imagenes"
+                      ? "bg-[#eef4ff] text-[#1459e9]"
+                      : "bg-white text-[#5d6578] border border-[#e6eaf4] hover:bg-[#f7faff]")
+                  }
+                >
+                  Imágenes
+                </button>
+              </div>
+            )}
+
+            {section === "gestion" && envio?.estado === "Entregado" && (
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab("asignacion")}
+                  className={
+                    "h-9 rounded-full px-4 text-[13px] font-semibold transition-colors " +
+                    (activeTab === "asignacion"
+                      ? "bg-[#eef4ff] text-[#1459e9]"
+                      : "bg-white text-[#5d6578] border border-[#e6eaf4] hover:bg-[#f7faff]")
+                  }
+                >
+                  Asignación
+                </button>
+                <button
+                  onClick={() => setActiveTab("entregado")}
+                  className={
+                    "h-9 rounded-full px-4 text-[13px] font-semibold transition-colors " +
+                    (activeTab === "entregado"
+                      ? "bg-[#eef4ff] text-[#1459e9]"
+                      : "bg-white text-[#5d6578] border border-[#e6eaf4] hover:bg-[#f7faff]")
+                  }
+                >
+                  Entregado
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Content */}
@@ -1073,7 +1177,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             <div className="col-span-2 space-y-3">
               {activeTab === "general" && (
                 <div className="space-y-3">
-                  {/* Fila 1: IDML, Tracking, ID_NX, Cliente */}
+                  {/* Fila 1: IDML, Tracking, ID_NX, Cuenta */}
                   <div className="grid grid-cols-4 gap-4">
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">IDML</label>
@@ -1092,7 +1196,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                       <Input value={normalizeValue(envio.idMvg)} className="h-9 text-sm border-gray-300 bg-white font-mono font-semibold shadow-sm" readOnly />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Cliente</label>
+                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Cuenta</label>
                       <Input value={normalizeValue(envio.cliente)} className="h-9 text-sm border-gray-300 bg-white font-semibold shadow-sm" readOnly />
                     </div>
                   </div>

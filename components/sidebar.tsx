@@ -9,7 +9,7 @@ import { useRouter, usePathname } from "next/navigation"
 const allMenuItems = [
   { icon: Truck, label: "Envíos", active: false, hasSubmenu: true },
   { icon: Wrench, label: "Sistema", active: false, hasSubmenu: true },
-  { icon: Users, label: "Clientes", active: true },
+  { icon: Users, label: "Cuentas", active: true },
   { icon: Route, label: "Ruteate", active: false, hasSubmenu: true },
 ]
 
@@ -67,7 +67,7 @@ export function Sidebar() {
     // Usuarios tipo "Cliente" no pueden ver "Sistema" ni "Clientes"
     if (userProfile === "Cliente") {
       return allMenuItems.filter(
-        (item) => item.label !== "Sistema" && item.label !== "Clientes"
+        (item) => item.label !== "Sistema" && item.label !== "Cuentas"
       )
     }
     
@@ -85,7 +85,7 @@ export function Sidebar() {
     if (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) return "Lista Precios"
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
     if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de Pedidos"
-    if (pathname?.includes("/clientes")) return "Clientes"
+    if (pathname?.includes("/clientes")) return "Cuentas"
     if (pathname?.includes("/reimprimir-noflex")) return "Reimprimir NoFlex"
     if (pathname?.includes("/subir-individual")) return "Subir individual"
     if (pathname?.includes("/subir-envio")) return "Subir envio"
@@ -116,10 +116,8 @@ export function Sidebar() {
     <aside className="w-64 bg-sidebar text-sidebar-foreground" suppressHydrationWarning>
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4" suppressHydrationWarning>
-        <div className="flex h-8 w-8 items-center justify-center rounded bg-sidebar-accent">
-          <span className="text-sm font-black tracking-tight text-sidebar-accent-foreground">MVG</span>
-        </div>
-        <span className="text-lg font-semibold">MVG</span>
+        <img src="/logos/nexo-iso-white.png" alt="Nexo" className="h-8 w-8" />
+        <span className="text-lg font-semibold">Nexo</span>
       </div>
 
       {/* Menu Items */}
@@ -151,7 +149,7 @@ export function Sidebar() {
                     setSistemaOpen(false)
                     setEnviosOpen(false)
                     setRuteateOpen(false)
-                    if (item.label === "Clientes") {
+                    if (item.label === "Cuentas") {
                       router.push("/clientes")
                     }
                   }

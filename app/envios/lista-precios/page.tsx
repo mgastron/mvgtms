@@ -334,7 +334,7 @@ export default function ListaPreciosEnvioPage() {
             <div className="ml-2 w-full max-w-[560px] shrink-0 rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="block text-[14px] font-medium text-[#4d5571]">Cliente</label>
+                  <label className="block text-[14px] font-medium text-[#4d5571]">Cuenta</label>
                 {userProfile === "Cliente" ? (
                   <Input
                     value={clienteNombre || ""}
@@ -348,7 +348,7 @@ export default function ListaPreciosEnvioPage() {
                     onValueChange={(value) => handleInputChange("cliente", value)}
                   >
                     <SelectTrigger className="h-10 text-[14px] text-[#525b76]">
-                      <SelectValue placeholder="Seleccionar cliente" />
+                      <SelectValue placeholder="Seleccionar cuenta" />
                     </SelectTrigger>
                     <SelectContent>
                       {clientes.map((cliente) => (

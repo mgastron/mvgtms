@@ -152,11 +152,11 @@ export default function InformesPage() {
   const handleDescargar = async () => {
     setError(null)
     if (!fechaDesde || !fechaHasta) {
-      setError("Debe indicar fecha desde y hasta.")
+      setError("Debe indicar un rango de fechas válido.")
       return
     }
     if (new Date(fechaDesde) > new Date(fechaHasta)) {
-      setError("La fecha desde no puede ser posterior a la fecha hasta.")
+      setError("El rango de fechas es inválido.")
       return
     }
     if (tipoDestinatario === TIPO_DESTINATARIO.GRUPOS && idsGrupos.length === 0) {
@@ -190,7 +190,7 @@ export default function InformesPage() {
       })
       if (!res.ok) {
         const text = await res.text()
-        setError(text || "Error al generar el informe.")
+        setError(text || "No fue posible generar el informe. Reintente.")
         return
       }
       const blob = await res.blob()

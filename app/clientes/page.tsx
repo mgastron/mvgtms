@@ -223,7 +223,7 @@ export default function ClientsPage() {
       <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px] space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Clientes</h1>
+            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Cuentas</h1>
             <Button
               className="h-10 gap-2 rounded-xl bg-[#1459e9] px-5 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce]"
               onClick={() => {
@@ -232,7 +232,7 @@ export default function ClientsPage() {
               }}
             >
               <UserPlus className="h-4 w-4" />
-              Nuevo
+              Nueva cuenta
             </Button>
           </div>
 

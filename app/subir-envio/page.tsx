@@ -193,12 +193,12 @@ export default function SubirEnvioPage() {
 
   const handleSubirModelo = async () => {
     if (!selectedFile) {
-      alert("Por favor, seleccione un archivo")
+      alert("Seleccione un archivo para continuar.")
       return
     }
 
     if (!formData.cliente) {
-      alert("Por favor, seleccione un cliente")
+      alert("Seleccione una cuenta para continuar.")
       return
     }
 
@@ -481,7 +481,7 @@ export default function SubirEnvioPage() {
           <div className="ml-2 max-w-[560px] rounded-2xl border border-[#e6eaf4] bg-white p-6 shadow-sm min-h-[500px]">
             <div className="space-y-5">
               <div className="space-y-2">
-                <label className="block text-[14px] font-medium text-[#4d5571]">Cliente</label>
+                <label className="block text-[14px] font-medium text-[#4d5571]">Cuenta</label>
                 {userProfile === "Cliente" ? (
                   <Input
                     value={clientes.find(c => c.codigo === formData.cliente)?.nombreFantasia || ""}
@@ -494,7 +494,7 @@ export default function SubirEnvioPage() {
                     onValueChange={(value) => handleInputChange("cliente", value)}
                   >
                     <SelectTrigger className="h-10 text-[14px] text-[#525b76]">
-                      <SelectValue placeholder="Seleccioná cliente" />
+                      <SelectValue placeholder="Seleccioná una cuenta" />
                     </SelectTrigger>
                     <SelectContent>
                       {clientes.map((cliente) => (

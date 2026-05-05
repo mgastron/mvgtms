@@ -587,7 +587,7 @@ export default function EnviosPage() {
         "Fecha Colecta",
         "Fecha Zeta Llegue",
         "Método de envío",
-        "Cod.Cliente",
+        "Cod.Cuenta",
         "Razon Social",
         "Nombre Fantasia",
         "Nombre Destinatario",
@@ -673,7 +673,7 @@ export default function EnviosPage() {
       }
       
       if (userProfile === "Cliente" && userCodigoCliente) {
-        filtrosAplicados.push(`Código Cliente: ${userCodigoCliente}`)
+        filtrosAplicados.push(`Código de cuenta: ${userCodigoCliente}`)
       }
       
       // Mapear todos los envíos a filas del Excel
@@ -1122,11 +1122,12 @@ export default function EnviosPage() {
                   <thead>
                     <tr className="bg-white border-b border-[#edf0f7]">
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '44px' }}>QR</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Nombre de fantasia</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '105px' }}>IDML</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '60px' }}>Origen</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Estado</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Tracking</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>ID_NX</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '60px' }}>Origen</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '130px' }}>Cuenta</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '105px' }}>IDML</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Fecha de venta</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '125px' }}>Fecha de llegada</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '130px' }}>Destino nombre</th>
@@ -1134,14 +1135,13 @@ export default function EnviosPage() {
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '90px' }}>Zona</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Zona Costo</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Chofer</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Estado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedEnvios.length === 0 ? (
                       <tr>
                         <td colSpan={14} className="px-3 py-8 text-center text-sm text-gray-500">
-                          No se encontraron envíos
+                          Sin resultados para los filtros aplicados.
                         </td>
                       </tr>
                     ) : (
@@ -1157,30 +1157,6 @@ export default function EnviosPage() {
                         >
                           <td className="px-2 py-3">
                             <QRThumbnail qrData={envio.qrData} tracking={envio.tracking} size={32} />
-                          </td>
-                          <td className="px-2 py-3 text-sm font-medium text-gray-900 whitespace-normal break-words">{envio.cliente}</td>
-                          <td className="px-2 py-3 text-sm text-gray-500 whitespace-normal break-words">{envio.idml || "-"}</td>
-                          <td className="px-2 py-3 text-sm">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {envio.origen}
-                            </span>
-                          </td>
-                          <td className="px-2 py-3 text-sm font-mono text-gray-700 whitespace-normal break-words">{envio.tracking}</td>
-                          <td className="px-2 py-3 text-sm font-mono text-gray-700 whitespace-normal break-words">{envio.idMvg ?? "—"}</td>
-                          <td className="px-2 py-3 text-sm text-gray-600 whitespace-normal break-words">{formatFecha(envio.fechaVenta || envio.fecha)}</td>
-                          <td className="px-2 py-3 text-sm text-gray-600 whitespace-normal break-words">{formatFecha(envio.fechaLlegue || envio.fecha)}</td>
-                          <td className="px-2 py-3 text-sm font-medium text-gray-900 whitespace-normal break-words">{envio.nombreDestinatario}</td>
-                          <td className="px-2 py-3 text-sm font-mono text-gray-600 whitespace-normal break-words">
-                            {envio.codigoPostal || "-"}
-                          </td>
-                          <td className="px-2 py-3 text-sm">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border whitespace-normal break-words ${getZonaBadgeClasses(envio.zonaEntrega || "Sin Zona")}`}>
-                              {envio.zonaEntrega || "Sin Zona"}
-                            </span>
-                          </td>
-                          <td className="px-2 py-3 text-sm text-gray-500 whitespace-normal break-words">Sin Zona</td>
-                          <td className="px-2 py-3 text-sm text-gray-700 font-medium whitespace-normal break-words">
-                            {envio.choferAsignadoNombre || "-"}
                           </td>
                           <td className="px-2 py-3">
                             {userProfile === "Cliente" ? (
@@ -1211,6 +1187,30 @@ export default function EnviosPage() {
                                 {envio.estado || "A retirar"}
                               </span>
                             )}
+                          </td>
+                          <td className="px-2 py-3 text-sm">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {envio.origen}
+                            </span>
+                          </td>
+                          <td className="px-2 py-3 text-sm font-mono text-gray-700 whitespace-normal break-words">{envio.tracking}</td>
+                          <td className="px-2 py-3 text-sm font-mono text-gray-700 whitespace-normal break-words">{envio.idMvg ?? "—"}</td>
+                          <td className="px-2 py-3 text-sm font-medium text-gray-900 whitespace-normal break-words">{envio.cliente}</td>
+                          <td className="px-2 py-3 text-sm text-gray-500 whitespace-normal break-words">{envio.idml || "-"}</td>
+                          <td className="px-2 py-3 text-sm text-gray-600 whitespace-normal break-words">{formatFecha(envio.fechaVenta || envio.fecha)}</td>
+                          <td className="px-2 py-3 text-sm text-gray-600 whitespace-normal break-words">{formatFecha(envio.fechaLlegue || envio.fecha)}</td>
+                          <td className="px-2 py-3 text-sm font-medium text-gray-900 whitespace-normal break-words">{envio.nombreDestinatario}</td>
+                          <td className="px-2 py-3 text-sm font-mono text-gray-600 whitespace-normal break-words">
+                            {envio.codigoPostal || "-"}
+                          </td>
+                          <td className="px-2 py-3 text-sm">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border whitespace-normal break-words ${getZonaBadgeClasses(envio.zonaEntrega || "Sin Zona")}`}>
+                              {envio.zonaEntrega || "Sin Zona"}
+                            </span>
+                          </td>
+                          <td className="px-2 py-3 text-sm text-gray-500 whitespace-normal break-words">Sin Zona</td>
+                          <td className="px-2 py-3 text-sm text-gray-700 font-medium whitespace-normal break-words">
+                            {envio.choferAsignadoNombre || "-"}
                           </td>
                         </tr>
                       ))

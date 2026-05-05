@@ -41,7 +41,7 @@ const allMenuItems = [
   },
   {
     icon: Users,
-    label: "Clientes",
+    label: "Cuentas",
     hasSubmenu: false,
     path: "/clientes",
   },
@@ -92,7 +92,7 @@ export function ModernHeader() {
     if (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) return "Lista Precios"
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
     if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de pedidos"
-    if (pathname?.includes("/clientes")) return "Clientes"
+    if (pathname?.includes("/clientes")) return "Cuentas"
     if (pathname?.includes("/reimprimir-noflex")) return "Reimprimir no flex"
     if (pathname?.includes("/subir-individual")) return "Subir individual"
     if (pathname?.includes("/subir-envio")) return "Subir envíos"
@@ -107,7 +107,7 @@ export function ModernHeader() {
   const getActiveMainItem = () => {
     if (pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir") || pathname?.includes("/envios") || pathname?.includes("/sistema/buscador-pedidos")) return "Envíos"
     if (pathname?.includes("/usuarios") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes") || (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) || pathname?.includes("/sistema/estado-ordenes")) return "Sistema"
-    if (pathname?.includes("/clientes")) return "Clientes"
+    if (pathname?.includes("/clientes")) return "Cuentas"
     if (pathname?.includes("/ruteate")) return "Ruteate"
     return null
   }

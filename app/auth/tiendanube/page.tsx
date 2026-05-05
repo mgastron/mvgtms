@@ -52,31 +52,31 @@ function TiendaNubeAuthContent() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
         <div className="px-8 pt-10 pb-6 text-center border-b border-slate-100">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-slate-200 text-slate-600 mb-4">
-            <span className="text-lg font-bold">MVG</span>
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#eef4ff] text-[#1459e9] mb-4">
+            <span className="text-lg font-bold">Nexo</span>
           </div>
           <h1 className="text-xl font-semibold text-slate-800">
-            Vincular Tienda Nube
+            Vincular integración: Tienda Nube
           </h1>
           <p className="mt-2 text-sm text-slate-500">
-            Con MVG para gestionar tus envíos desde la tienda.
+            Autorice a Nexo para operar sus envíos desde Tienda Nube.
           </p>
         </div>
 
         <div className="px-8 py-6 space-y-5">
           <p className="text-sm text-slate-600 leading-relaxed">
-            Al continuar, autorizás a <strong className="text-slate-700">MVG</strong> a usar solo los datos necesarios para pedidos y envíos. Podés desvincular la cuenta cuando quieras.
+            Al continuar, autoriza a <strong className="text-slate-700">Nexo</strong> a acceder a los datos necesarios para sincronizar pedidos y gestionar envíos. Podrá desvincular la integración en cualquier momento.
           </p>
 
           <button
             onClick={handleContinuar}
             disabled={loading}
-            className="w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-3.5 px-4 rounded-xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-[#1459e9] hover:bg-[#114bce] text-white font-semibold py-3.5 px-4 rounded-xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
                 <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Cargando...
+                Cargando…
               </>
             ) : (
               "Continuar a Tienda Nube"

@@ -383,7 +383,7 @@ export default function SubirIndividualPage() {
       handleClear()
     } catch (error) {
       errorDev("Error al generar PDF:", error)
-      alert("Error al generar el PDF. Por favor, intente nuevamente.")
+      alert("No fue posible generar el PDF. Reintente.")
     }
   }
 
@@ -392,7 +392,7 @@ export default function SubirIndividualPage() {
     if (isSubmitting) return
     // Validar campos requeridos
     if (!formData.tracking || !formData.destinatarioNombre || !formData.destinatarioTelefono || !formData.direccion) {
-      alert("Por favor, complete todos los campos obligatorios (*)")
+    alert("Complete los campos obligatorios para continuar.")
       return
     }
     setIsSubmitting(true)
@@ -548,7 +548,7 @@ export default function SubirIndividualPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className="block text-[14px] font-medium text-[#4d5571]">
-                    Cliente{userProfile === "Cliente" ? " *" : ""}
+                    Cuenta{userProfile === "Cliente" ? " *" : ""}
                   </label>
                   {userProfile === "Cliente" ? (
                     <Input
@@ -569,7 +569,7 @@ export default function SubirIndividualPage() {
                       }}
                     >
                       <SelectTrigger className="h-10 text-[14px] font-medium text-[#1f2433]">
-                        <SelectValue placeholder="Seleccionar cliente" />
+                        <SelectValue placeholder="Seleccionar cuenta" />
                       </SelectTrigger>
                       <SelectContent>
                         {clientes.map((cliente) => (

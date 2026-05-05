@@ -37,21 +37,21 @@ function MercadoLibreCallbackContent() {
         if (response.ok) {
           const data = await response.json()
           setStatus("success")
-          setMessage("¡Cuenta vinculada exitosamente!")
+          setMessage("Integración vinculada correctamente.")
           
-          // Redirigir a la página de clientes después de 2 segundos
+          // Redirigir a la página de cuentas después de 2 segundos
           setTimeout(() => {
             router.push("/clientes")
           }, 2000)
         } else {
           const errorData = await response.json().catch(() => ({ message: "Error desconocido" }))
           setStatus("error")
-          setMessage(errorData.message || "Error al vincular la cuenta")
+          setMessage(errorData.message || "No fue posible vincular la integración.")
         }
       } catch (error: any) {
         errorDev("Error:", error)
         setStatus("error")
-        setMessage("Error de conexión: " + error.message)
+        setMessage("Error de conexión. Reintente.")
       }
     }
 
@@ -64,8 +64,8 @@ function MercadoLibreCallbackContent() {
         {status === "processing" && (
           <>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1B4F9C] mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Procesando autorización...</h2>
-            <p className="text-gray-600">Por favor, espera mientras vinculamos tu cuenta.</p>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Procesando autorización…</h2>
+            <p className="text-gray-600">Por favor, espere mientras vinculamos la integración.</p>
           </>
         )}
 
@@ -78,7 +78,7 @@ function MercadoLibreCallbackContent() {
             </div>
             <h2 className="text-xl font-semibold text-gray-800 mb-2">¡Éxito!</h2>
             <p className="text-gray-600 mb-4">{message}</p>
-            <p className="text-sm text-gray-500">Redirigiendo a la página de clientes...</p>
+            <p className="text-sm text-gray-500">Redirigiendo a la página de cuentas…</p>
           </>
         )}
 
@@ -95,7 +95,7 @@ function MercadoLibreCallbackContent() {
               onClick={() => router.push("/clientes")}
               className="bg-[#1B4F9C] hover:bg-[#153d7a] text-white font-semibold py-2 px-6 rounded-lg transition-colors"
             >
-              Volver a Clientes
+              Volver a Cuentas
             </button>
           </>
         )}
