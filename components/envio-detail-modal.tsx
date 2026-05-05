@@ -943,7 +943,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
 
   const handleConfirmarAsignacion = async () => {
     if (!choferSeleccionado || !envio) {
-      alert("Debes seleccionar un chofer para asignar el envío.")
+      alert("Debés seleccionar un repartidor para asignar el pedido.")
       return
     }
 
@@ -1182,7 +1182,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             <div
               className={
                 activeTab === "general"
-                  ? "min-w-0 flex-1 space-y-4 xl:max-w-[min(100%,640px)]"
+                  ? "min-w-0 flex-1 space-y-4"
                   : "w-full space-y-4"
               }
             >
@@ -1230,9 +1230,9 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Fecha Despacho</label>
+                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Fecha de llegada</label>
                       <Input
-                        value={envio.fechaLlegue ? new Date(envio.fechaLlegue).toLocaleDateString("es-AR") : "12/01/2026"}
+                        value={envio.fechaLlegue ? new Date(envio.fechaLlegue).toLocaleDateString("es-AR") : "—"}
                         className="h-9 text-sm border-gray-300 bg-white shadow-sm"
                         readOnly
                       />
@@ -1593,24 +1593,29 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             </div>
 
             {activeTab === "general" && (
-            <aside className="w-full shrink-0 space-y-3 xl:sticky xl:top-2 xl:w-[380px] xl:self-start">
-              <div className="grid grid-cols-2 gap-3">
+            <aside className="w-full shrink-0 space-y-3 xl:sticky xl:top-2 xl:w-[min(100%,420px)] xl:self-start">
+              <div className="space-y-3">
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">QR público</label>
-                  <div className="bg-white border-2 border-gray-200 rounded-xl p-3 flex items-center justify-center shadow-lg">
+                  <div className="flex justify-center rounded-xl border-2 border-gray-200 bg-white p-3 shadow-lg">
                     {qrImageUrl ? (
-                      <img src={qrImageUrl} alt="QR público" className="w-[150px] h-[150px]" />
+                      <img src={qrImageUrl} alt="QR público" className="h-[140px] w-[140px]" />
                     ) : (
-                      <div className="w-[150px] h-[150px] bg-gray-100 rounded-lg flex items-center justify-center">
-                        <span className="text-gray-400 text-xs">Cargando…</span>
+                      <div className="flex h-[140px] w-[140px] items-center justify-center rounded-lg bg-gray-100">
+                        <span className="text-xs text-gray-400">Cargando…</span>
                       </div>
                     )}
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Link público</label>
-                  <Input value={publicLink} className="h-9 text-sm border-gray-300 bg-white font-mono text-xs shadow-sm" readOnly />
-                  <p className="text-[11px] text-gray-500 leading-snug">
+                  <textarea
+                    readOnly
+                    value={publicLink}
+                    rows={3}
+                    className="w-full resize-none rounded-lg border border-gray-300 bg-white p-2.5 font-mono text-[11px] font-medium leading-snug text-[#1f2433] shadow-sm outline-none ring-offset-0 [font-variant-ligatures:none] break-all"
+                  />
+                  <p className="text-[11px] leading-snug text-gray-500">
                     Compartir este enlace o el QR para seguimiento público.
                   </p>
                 </div>
@@ -1832,7 +1837,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Asignar a:</h2>
-            <p className="text-sm text-gray-600 mb-4">Selecciona un chofer (obligatorio)</p>
+            <p className="text-sm text-gray-600 mb-4">Seleccioná un repartidor (obligatorio)</p>
             
             <div className="max-h-64 overflow-y-auto mb-4 space-y-2">
               {/* Mostrar "PENDIENTES DEPÓSITO" primero si el usuario no es chofer */}

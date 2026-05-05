@@ -1116,7 +1116,7 @@ export default function EnviosPage() {
             {/* Table */}
           <div className="mt-4 rounded-xl border border-[#e6eaf4] bg-white overflow-hidden">
               <div className="overflow-x-auto" suppressHydrationWarning>
-                <table className="w-full border-collapse table-fixed" style={{ tableLayout: 'fixed', minWidth: '1120px' }}>
+                <table className="w-full border-collapse table-fixed" style={{ tableLayout: 'fixed', minWidth: '1180px' }}>
                   <thead>
                     <tr className="bg-white border-b border-[#edf0f7]">
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Estado</th>
@@ -1126,7 +1126,7 @@ export default function EnviosPage() {
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '130px' }}>Vendedor</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '105px' }}>IDML</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Fecha de venta</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '125px' }}>Fecha de llegada</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '200px' }}>Dirección</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '130px' }}>Destino nombre</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '70px' }}>CP</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '90px' }}>Zona</th>
@@ -1192,7 +1192,7 @@ export default function EnviosPage() {
                           <td className="px-2 py-3 text-sm font-medium text-gray-900 whitespace-normal break-words">{envio.cliente}</td>
                           <td className="px-2 py-3 text-sm text-gray-500 whitespace-normal break-words">{envio.idml || "-"}</td>
                           <td className="px-2 py-3 text-sm text-gray-600 whitespace-normal break-words">{formatFecha(envio.fechaVenta || envio.fecha)}</td>
-                          <td className="px-2 py-3 text-sm text-gray-600 whitespace-normal break-words">{formatFecha(envio.fechaLlegue || envio.fecha)}</td>
+                          <td className="px-2 py-3 text-sm text-gray-700 whitespace-normal break-words">{envio.direccion || "—"}</td>
                           <td className="px-2 py-3 text-sm font-medium text-gray-900 whitespace-normal break-words">{envio.nombreDestinatario}</td>
                           <td className="px-2 py-3 text-sm font-mono text-gray-600 whitespace-normal break-words">
                             {envio.codigoPostal || "-"}

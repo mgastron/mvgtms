@@ -82,7 +82,8 @@ export default function CargarEnviosHubPage() {
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true">
           <div className="h-[92vh] w-[96vw] max-w-[1400px] overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-2xl">
-            <div className="flex items-center justify-end border-b border-[#eef1f8] bg-[#fafbff] px-3 py-2">
+            <div className="flex items-center justify-between border-b border-[#eef1f8] bg-[#fafbff] px-4 py-2.5">
+              <p className="text-[15px] font-semibold tracking-tight text-[#1f2433]">{embedTitle}</p>
               <button
                 type="button"
                 onClick={() => setOpen(false)}

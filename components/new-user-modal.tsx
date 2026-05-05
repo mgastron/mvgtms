@@ -295,8 +295,8 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Administrativo">Administrativo</SelectItem>
-                      <SelectItem value="Cliente">Cliente</SelectItem>
-                      <SelectItem value="Chofer">Chofer</SelectItem>
+                      <SelectItem value="Cliente">Vendedor</SelectItem>
+                      <SelectItem value="Chofer">Repartidor</SelectItem>
                       <SelectItem value="Coordinador">Coordinador</SelectItem>
                       <SelectItem value="Logística Externa">Logística Externa</SelectItem>
                     </SelectContent>

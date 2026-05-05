@@ -304,11 +304,11 @@ export default function GeochoferesPage() {
                 />
                 <Input
                   type="text"
-                  placeholder="Ubicar chofer"
+                  placeholder="Ubicar repartidor"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className={searchInputClass}
-                  aria-label="Buscar chofer"
+                  aria-label="Buscar repartidor"
                 />
                 {searchTerm ? (
                   <button
@@ -332,10 +332,10 @@ export default function GeochoferesPage() {
 
           <div className="min-h-0 flex-1 overflow-y-auto">
             {isLoading ? (
-              <div className="px-4 py-8 text-center text-[14px] font-medium text-[#5d6578]">Cargando choferes…</div>
+              <div className="px-4 py-8 text-center text-[14px] font-medium text-[#5d6578]">Cargando repartidores…</div>
             ) : choferesFiltrados.length === 0 ? (
               <div className="px-4 py-8 text-center text-[14px] text-[#5d6578]">
-                {searchTerm ? "No se encontraron choferes" : "No hay choferes con envíos asignados"}
+                {searchTerm ? "No se encontraron repartidores" : "No hay repartidores con pedidos asignados"}
               </div>
             ) : (
               <ul className="divide-y divide-[#eef1f8]">
@@ -358,7 +358,7 @@ export default function GeochoferesPage() {
                           </div>
                           <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-[#5d6578]">
                             <span>
-                              {chofer.cantidadEnvios} envío{chofer.cantidadEnvios !== 1 ? "s" : ""}
+                              {chofer.cantidadEnvios} pedido{chofer.cantidadEnvios !== 1 ? "s" : ""}
                             </span>
                             {chofer.bateria !== null && chofer.bateria !== undefined ? (
                               <span

@@ -39,6 +39,12 @@ interface User {
   bloqueado: boolean
 }
 
+function perfilEtiqueta(perfil: string): string {
+  if (perfil === "Cliente") return "Vendedor"
+  if (perfil === "Chofer") return "Repartidor"
+  return perfil
+}
+
 export default function UsuariosPage() {
   const router = useRouter()
   
@@ -182,170 +188,159 @@ export default function UsuariosPage() {
   }
 
   const filterInputClass =
-    "h-10 rounded-xl border border-[#e6eaf4] bg-white text-[14px] font-medium text-[#1f2433] shadow-sm placeholder:font-normal placeholder:text-[#8890a8] focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"
+    "h-9 rounded-lg border border-slate-200 bg-slate-50/80 text-[13px] font-medium text-slate-800 shadow-none placeholder:font-normal placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:ring-1 focus-visible:ring-slate-300 focus-visible:ring-offset-0"
 
   return (
-    <div className="min-h-screen bg-[#f7f8fc]">
+    <div className="min-h-screen bg-slate-100/80">
       <ModernHeader />
-      <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
-        <div className="mx-auto w-full max-w-[1700px] space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Usuarios</h1>
+      <main className={`px-4 pb-8 pt-4 ${montserrat.className}`}>
+        <div className="mx-auto w-full max-w-[1700px]">
+          <div className="mb-5 flex flex-col gap-3 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Sistema</p>
+              <h1 className="mt-0.5 text-[28px] font-semibold tracking-tight text-slate-900">Cuentas de acceso</h1>
+              <p className="mt-1 max-w-xl text-[13px] text-slate-600">Altas, roles y accesos del equipo operativo.</p>
+            </div>
             <Button
-              className="h-10 gap-2 rounded-xl bg-[#1459e9] px-5 text-[14px] font-semibold text-white shadow-sm hover:bg-[#114bce]"
+              className="h-10 shrink-0 gap-2 rounded-lg border border-slate-800 bg-slate-900 px-5 text-[13px] font-semibold text-white shadow-sm hover:bg-slate-800"
               onClick={() => {
                 setEditingUser(null)
                 setIsNewUserModalOpen(true)
               }}
             >
               <UserPlus className="h-4 w-4" />
-              Nuevo
+              Alta de usuario
             </Button>
           </div>
 
-          <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
-            <h2 className="mb-4 text-[18px] font-semibold text-[#4f46ce]">Filtros</h2>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
-              <div className="space-y-1.5">
-                <label className="block text-[14px] font-medium text-[#4d5571]">Nombre</label>
-                <Input
-                  value={filters.nombre}
-                  onChange={(e) => handleFilterChange("nombre", e.target.value)}
-                  placeholder="Buscar por nombre…"
-                  className={filterInputClass}
-                />
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,260px)_1fr] lg:items-start">
+            <aside className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Refinar listado</p>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-slate-600">Nombre</label>
+                  <Input
+                    value={filters.nombre}
+                    onChange={(e) => handleFilterChange("nombre", e.target.value)}
+                    placeholder="Nombre…"
+                    className={filterInputClass}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-slate-600">Apellido</label>
+                  <Input
+                    value={filters.apellido}
+                    onChange={(e) => handleFilterChange("apellido", e.target.value)}
+                    placeholder="Apellido…"
+                    className={filterInputClass}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-slate-600">Usuario</label>
+                  <Input
+                    value={filters.usuario}
+                    onChange={(e) => handleFilterChange("usuario", e.target.value)}
+                    placeholder="Usuario…"
+                    className={filterInputClass}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-slate-600">Rol</label>
+                  <Select value={filters.perfil} onValueChange={(value) => handleFilterChange("perfil", value)}>
+                    <SelectTrigger className="h-9 rounded-lg border-slate-200 bg-slate-50/80 text-[13px] font-medium text-slate-800 shadow-none">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Todos">Todos</SelectItem>
+                      <SelectItem value="Administrativo">Administrativo</SelectItem>
+                      <SelectItem value="Cliente">Vendedor</SelectItem>
+                      <SelectItem value="Chofer">Repartidor</SelectItem>
+                      <SelectItem value="Coordinador">Coordinador</SelectItem>
+                      <SelectItem value="Logística Externa">Logística externa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="block text-[14px] font-medium text-[#4d5571]">Apellido</label>
-                <Input
-                  value={filters.apellido}
-                  onChange={(e) => handleFilterChange("apellido", e.target.value)}
-                  placeholder="Buscar por apellido…"
-                  className={filterInputClass}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-[14px] font-medium text-[#4d5571]">Usuario</label>
-                <Input
-                  value={filters.usuario}
-                  onChange={(e) => handleFilterChange("usuario", e.target.value)}
-                  placeholder="Buscar por usuario…"
-                  className={filterInputClass}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-[14px] font-medium text-[#4d5571]">Perfil</label>
-                <Select value={filters.perfil} onValueChange={(value) => handleFilterChange("perfil", value)}>
-                  <SelectTrigger className="h-10 text-[14px] font-medium text-[#1f2433]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Todos">Todos</SelectItem>
-                    <SelectItem value="Administrativo">Administrativo</SelectItem>
-                    <SelectItem value="Cliente">Cliente</SelectItem>
-                    <SelectItem value="Chofer">Chofer</SelectItem>
-                    <SelectItem value="Coordinador">Coordinador</SelectItem>
-                    <SelectItem value="Logística Externa">Logística Externa</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
+            </aside>
 
-          <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:px-5">
-              <h3 className="text-[16px] font-semibold text-[#1f2433]">Listado</h3>
-              <div className="flex items-center gap-2 rounded-full border border-[#e6eaf4] bg-white px-3 py-1 text-[13px] font-medium text-[#5d6578]">
-                <span className="text-[#1570ef]">{totalRecords}</span>
-                <span>usuarios</span>
+            <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-100 px-4 py-3 sm:px-5">
+                <h2 className="text-[15px] font-semibold text-slate-900">Usuarios</h2>
+                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[12px] font-medium tabular-nums text-slate-600">
+                  {totalRecords} registro{totalRecords !== 1 ? "s" : ""}
+                </span>
               </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[#e6eaf4] bg-[#f7f8fc]">
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
-                      Nombre
-                    </th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
-                      Apellido
-                    </th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
-                      Usuario
-                    </th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
-                      Perfil
-                    </th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
-                      Contraseña
-                    </th>
-                    <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#eef1f8]">
-                  {paginatedUsers.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-5 py-14 text-center">
-                        <div className="flex flex-col items-center justify-center">
-                          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#eef4ff]">
-                            <svg className="h-6 w-6 text-[#1570ef]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                              />
-                            </svg>
-                          </div>
-                          <p className="text-[14px] font-semibold text-[#1f2433]">No se encontraron usuarios</p>
-                          <p className="mt-1 text-[13px] text-[#8890a8]">Probá cambiar los filtros</p>
-                        </div>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] text-left text-[13px]">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50/90">
+                      <th className="px-4 py-2.5 font-semibold text-slate-600 sm:px-5">Nombre</th>
+                      <th className="px-4 py-2.5 font-semibold text-slate-600 sm:px-5">Apellido</th>
+                      <th className="px-4 py-2.5 font-semibold text-slate-600 sm:px-5">Usuario</th>
+                      <th className="px-4 py-2.5 font-semibold text-slate-600 sm:px-5">Rol</th>
+                      <th className="px-4 py-2.5 font-semibold text-slate-600 sm:px-5">Contraseña</th>
+                      <th className="px-4 py-2.5 text-center font-semibold text-slate-600 sm:px-5">Acciones</th>
                     </tr>
-                  ) : (
-                    paginatedUsers.map((user, index) => (
-                      <tr
-                        key={user.id}
-                        className={`transition-colors hover:bg-[#f7faff] ${index % 2 === 0 ? "bg-white" : "bg-[#fafbff]"}`}
-                      >
-                        <td className="whitespace-nowrap px-4 py-3 text-[14px] text-[#1f2433] sm:px-5">{user.nombre}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-[14px] text-[#1f2433] sm:px-5">{user.apellido}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-[14px] text-[#1f2433] sm:px-5">{user.usuario}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-[14px] text-[#5d6578]">{user.perfil}</td>
-                        <td className="whitespace-nowrap px-4 py-3 font-mono text-[13px] text-[#525b76] sm:px-5">{user.contraseña}</td>
-                        <td className="whitespace-nowrap px-4 py-3 sm:px-5">
-                          <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9 rounded-lg text-[#5d6578] hover:bg-[#eef4ff] hover:text-[#1570ef]"
-                              onClick={() => {
-                                setEditingUser(user)
-                                setIsNewUserModalOpen(true)
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9 rounded-lg text-[#5d6578] hover:bg-red-50 hover:text-red-600"
-                              onClick={() => handleDeleteClick(user)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                  </thead>
+                  <tbody>
+                    {paginatedUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-5 py-14 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100">
+                              <svg className="h-5 w-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                                />
+                              </svg>
+                            </div>
+                            <p className="text-[14px] font-semibold text-slate-800">Sin coincidencias</p>
+                            <p className="mt-1 text-[13px] text-slate-500">Ajustá los criterios de la columna izquierda</p>
                           </div>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    ) : (
+                      paginatedUsers.map((user) => (
+                        <tr key={user.id} className="border-b border-slate-100 transition-colors hover:bg-slate-50/80">
+                          <td className="whitespace-nowrap px-4 py-2.5 font-medium text-slate-900 sm:px-5">{user.nombre}</td>
+                          <td className="whitespace-nowrap px-4 py-2.5 text-slate-800 sm:px-5">{user.apellido}</td>
+                          <td className="whitespace-nowrap px-4 py-2.5 font-mono text-[12px] text-slate-700 sm:px-5">{user.usuario}</td>
+                          <td className="whitespace-nowrap px-4 py-2.5 text-slate-600 sm:px-5">{perfilEtiqueta(user.perfil)}</td>
+                          <td className="whitespace-nowrap px-4 py-2.5 font-mono text-[12px] text-slate-500 sm:px-5">{user.contraseña}</td>
+                          <td className="whitespace-nowrap px-4 py-2.5 sm:px-5">
+                            <div className="flex items-center justify-center gap-0.5">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                                onClick={() => {
+                                  setEditingUser(user)
+                                  setIsNewUserModalOpen(true)
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-md text-slate-500 hover:bg-red-50 hover:text-red-600"
+                                onClick={() => handleDeleteClick(user)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
-            <div className="flex flex-col gap-3 border-t border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <div className="flex flex-wrap items-center gap-3 text-[13px] text-[#5d6578]">
                 <div className="flex items-center gap-1.5">
                   <span className="font-medium">Total</span>
@@ -428,6 +423,7 @@ export default function UsuariosPage() {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </main>
 
