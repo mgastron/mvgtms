@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { User, LogOut, ChevronDown } from "lucide-react"
+import { User, LogOut, ChevronDown, MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
@@ -144,6 +144,18 @@ export function UserProfile({ variant = "default" }: UserProfileProps) {
             )}
           </div>
           <div className="px-2 py-1">
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false)
+                router.push("/utilidades")
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <MoreHorizontal className="h-4 w-4 text-gray-500" />
+              Utilidades
+            </button>
+
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
