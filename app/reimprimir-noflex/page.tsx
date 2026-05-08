@@ -1204,17 +1204,30 @@ export default function ReimprimirNoflexPage() {
 
               {/* Pagination */}
               {filteredEnvios.length > 0 && (
-                <div className="shrink-0 flex flex-col gap-3 border-t border-[#edf0f7] bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="text-sm font-medium text-gray-700">
-                    Total de registros: <span className="text-[#6B46FF] font-bold">{filteredEnvios.length}</span>
-                    {" | "}
-                    Mostrando:{" "}
-                    <span className="text-[#6B46FF] font-bold">
-                      {Math.min(currentPage * itemsPerPage + 1, filteredEnvios.length)} -{" "}
-                      {Math.min((currentPage + 1) * itemsPerPage, filteredEnvios.length)}
-                    </span>
+                <div className="shrink-0 border-t border-[#edf0f7] bg-white px-4 py-3">
+                  <div className="mb-2 flex items-center justify-end text-sm font-medium text-gray-700">
+                    <span className="text-[#6B46FF] font-bold">{filteredEnvios.length}</span>
+                    <span className="ml-2 text-gray-500">registros</span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                    <div className="flex flex-wrap items-center gap-3 text-[13px] text-gray-600">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium">Total</span>
+                        <span className="rounded-md bg-gray-50 px-2 py-0.5 font-semibold text-gray-900 ring-1 ring-gray-200">
+                          {filteredEnvios.length}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium">Mostrando</span>
+                        <span className="rounded-md border border-gray-200 bg-white px-2 py-0.5 font-semibold text-gray-700">
+                          {Math.min(currentPage * itemsPerPage + 1, filteredEnvios.length)} -{" "}
+                          {Math.min((currentPage + 1) * itemsPerPage, filteredEnvios.length)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto">
                     <Button
                       variant="outline"
                       size="sm"
@@ -1284,23 +1297,30 @@ export default function ReimprimirNoflexPage() {
                     >
                       {">>"}
                     </Button>
-                    <Select
-                      value={itemsPerPage.toString()}
-                      onValueChange={(value) => {
-                        setItemsPerPage(Number(value))
-                        setCurrentPage(0)
-                      }}
-                    >
-                      <SelectTrigger className="h-8 w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="25">25</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                        <SelectItem value="100">100</SelectItem>
-                        <SelectItem value="200">200</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    </div>
+
+                    <div className="flex justify-start sm:justify-end">
+                      <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-2.5 py-1">
+                        <span className="text-[13px] font-medium text-gray-600">Por página</span>
+                        <Select
+                          value={itemsPerPage.toString()}
+                          onValueChange={(value) => {
+                            setItemsPerPage(Number(value))
+                            setCurrentPage(0)
+                          }}
+                        >
+                          <SelectTrigger className="h-8 w-14 border-0 bg-transparent text-[13px] font-semibold text-gray-900 shadow-none focus:ring-0">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="25">25</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                            <SelectItem value="100">100</SelectItem>
+                            <SelectItem value="200">200</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

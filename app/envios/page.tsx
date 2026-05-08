@@ -1116,6 +1116,10 @@ export default function EnviosPage() {
             {/* Table */}
           <div className="mt-4 rounded-xl border border-[#e6eaf4] bg-white overflow-hidden">
               <div className="overflow-x-auto" suppressHydrationWarning>
+                <div className="flex items-center justify-end border-b border-[#edf0f7] bg-white px-4 py-3 text-sm font-medium text-gray-700">
+                  <span className="text-[#6B46FF] font-bold">{totalElements}</span>
+                  <span className="ml-2 text-gray-500">registros</span>
+                </div>
                 <table className="w-full border-collapse table-fixed" style={{ tableLayout: 'fixed', minWidth: '1180px' }}>
                   <thead>
                     <tr className="bg-white border-b border-[#edf0f7]">
@@ -1218,11 +1222,22 @@ export default function EnviosPage() {
               </div>
 
               {/* Pagination */}
-              <div className="mt-4 flex items-center justify-between" suppressHydrationWarning>
-                <div className="text-sm font-medium text-gray-700">
-                  Total de registros: <span className="text-[#6B46FF] font-bold">{totalElements}</span>
-                </div>
-                <div className="flex items-center gap-2">
+              <div className="mt-4 border-t border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:px-5" suppressHydrationWarning>
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                  <div className="flex flex-wrap items-center gap-3 text-[13px] text-[#5d6578]">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium">Total</span>
+                      <span className="rounded-md bg-[#eef4ff] px-2 py-0.5 font-semibold text-[#1459e9]">{totalElements}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium">Páginas</span>
+                      <span className="rounded-md border border-[#e6eaf4] bg-white px-2 py-0.5 font-semibold text-[#4d5571]">
+                        {totalPages || 1}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex w-full items-center justify-center gap-2 sm:w-auto">
                   <Button
                     variant="outline"
                     size="sm"
@@ -1287,23 +1302,30 @@ export default function EnviosPage() {
                   >
                     {">>"}
                   </Button>
-                  <Select
-                    value={itemsPerPage.toString()}
-                    onValueChange={(value) => {
-                      setItemsPerPage(Number(value))
-                      setCurrentPage(0)
-                    }}
-                  >
-                    <SelectTrigger className="h-8 w-32 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="25">25</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  </div>
+
+                  <div className="flex justify-start sm:justify-end">
+                    <div className="flex items-center gap-2 rounded-xl border border-[#e6eaf4] bg-white px-2.5 py-1">
+                      <span className="text-[13px] font-medium text-[#4d5571]">Por página</span>
+                      <Select
+                        value={itemsPerPage.toString()}
+                        onValueChange={(value) => {
+                          setItemsPerPage(Number(value))
+                          setCurrentPage(0)
+                        }}
+                      >
+                        <SelectTrigger className="h-8 w-14 border-0 bg-transparent text-[13px] font-semibold text-[#1459e9] shadow-none focus:ring-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="25">25</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                          <SelectItem value="100">100</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

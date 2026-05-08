@@ -1634,8 +1634,9 @@ export default function EstadoOrdenesPage() {
                 </Button>
               </div>
 
-              <div className="flex flex-col gap-3 border-t border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                <div className="flex flex-wrap items-center gap-3 text-[13px] text-[#5d6578]">
+              <div className="border-t border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:px-5">
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                  <div className="flex flex-wrap items-center gap-3 text-[13px] text-[#5d6578]">
                   <div className="flex items-center gap-1.5">
                     <span className="font-medium">Total</span>
                     <span className="rounded-md bg-[#eef4ff] px-2 py-0.5 font-semibold text-[#1459e9]">
@@ -1650,8 +1651,7 @@ export default function EstadoOrdenesPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-0.5 rounded-xl border border-[#e6eaf4] bg-white p-0.5">
+                  <div className="flex w-full items-center justify-center gap-0.5 rounded-xl border border-[#e6eaf4] bg-white p-0.5 sm:w-auto">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1702,25 +1702,27 @@ export default function EstadoOrdenesPage() {
                     </Button>
                   </div>
 
-                  <div className="flex items-center gap-2 rounded-xl border border-[#e6eaf4] bg-white px-2.5 py-1">
-                    <span className="text-[13px] font-medium text-[#4d5571]">Por página</span>
-                    <Select
-                      value={itemsPerPage.toString()}
-                      onValueChange={(value) => {
-                        setItemsPerPage(Number(value))
-                        setCurrentPage(1)
-                      }}
-                    >
-                      <SelectTrigger className="h-8 w-14 border-0 bg-transparent text-[13px] font-semibold text-[#1459e9] shadow-none focus:ring-0">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="20">20</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                        <SelectItem value="100">100</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="flex justify-start sm:justify-end">
+                    <div className="flex items-center gap-2 rounded-xl border border-[#e6eaf4] bg-white px-2.5 py-1">
+                      <span className="text-[13px] font-medium text-[#4d5571]">Por página</span>
+                      <Select
+                        value={itemsPerPage.toString()}
+                        onValueChange={(value) => {
+                          setItemsPerPage(Number(value))
+                          setCurrentPage(1)
+                        }}
+                      >
+                        <SelectTrigger className="h-8 w-14 border-0 bg-transparent text-[13px] font-semibold text-[#1459e9] shadow-none focus:ring-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="20">20</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                          <SelectItem value="100">100</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               </div>

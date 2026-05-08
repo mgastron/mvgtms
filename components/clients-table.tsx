@@ -555,39 +555,39 @@ export function ClientsTable({
 
       <div
         className={cn(
-          "flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5",
+          "border-t px-4 py-3 sm:px-5",
           slate ? "border-slate-100 bg-slate-50/60" : "border-[#e6eaf4] bg-[#fafbff]"
         )}
       >
-        <div className={cn("flex flex-wrap items-center gap-3 text-[13px]", slate ? "text-slate-600" : "text-[#5d6578]")}>
-          <div className="flex items-center gap-1.5">
-            <span className="font-medium">Total</span>
-            <span
-              className={cn(
-                "rounded-md px-2 py-0.5 font-semibold",
-                slate ? "bg-white text-slate-800 ring-1 ring-slate-200/80" : "bg-[#eef4ff] text-[#1459e9]"
-              )}
-            >
-              {totalRecords}
-            </span>
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+          <div className={cn("flex flex-wrap items-center gap-3 text-[13px]", slate ? "text-slate-600" : "text-[#5d6578]")}>
+            <div className="flex items-center gap-1.5">
+              <span className="font-medium">Total</span>
+              <span
+                className={cn(
+                  "rounded-md px-2 py-0.5 font-semibold",
+                  slate ? "bg-white text-slate-800 ring-1 ring-slate-200/80" : "bg-[#eef4ff] text-[#1459e9]"
+                )}
+              >
+                {totalRecords}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="font-medium">Páginas</span>
+              <span
+                className={cn(
+                  "rounded-md px-2 py-0.5 font-semibold",
+                  slate ? "border border-slate-200 bg-white text-slate-700" : "border border-[#e6eaf4] bg-white text-[#4d5571]"
+                )}
+              >
+                {totalPages || 1}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-medium">Páginas</span>
-            <span
-              className={cn(
-                "rounded-md px-2 py-0.5 font-semibold",
-                slate ? "border border-slate-200 bg-white text-slate-700" : "border border-[#e6eaf4] bg-white text-[#4d5571]"
-              )}
-            >
-              {totalPages || 1}
-            </span>
-          </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-2">
           <div
             className={cn(
-              "flex items-center gap-0.5 rounded-xl p-0.5",
+              "flex w-full items-center justify-center gap-0.5 rounded-xl p-0.5 sm:w-auto",
               slate ? "border border-slate-200 bg-white" : "border border-[#e6eaf4] bg-white"
             )}
           >
@@ -656,35 +656,37 @@ export function ClientsTable({
             </Button>
           </div>
 
-          <div
-            className={cn(
-              "flex items-center gap-2 rounded-xl px-2.5 py-1",
-              slate ? "border border-slate-200 bg-white" : "border border-[#e6eaf4] bg-white"
-            )}
-          >
-            <span className={cn("text-[13px] font-medium", slate ? "text-slate-600" : "text-[#4d5571]")}>Por página</span>
-            <Select
-              value={itemsPerPage.toString()}
-              onValueChange={(value) => {
-                setItemsPerPage(Number(value))
-                setCurrentPage(1)
-              }}
+          <div className="flex justify-start sm:justify-end">
+            <div
+              className={cn(
+                "flex items-center gap-2 rounded-xl px-2.5 py-1",
+                slate ? "border border-slate-200 bg-white" : "border border-[#e6eaf4] bg-white"
+              )}
             >
-              <SelectTrigger
-                className={cn(
-                  "h-8 w-14 border-0 bg-transparent text-[13px] font-semibold shadow-none focus:ring-0",
-                  slate ? "text-slate-800" : "text-[#1459e9]"
-                )}
+              <span className={cn("text-[13px] font-medium", slate ? "text-slate-600" : "text-[#4d5571]")}>Por página</span>
+              <Select
+                value={itemsPerPage.toString()}
+                onValueChange={(value) => {
+                  setItemsPerPage(Number(value))
+                  setCurrentPage(1)
+                }}
               >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
+                <SelectTrigger
+                  className={cn(
+                    "h-8 w-14 border-0 bg-transparent text-[13px] font-semibold shadow-none focus:ring-0",
+                    slate ? "text-slate-800" : "text-[#1459e9]"
+                  )}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </div>
