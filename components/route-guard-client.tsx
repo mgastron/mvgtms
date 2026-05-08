@@ -7,9 +7,10 @@ function isPathAllowedForCliente(pathname: string | null): boolean {
   if (!pathname) return true
   if (pathname === "/") return true
   if (pathname.startsWith("/pedidos")) return true
+  if (pathname.startsWith("/utilidades")) return true
   if (pathname.startsWith("/tracking/")) return true
   if (pathname === "/subir-envio" || pathname === "/subir-individual" || pathname === "/reimprimir-noflex" || pathname === "/subir-flex-manual") return true
-  if (pathname.startsWith("/pedidos/buscador")) return true
+  if (pathname.startsWith("/utilidades/buscador")) return true
   return false
 }
 
@@ -27,7 +28,7 @@ export function RouteGuardClient({ children }: { children: React.ReactNode }) {
     const isPublicPath =
       (pathname?.startsWith("/auth/") ?? false) ||
       (pathname?.startsWith("/tracking/") ?? false) ||
-      (pathname?.startsWith("/pedidos/buscador") ?? false)
+      (pathname?.startsWith("/utilidades/buscador") ?? false)
 
     if (!isAuthenticated && pathname !== "/" && !isPublicPath) {
       router.replace("/")

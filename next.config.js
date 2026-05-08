@@ -11,9 +11,11 @@ const nextConfig = {
       // Pedidos
       { source: "/envios", destination: "/pedidos", permanent: true },
       { source: "/envios/subida", destination: "/pedidos/cargar", permanent: true },
-      { source: "/envios/lista-precios", destination: "/pedidos/lista-precios", permanent: true },
+      { source: "/envios/lista-precios", destination: "/utilidades/lista-precios", permanent: true },
       { source: "/reimprimir-noflex", destination: "/pedidos/reimpresion-etiquetas", permanent: true },
-      { source: "/sistema/buscador-pedidos", destination: "/pedidos/buscador", permanent: true },
+      { source: "/sistema/buscador-pedidos", destination: "/utilidades/buscador", permanent: true },
+      { source: "/pedidos/buscador", destination: "/utilidades/buscador", permanent: true },
+      { source: "/pedidos/lista-precios", destination: "/utilidades/lista-precios", permanent: true },
 
       // Cargar (paths viejos)
       { source: "/subir-individual", destination: "/pedidos/cargar/manual", permanent: true },

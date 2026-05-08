@@ -99,6 +99,7 @@ export function ModernHeader() {
   }
 
   const getActiveMainItem = () => {
+    if (pathname?.startsWith("/utilidades")) return null
     if (pathname?.includes("/pedidos") || pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir")) return "Pedidos"
     if (pathname?.includes("/sistema/usuarios") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes") || pathname?.includes("/sistema/tarifas") || pathname?.includes("/sistema/estado-ordenes")) return "Sistema"
     if (pathname?.includes("/vendedores")) return "Vendedores"

@@ -18,12 +18,12 @@ const ITEMS: UtilidadItem[] = [
   {
     title: "Buscador de pedidos",
     description: "Buscar pedidos por tracking u otros datos.",
-    path: "/pedidos/buscador",
+    path: "/utilidades/buscador",
   },
   {
     title: "Lista de precios",
     description: "Ver y administrar tarifas/listas de precios.",
-    path: "/pedidos/lista-precios",
+    path: "/utilidades/lista-precios",
   },
 ]
 
