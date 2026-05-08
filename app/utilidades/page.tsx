@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Montserrat } from "next/font/google"
 import { cn } from "@/lib/utils"
-import ModernHeader from "@/components/modern-header"
+import { ModernHeader } from "@/components/modern-header"
 
 const montserrat = Montserrat({ subsets: ["latin"] })
 
