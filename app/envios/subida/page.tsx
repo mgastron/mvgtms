@@ -37,7 +37,7 @@ export default function CargarEnviosHubPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <button type="button" onClick={() => openEmbed("/subir-individual", "Carga manual")} className={`${cardClass} text-left`}>
+            <button type="button" onClick={() => openEmbed("/pedidos/cargar/manual", "Carga manual")} className={`${cardClass} text-left`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eef4ff] text-[#1459e9]">
                   <FileUp className="h-5 w-5" aria-hidden />
@@ -50,7 +50,7 @@ export default function CargarEnviosHubPage() {
               </p>
             </button>
 
-            <button type="button" onClick={() => openEmbed("/subir-envio", "Carga por modelo")} className={`${cardClass} text-left`}>
+            <button type="button" onClick={() => openEmbed("/pedidos/cargar/modelo", "Carga por modelo")} className={`${cardClass} text-left`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eef4ff] text-[#1459e9]">
                   <Upload className="h-5 w-5" aria-hidden />
@@ -63,7 +63,7 @@ export default function CargarEnviosHubPage() {
               </p>
             </button>
 
-            <button type="button" onClick={() => openEmbed("/subir-flex-manual", "Carga Flex manual")} className={`${cardClass} text-left`}>
+            <button type="button" onClick={() => openEmbed("/pedidos/cargar/flex", "Carga Flex manual")} className={`${cardClass} text-left`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eef4ff] text-[#1459e9]">
                   <Upload className="h-5 w-5" aria-hidden />

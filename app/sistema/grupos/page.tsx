@@ -58,11 +58,11 @@ export default function GruposPage() {
       return
     }
     if (userProfile === "Chofer") {
-      router.push("/chofer")
+      router.push("/repartidor")
       return
     }
     if (userProfile === "Cliente") {
-      router.push("/clientes")
+      router.push("/vendedores")
       return
     }
   }, [router])

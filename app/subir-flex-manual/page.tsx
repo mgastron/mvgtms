@@ -76,7 +76,7 @@ export default function SubirFlexManualPage() {
       setFormData({ sellerId: "", shipmentId: "" })
 
       setTimeout(() => {
-        router.push("/envios")
+        router.push("/pedidos")
       }, 2000)
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Error al subir el envío Flex"

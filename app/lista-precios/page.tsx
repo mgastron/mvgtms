@@ -105,19 +105,19 @@ export default function ListaPreciosPage() {
     
     // Choferes no pueden acceder
     if (userProfile === "Chofer") {
-      router.push("/chofer")
+      router.push("/repartidor")
       return
     }
     
     // Clientes no pueden acceder a Sistema
     if (userProfile === "Cliente") {
-      router.push("/clientes")
+      router.push("/vendedores")
       return
     }
 
     // Coordinador no puede acceder a Tarifas (Sistema)
     if (userProfile === "Coordinador") {
-      router.push("/envios")
+      router.push("/pedidos")
       return
     }
   }, [router])

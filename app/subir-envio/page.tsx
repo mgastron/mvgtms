@@ -51,7 +51,7 @@ export default function SubirEnvioPage() {
 
     // Redirigir Chofer y Cliente
     if (profile === "Chofer") {
-      router.push("/chofer")
+      router.push("/repartidor")
       return
     }
 

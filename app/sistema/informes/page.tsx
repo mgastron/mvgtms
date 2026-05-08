@@ -72,11 +72,11 @@ export default function InformesPage() {
       return
     }
     if (userProfile === "Chofer") {
-      router.push("/chofer")
+      router.push("/repartidor")
       return
     }
     if (userProfile === "Cliente") {
-      router.push("/clientes")
+      router.push("/vendedores")
       return
     }
   }, [router])

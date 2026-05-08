@@ -29,7 +29,7 @@ export default function LoginPage() {
       sessionStorage.setItem("isAuthenticated", "true")
       sessionStorage.setItem("username", username)
       sessionStorage.setItem("userProfile", "Administrativo")
-      router.push("/clientes")
+      router.push("/vendedores")
       return
     }
 
@@ -51,9 +51,9 @@ export default function LoginPage() {
             
             // Redirigir según el perfil (Chofer va a ver solo sus envíos asignados)
             if (userProfile === "Chofer") {
-              router.push("/envios")
+              router.push("/repartidor")
             } else {
-              router.push("/clientes")
+              router.push("/vendedores")
             }
             return
           }

@@ -6,9 +6,10 @@ import { useRouter, usePathname } from "next/navigation"
 function isPathAllowedForCliente(pathname: string | null): boolean {
   if (!pathname) return true
   if (pathname === "/") return true
-  if (pathname.startsWith("/envios")) return true
+  if (pathname.startsWith("/pedidos")) return true
+  if (pathname.startsWith("/tracking/")) return true
   if (pathname === "/subir-envio" || pathname === "/subir-individual" || pathname === "/reimprimir-noflex" || pathname === "/subir-flex-manual") return true
-  if (pathname.startsWith("/sistema/buscador-pedidos")) return true
+  if (pathname.startsWith("/pedidos/buscador")) return true
   return false
 }
 
@@ -26,7 +27,7 @@ export function RouteGuardClient({ children }: { children: React.ReactNode }) {
     const isPublicPath =
       (pathname?.startsWith("/auth/") ?? false) ||
       (pathname?.startsWith("/tracking/") ?? false) ||
-      (pathname?.startsWith("/sistema/buscador-pedidos") ?? false)
+      (pathname?.startsWith("/pedidos/buscador") ?? false)
 
     if (!isAuthenticated && pathname !== "/" && !isPublicPath) {
       router.replace("/")
@@ -34,7 +35,7 @@ export function RouteGuardClient({ children }: { children: React.ReactNode }) {
     }
 
     if (userProfile === "Cliente" && !isPathAllowedForCliente(pathname) && !isPublicPath) {
-      router.replace("/envios")
+      router.replace("/pedidos")
     }
   }, [pathname, router])
 

@@ -77,19 +77,19 @@ export function Sidebar() {
   
   // Determinar el item activo basado en la ruta actual
   const getActiveItem = () => {
-    if (pathname?.includes("/usuarios")) return "Usuarios"
+    if (pathname?.includes("/sistema/usuarios")) return "Usuarios"
     if (pathname?.includes("/sistema/grupos")) return "Grupos"
     if (pathname?.includes("/sistema/informes")) return "Informes"
-    if (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) return "Tarifas"
+    if (pathname?.includes("/sistema/tarifas")) return "Tarifas"
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
-    if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de Pedidos"
-    if (pathname?.includes("/clientes")) return "Vendedores"
-    if (pathname?.includes("/reimprimir-noflex")) return "Reimpresión de etiquetas"
-    if (pathname?.includes("/envios/subida") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) return "Cargar pedidos"
-    if (pathname?.includes("/envios/lista-precios")) return "Lista de Precios"
-    if (pathname?.includes("/envios")) return "Pedidos"
-    if (pathname?.includes("/ruteate/geochoferes")) return "Ubicación"
-    if (pathname?.includes("/ruteate/cierre")) return "Cierre"
+    if (pathname?.includes("/pedidos/buscador")) return "Buscador de Pedidos"
+    if (pathname?.includes("/vendedores")) return "Vendedores"
+    if (pathname?.includes("/pedidos/reimpresion-etiquetas")) return "Reimpresión de etiquetas"
+    if (pathname?.includes("/pedidos/cargar") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) return "Cargar pedidos"
+    if (pathname?.includes("/pedidos/lista-precios")) return "Lista de Precios"
+    if (pathname?.includes("/pedidos")) return "Pedidos"
+    if (pathname?.includes("/repartidores/ubicacion")) return "Ubicación"
+    if (pathname?.includes("/repartidores/cierre")) return "Cierre"
     return null
   }
   
@@ -97,13 +97,13 @@ export function Sidebar() {
   
   // Abrir automáticamente los submenús si estamos en una página del submenú
   useEffect(() => {
-    if (pathname?.includes("/usuarios") || pathname?.includes("/lista-precios") || pathname?.includes("/sistema/estado-ordenes") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes")) {
+    if (pathname?.includes("/sistema/usuarios") || pathname?.includes("/sistema/tarifas") || pathname?.includes("/sistema/estado-ordenes") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes")) {
       setSistemaOpen(true)
     }
-    if (pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual") || pathname?.includes("/envios") || pathname?.includes("/sistema/buscador-pedidos")) {
+    if (pathname?.includes("/pedidos") || pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) {
       setEnviosOpen(true)
     }
-    if (pathname?.includes("/ruteate")) {
+    if (pathname?.includes("/repartidores")) {
       setRuteateOpen(true)
     }
   }, [pathname])
@@ -146,7 +146,7 @@ export function Sidebar() {
                     setEnviosOpen(false)
                     setRuteateOpen(false)
                     if (item.label === "Vendedores") {
-                      router.push("/clientes")
+                      router.push("/vendedores")
                     }
                   }
                 }}
@@ -185,15 +185,15 @@ export function Sidebar() {
                         key={subItem.label}
                         onClick={() => {
                           if (subItem.label === "Cargar pedidos") {
-                            router.push("/envios/subida")
+                            router.push("/pedidos/cargar")
                           } else if (subItem.label === "Reimpresión de etiquetas") {
-                            router.push("/reimprimir-noflex")
+                            router.push("/pedidos/reimpresion-etiquetas")
                           } else if (subItem.label === "Pedidos") {
-                            router.push("/envios")
+                            router.push("/pedidos")
                           } else if (subItem.label === "Lista de Precios") {
-                            router.push("/envios/lista-precios")
+                            router.push("/pedidos/lista-precios")
                           } else if (subItem.label === "Buscador de Pedidos") {
-                            router.push("/sistema/buscador-pedidos")
+                            router.push("/pedidos/buscador")
                           } else {
                             logDev(`Navegar a: ${subItem.label}`)
                           }
@@ -224,13 +224,13 @@ export function Sidebar() {
                         key={subItem.label}
                         onClick={() => {
                           if (subItem.label === "Usuarios") {
-                            router.push("/usuarios")
+                            router.push("/sistema/usuarios")
                           } else if (subItem.label === "Grupos") {
                             router.push("/sistema/grupos")
                           } else if (subItem.label === "Informes") {
                             router.push("/sistema/informes")
                           } else if (subItem.label === "Tarifas") {
-                            router.push("/lista-precios")
+                            router.push("/sistema/tarifas")
                           } else if (subItem.label === "Estado Órdenes") {
                             router.push("/sistema/estado-ordenes")
                           }
@@ -261,9 +261,9 @@ export function Sidebar() {
                         key={subItem.label}
                         onClick={() => {
                           if (subItem.label === "Ubicación") {
-                            router.push("/ruteate/geochoferes")
+                            router.push("/repartidores/ubicacion")
                           } else if (subItem.label === "Cierre") {
-                            router.push("/ruteate/cierre")
+                            router.push("/repartidores/cierre")
                           }
                         }}
                         className={cn(

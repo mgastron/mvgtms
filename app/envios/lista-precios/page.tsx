@@ -66,13 +66,13 @@ export default function ListaPreciosEnvioPage() {
     }
 
     if (profile === "Chofer") {
-      router.push("/chofer")
+      router.push("/repartidor")
       return
     }
 
     // Coordinador no puede acceder a Envios/Lista de Precios
     if (profile === "Coordinador") {
-      router.push("/envios")
+      router.push("/pedidos")
       return
     }
 

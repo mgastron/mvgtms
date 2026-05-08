@@ -90,7 +90,7 @@ export default function EstadoOrdenesPage() {
       setUserProfile(profile)
       // Coordinador no puede acceder a Estado Órdenes
       if (profile === "Coordinador") {
-        router.push("/envios")
+        router.push("/pedidos")
         return
       }
     }

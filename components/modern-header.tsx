@@ -18,11 +18,11 @@ const allMenuItems = [
     label: "Pedidos",
     hasSubmenu: true,
     submenu: [
-      { icon: Truck, label: "Pedidos", path: "/envios" },
-      { icon: Upload, label: "Cargar pedidos", path: "/envios/subida" },
-      { icon: DollarSign, label: "Lista de precios", path: "/envios/lista-precios" },
-      { icon: Printer, label: "Reimpresión de etiquetas", path: "/reimprimir-noflex" },
-      { icon: Search, label: "Buscador de pedidos", path: "/sistema/buscador-pedidos" },
+      { icon: Truck, label: "Pedidos", path: "/pedidos" },
+      { icon: Upload, label: "Cargar pedidos", path: "/pedidos/cargar" },
+      { icon: DollarSign, label: "Lista de precios", path: "/pedidos/lista-precios" },
+      { icon: Printer, label: "Reimpresión de etiquetas", path: "/pedidos/reimpresion-etiquetas" },
+      { icon: Search, label: "Buscador de pedidos", path: "/pedidos/buscador" },
     ],
   },
   {
@@ -30,10 +30,10 @@ const allMenuItems = [
     label: "Sistema",
     hasSubmenu: true,
     submenu: [
-      { icon: Users, label: "Usuarios", path: "/usuarios" },
+      { icon: Users, label: "Usuarios", path: "/sistema/usuarios" },
       { icon: Layers, label: "Grupos", path: "/sistema/grupos" },
       { icon: FileBarChart, label: "Informes", path: "/sistema/informes" },
-      { icon: DollarSign, label: "Tarifas", path: "/lista-precios" },
+      { icon: DollarSign, label: "Tarifas", path: "/sistema/tarifas" },
       { icon: FileCheck, label: "Estado Órdenes", path: "/sistema/estado-ordenes" },
     ],
   },
@@ -41,15 +41,15 @@ const allMenuItems = [
     icon: Users,
     label: "Vendedores",
     hasSubmenu: false,
-    path: "/clientes",
+    path: "/vendedores",
   },
   {
     icon: Route,
     label: "Repartidores",
     hasSubmenu: true,
     submenu: [
-      { icon: Route, label: "Ubicación", path: "/ruteate/geochoferes" },
-      { icon: FileCheck, label: "Cierre", path: "/ruteate/cierre" },
+      { icon: Route, label: "Ubicación", path: "/repartidores/ubicacion" },
+      { icon: FileCheck, label: "Cierre", path: "/repartidores/cierre" },
     ],
   },
 ]
@@ -84,29 +84,29 @@ export function ModernHeader() {
   const menuItems = getFilteredMenuItems()
 
   const getActiveItem = () => {
-    if (pathname?.includes("/usuarios")) return "Usuarios"
+    if (pathname?.includes("/sistema/usuarios")) return "Usuarios"
     if (pathname?.includes("/sistema/grupos")) return "Grupos"
     if (pathname?.includes("/sistema/informes")) return "Informes"
-    if (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) return "Tarifas"
+    if (pathname?.includes("/sistema/tarifas")) return "Tarifas"
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
-    if (pathname?.includes("/sistema/buscador-pedidos")) return "Buscador de pedidos"
-    if (pathname?.includes("/clientes")) return "Vendedores"
-    if (pathname?.includes("/reimprimir-noflex")) return "Reimpresión de etiquetas"
-    if (pathname?.includes("/envios/subida") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) {
+    if (pathname?.includes("/pedidos/buscador")) return "Buscador de pedidos"
+    if (pathname?.includes("/vendedores")) return "Vendedores"
+    if (pathname?.includes("/pedidos/reimpresion-etiquetas")) return "Reimpresión de etiquetas"
+    if (pathname?.includes("/pedidos/cargar") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) {
       return "Cargar pedidos"
     }
-    if (pathname?.includes("/envios/lista-precios")) return "Lista de precios"
-    if (pathname?.includes("/envios")) return "Pedidos"
-    if (pathname?.includes("/ruteate/geochoferes")) return "Ubicación"
-    if (pathname?.includes("/ruteate/cierre")) return "Cierre"
+    if (pathname?.includes("/pedidos/lista-precios")) return "Lista de precios"
+    if (pathname?.includes("/pedidos")) return "Pedidos"
+    if (pathname?.includes("/repartidores/ubicacion")) return "Ubicación"
+    if (pathname?.includes("/repartidores/cierre")) return "Cierre"
     return null
   }
 
   const getActiveMainItem = () => {
-    if (pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir") || pathname?.includes("/envios") || pathname?.includes("/sistema/buscador-pedidos")) return "Pedidos"
-    if (pathname?.includes("/usuarios") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes") || (pathname?.includes("/lista-precios") && !pathname?.includes("/envios")) || pathname?.includes("/sistema/estado-ordenes")) return "Sistema"
-    if (pathname?.includes("/clientes")) return "Vendedores"
-    if (pathname?.includes("/ruteate")) return "Repartidores"
+    if (pathname?.includes("/pedidos") || pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir")) return "Pedidos"
+    if (pathname?.includes("/sistema/usuarios") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes") || pathname?.includes("/sistema/tarifas") || pathname?.includes("/sistema/estado-ordenes")) return "Sistema"
+    if (pathname?.includes("/vendedores")) return "Vendedores"
+    if (pathname?.includes("/repartidores")) return "Repartidores"
     return null
   }
 
@@ -133,7 +133,7 @@ export function ModernHeader() {
       <header className="sticky top-0 z-50 w-full bg-[#f7f8fc]">
         <div className={`mx-auto w-full max-w-[1700px] px-3 pt-3 ${montserrat.className}`}>
           <div className="flex h-[72px] items-center justify-between rounded-2xl bg-[#1459e9] px-6">
-            <button onClick={() => router.push("/envios")} className="hover:opacity-90 transition-opacity">
+            <button onClick={() => router.push("/pedidos")} className="hover:opacity-90 transition-opacity">
               <img src="/logos/nexo-logo-white.png" alt="nexo" className="h-auto w-[102px]" />
             </button>
 
