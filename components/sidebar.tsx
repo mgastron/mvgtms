@@ -16,9 +16,7 @@ const allMenuItems = [
 const enviosSubmenu = [
   { icon: Upload, label: "Cargar pedidos" },
   { icon: Truck, label: "Pedidos" },
-  { icon: DollarSign, label: "Lista de Precios" },
   { icon: Printer, label: "Reimpresión de etiquetas" },
-  { icon: Search, label: "Buscador de Pedidos" },
 ]
 
 const sistemaSubmenu = [
@@ -48,10 +46,10 @@ export function Sidebar() {
     setUserProfile(profile)
   }, [])
   
-  // Coordinador no ve: Envíos > Lista de Precios; Sistema > Tarifas, Estado Órdenes
+  // Coordinador no ve: Sistema > Tarifas, Estado Órdenes
   const enviosSubmenuFiltered =
     userProfile === "Coordinador"
-      ? enviosSubmenu.filter((s) => s.label !== "Lista de Precios")
+      ? enviosSubmenu
       : enviosSubmenu
   const sistemaSubmenuFiltered =
     userProfile === "Coordinador"
@@ -82,11 +80,9 @@ export function Sidebar() {
     if (pathname?.includes("/sistema/informes")) return "Informes"
     if (pathname?.includes("/sistema/tarifas")) return "Tarifas"
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
-    if (pathname?.includes("/pedidos/buscador")) return "Buscador de Pedidos"
     if (pathname?.includes("/vendedores")) return "Vendedores"
     if (pathname?.includes("/pedidos/reimpresion-etiquetas")) return "Reimpresión de etiquetas"
     if (pathname?.includes("/pedidos/cargar") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) return "Cargar pedidos"
-    if (pathname?.includes("/pedidos/lista-precios")) return "Lista de Precios"
     if (pathname?.includes("/pedidos")) return "Pedidos"
     if (pathname?.includes("/repartidores/ubicacion")) return "Ubicación"
     if (pathname?.includes("/repartidores/cierre")) return "Cierre"
@@ -190,10 +186,6 @@ export function Sidebar() {
                             router.push("/pedidos/reimpresion-etiquetas")
                           } else if (subItem.label === "Pedidos") {
                             router.push("/pedidos")
-                          } else if (subItem.label === "Lista de Precios") {
-                            router.push("/pedidos/lista-precios")
-                          } else if (subItem.label === "Buscador de Pedidos") {
-                            router.push("/pedidos/buscador")
                           } else {
                             logDev(`Navegar a: ${subItem.label}`)
                           }

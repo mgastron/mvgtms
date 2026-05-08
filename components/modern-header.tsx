@@ -1,8 +1,8 @@
 "use client"
 
-import { Truck, Wrench, Users, DollarSign, Route, Upload, Printer, FileUp, FileCheck, Search, Menu, X, Layers, FileBarChart } from "lucide-react"
+import { Truck, Wrench, Users, DollarSign, Route, Upload, Printer, FileUp, FileCheck, Search, Menu, X, Layers, FileBarChart, MoreHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { UserProfile } from "@/components/user-profile"
 import { Montserrat } from "next/font/google"
@@ -20,9 +20,7 @@ const allMenuItems = [
     submenu: [
       { icon: Truck, label: "Pedidos", path: "/pedidos" },
       { icon: Upload, label: "Cargar pedidos", path: "/pedidos/cargar" },
-      { icon: DollarSign, label: "Lista de precios", path: "/pedidos/lista-precios" },
       { icon: Printer, label: "Reimpresión de etiquetas", path: "/pedidos/reimpresion-etiquetas" },
-      { icon: Search, label: "Buscador de pedidos", path: "/pedidos/buscador" },
     ],
   },
   {
@@ -59,6 +57,8 @@ export function ModernHeader() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userProfile, setUserProfile] = useState<string | null>(null)
+  const [toolsOpen, setToolsOpen] = useState(false)
+  const toolsRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const profile = sessionStorage.getItem("userProfile")
@@ -83,19 +83,37 @@ export function ModernHeader() {
 
   const menuItems = getFilteredMenuItems()
 
+  const toolsItems = useMemo(
+    () => [
+      { label: "Buscador de pedidos", path: "/pedidos/buscador" },
+      { label: "Lista de precios", path: "/pedidos/lista-precios" },
+    ],
+    []
+  )
+
+  useEffect(() => {
+    if (!toolsOpen) return
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node | null
+      if (!target) return
+      if (!toolsRef.current) return
+      if (!toolsRef.current.contains(target)) setToolsOpen(false)
+    }
+    window.addEventListener("mousedown", handler)
+    return () => window.removeEventListener("mousedown", handler)
+  }, [toolsOpen])
+
   const getActiveItem = () => {
     if (pathname?.includes("/sistema/usuarios")) return "Usuarios"
     if (pathname?.includes("/sistema/grupos")) return "Grupos"
     if (pathname?.includes("/sistema/informes")) return "Informes"
     if (pathname?.includes("/sistema/tarifas")) return "Tarifas"
     if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
-    if (pathname?.includes("/pedidos/buscador")) return "Buscador de pedidos"
     if (pathname?.includes("/vendedores")) return "Vendedores"
     if (pathname?.includes("/pedidos/reimpresion-etiquetas")) return "Reimpresión de etiquetas"
     if (pathname?.includes("/pedidos/cargar") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) {
       return "Cargar pedidos"
     }
-    if (pathname?.includes("/pedidos/lista-precios")) return "Lista de precios"
     if (pathname?.includes("/pedidos")) return "Pedidos"
     if (pathname?.includes("/repartidores/ubicacion")) return "Ubicación"
     if (pathname?.includes("/repartidores/cierre")) return "Cierre"
@@ -161,6 +179,51 @@ export function ModernHeader() {
               <div className={cn(userProfile === "Chofer" ? "block" : "hidden md:block")}>
                 <UserProfile variant="headerBlue" />
               </div>
+
+              {userProfile !== "Chofer" && (
+                <div className="relative hidden md:block" ref={toolsRef}>
+                  <button
+                    type="button"
+                    onClick={() => setToolsOpen((v) => !v)}
+                    className={cn(
+                      "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[14px] font-semibold text-white/90 transition-colors hover:bg-white/10 hover:text-white",
+                      toolsOpen && "bg-white/10 text-white"
+                    )}
+                    aria-haspopup="menu"
+                    aria-expanded={toolsOpen}
+                  >
+                    <MoreHorizontal className="h-5 w-5" aria-hidden />
+                    Utilidades
+                  </button>
+                  {toolsOpen && (
+                    <div
+                      role="menu"
+                      className="absolute right-0 top-[calc(100%+10px)] z-50 w-[240px] overflow-hidden rounded-xl border border-[#e6eaf4] bg-white shadow-lg"
+                    >
+                      <div className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">
+                        Funciones extra
+                      </div>
+                      <div className="h-px bg-[#eef1f8]" />
+                      <div className="p-2">
+                        {toolsItems.map((it) => (
+                          <button
+                            key={it.path}
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setToolsOpen(false)
+                              router.push(it.path)
+                            }}
+                            className="w-full rounded-lg px-3 py-2 text-left text-[14px] font-medium text-[#1f2433] hover:bg-[#f7faff]"
+                          >
+                            {it.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {userProfile !== "Chofer" && (
                 <button
@@ -229,6 +292,22 @@ export function ModernHeader() {
                 )}
               </div>
             ))}
+
+            <div className="rounded-xl border border-gray-200 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Utilidades</p>
+              <div className="mt-2 space-y-1">
+                {toolsItems.map((it) => (
+                  <button
+                    key={it.path}
+                    onClick={() => handleSubmenuClick(it.path)}
+                    className="w-full rounded-lg px-3 py-2 text-left text-sm text-gray-600 hover:bg-[#eff6ff]"
+                  >
+                    {it.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="pt-2 border-t border-gray-200">
               <UserProfile />
             </div>
