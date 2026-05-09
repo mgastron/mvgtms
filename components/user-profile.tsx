@@ -153,7 +153,7 @@ export function UserProfile({ variant = "default" }: UserProfileProps) {
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
             >
               <MoreHorizontal className="h-4 w-4 text-gray-500" />
-              Utilidades
+              Herramientas operativas
             </button>
 
             <button

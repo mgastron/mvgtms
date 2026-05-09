@@ -44,16 +44,16 @@ export default function UtilidadesPage() {
         <div className="mx-auto w-full max-w-[1200px]">
           <div className="mb-4">
             <p className="text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">Cuenta</p>
-            <h1 className="text-[32px] font-semibold tracking-tight text-[#1570ef]">Utilidades</h1>
+            <h1 className="text-[32px] font-semibold tracking-tight text-[#1570ef]">Herramientas operativas</h1>
             <p className="mt-1 text-[14px] text-[#5d6578]">
-              Funciones secundarias para administración y soporte.
+              Funciones auxiliares para gestión de envíos y soporte.
             </p>
           </div>
 
           {userProfile === "Chofer" ? (
             <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">
               <p className="text-sm font-semibold text-[#1f2433]">Sin acceso</p>
-              <p className="mt-1 text-sm text-[#5d6578]">Estas utilidades no están disponibles para repartidores.</p>
+              <p className="mt-1 text-sm text-[#5d6578]">Estas herramientas no están disponibles para repartidores.</p>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
