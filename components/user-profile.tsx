@@ -126,7 +126,7 @@ export function UserProfile({ variant = "default" }: UserProfileProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+        <div className="absolute right-0 z-50 mt-2 min-w-[17.5rem] max-w-[min(22rem,calc(100vw-1.5rem))] rounded-lg border border-gray-200 bg-white py-2 shadow-xl">
           <div className="px-4 py-3 border-b border-gray-200 space-y-1">
             <p className="text-xs text-gray-500">Usuario</p>
             <p className="text-sm font-semibold text-gray-900">{userInfo.username}</p>
@@ -143,17 +143,17 @@ export function UserProfile({ variant = "default" }: UserProfileProps) {
               </>
             )}
           </div>
-          <div className="px-2 py-1 space-y-0.5">
+          <div className="space-y-0.5 px-2 py-1">
             <button
               type="button"
               onClick={() => {
                 setIsOpen(false)
                 router.push("/utilidades/buscador")
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              className="flex w-full items-start gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
             >
-              <Search className="h-4 w-4 text-gray-500 shrink-0" />
-              Buscador de pedidos
+              <Search className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
+              <span className="min-w-0 flex-1 leading-snug">Buscador de pedidos</span>
             </button>
             <button
               type="button"
@@ -161,10 +161,10 @@ export function UserProfile({ variant = "default" }: UserProfileProps) {
                 setIsOpen(false)
                 router.push("/utilidades/lista-precios")
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              className="flex w-full items-start gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
             >
-              <MapPinned className="h-4 w-4 text-gray-500 shrink-0" />
-              Cotizá un viaje
+              <MapPinned className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
+              <span className="min-w-0 flex-1 leading-snug">Cotizá un viaje</span>
             </button>
             {userInfo.perfil !== "Coordinador" && (
               <button
@@ -173,19 +173,19 @@ export function UserProfile({ variant = "default" }: UserProfileProps) {
                   setIsOpen(false)
                   router.push("/sistema/estado-ordenes")
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                className="flex w-full items-start gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
               >
-                <FileCheck className="h-4 w-4 text-gray-500 shrink-0" />
-                Verificador de integraciones
+                <FileCheck className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
+                <span className="min-w-0 flex-1 leading-snug">Verificador de integraciones</span>
               </button>
             )}
 
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="flex w-full items-start gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
             >
-              <LogOut className="h-4 w-4" />
-              Salir
+              <LogOut className="mt-0.5 h-4 w-4 shrink-0" />
+              <span className="min-w-0 flex-1 leading-snug">Salir</span>
             </button>
           </div>
         </div>

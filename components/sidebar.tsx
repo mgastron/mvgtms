@@ -24,7 +24,6 @@ const sistemaSubmenu = [
   { icon: Layers, label: "Grupos" },
   { icon: FileBarChart, label: "Informes" },
   { icon: DollarSign, label: "Tarifas" },
-  { icon: FileCheck, label: "Verificador de integraciones" },
 ]
 
 const ruteateSubmenu = [
@@ -46,14 +45,14 @@ export function Sidebar() {
     setUserProfile(profile)
   }, [])
   
-  // Coordinador no ve: Sistema > Tarifas, Verificador de integraciones
+  // Coordinador no ve: Sistema > Tarifas
   const enviosSubmenuFiltered =
     userProfile === "Coordinador"
       ? enviosSubmenu
       : enviosSubmenu
   const sistemaSubmenuFiltered =
     userProfile === "Coordinador"
-      ? sistemaSubmenu.filter((s) => s.label !== "Tarifas" && s.label !== "Verificador de integraciones")
+      ? sistemaSubmenu.filter((s) => s.label !== "Tarifas")
       : sistemaSubmenu
 
   // Filtrar elementos del menú según el perfil del usuario
@@ -79,7 +78,6 @@ export function Sidebar() {
     if (pathname?.includes("/sistema/grupos")) return "Grupos"
     if (pathname?.includes("/sistema/informes")) return "Informes"
     if (pathname?.includes("/sistema/tarifas")) return "Tarifas"
-    if (pathname?.includes("/sistema/estado-ordenes")) return "Verificador de integraciones"
     if (pathname?.includes("/vendedores")) return "Vendedores"
     if (pathname?.includes("/pedidos/reimpresion-etiquetas")) return "Reimpresión de etiquetas"
     if (pathname?.includes("/pedidos/cargar") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) return "Cargar pedidos"
@@ -93,7 +91,7 @@ export function Sidebar() {
   
   // Abrir automáticamente los submenús si estamos en una página del submenú
   useEffect(() => {
-    if (pathname?.includes("/sistema/usuarios") || pathname?.includes("/sistema/tarifas") || pathname?.includes("/sistema/estado-ordenes") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes")) {
+    if (pathname?.includes("/sistema/usuarios") || pathname?.includes("/sistema/tarifas") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes")) {
       setSistemaOpen(true)
     }
     if (pathname?.includes("/pedidos") || pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) {
@@ -223,8 +221,6 @@ export function Sidebar() {
                             router.push("/sistema/informes")
                           } else if (subItem.label === "Tarifas") {
                             router.push("/sistema/tarifas")
-                          } else if (subItem.label === "Verificador de integraciones") {
-                            router.push("/sistema/estado-ordenes")
                           }
                         }}
                         className={cn(

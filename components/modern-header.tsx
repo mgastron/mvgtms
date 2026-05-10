@@ -32,7 +32,6 @@ const allMenuItems = [
       { icon: Layers, label: "Grupos", path: "/sistema/grupos" },
       { icon: FileBarChart, label: "Informes", path: "/sistema/informes" },
       { icon: DollarSign, label: "Tarifas", path: "/sistema/tarifas" },
-      { icon: FileCheck, label: "Verificador de integraciones", path: "/sistema/estado-ordenes" },
     ],
   },
   {
@@ -63,7 +62,7 @@ export function ModernHeader() {
     setUserProfile(profile)
   }, [])
 
-  const coordinadorOcultarSubmenuLabels = ["Lista de precios", "Tarifas", "Verificador de integraciones"]
+  const coordinadorOcultarSubmenuLabels = ["Tarifas"]
 
   const getFilteredMenuItems = () => {
     if (userProfile === "Chofer") return allMenuItems.filter((item) => item.label !== "Repartidores")
@@ -86,7 +85,6 @@ export function ModernHeader() {
     if (pathname?.includes("/sistema/grupos")) return "Grupos"
     if (pathname?.includes("/sistema/informes")) return "Informes"
     if (pathname?.includes("/sistema/tarifas")) return "Tarifas"
-    if (pathname?.includes("/sistema/estado-ordenes")) return "Verificador de integraciones"
     if (pathname?.includes("/vendedores")) return "Vendedores"
     if (pathname?.includes("/pedidos/reimpresion-etiquetas")) return "Reimpresión de etiquetas"
     if (pathname?.includes("/pedidos/cargar") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) {
@@ -100,8 +98,9 @@ export function ModernHeader() {
 
   const getActiveMainItem = () => {
     if (pathname?.startsWith("/utilidades")) return null
+    if (pathname?.includes("/sistema/estado-ordenes")) return null
     if (pathname?.includes("/pedidos") || pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir")) return "Pedidos"
-    if (pathname?.includes("/sistema/usuarios") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes") || pathname?.includes("/sistema/tarifas") || pathname?.includes("/sistema/estado-ordenes")) return "Sistema"
+    if (pathname?.includes("/sistema/usuarios") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes") || pathname?.includes("/sistema/tarifas")) return "Sistema"
     if (pathname?.includes("/vendedores")) return "Vendedores"
     if (pathname?.includes("/repartidores")) return "Repartidores"
     return null
