@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { User, LogOut, ChevronDown, MoreHorizontal } from "lucide-react"
+import { User, LogOut, ChevronDown, Search, MapPinned } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
@@ -143,17 +143,28 @@ export function UserProfile({ variant = "default" }: UserProfileProps) {
               </>
             )}
           </div>
-          <div className="px-2 py-1">
+          <div className="px-2 py-1 space-y-0.5">
             <button
               type="button"
               onClick={() => {
                 setIsOpen(false)
-                router.push("/utilidades")
+                router.push("/utilidades/buscador")
               }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
             >
-              <MoreHorizontal className="h-4 w-4 text-gray-500" />
-              Herramientas operativas
+              <Search className="h-4 w-4 text-gray-500 shrink-0" />
+              Buscador de pedidos
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false)
+                router.push("/utilidades/lista-precios")
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <MapPinned className="h-4 w-4 text-gray-500 shrink-0" />
+              Cotizá un viaje
             </button>
 
             <button
