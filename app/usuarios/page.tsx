@@ -65,7 +65,7 @@ export default function UsuariosPage() {
       return
     }
     
-    // Clientes no pueden acceder a Sistema
+    // Clientes no pueden acceder a Configuración / Administración
     if (userProfile === "Cliente") {
       router.push("/vendedores")
       return
@@ -199,7 +199,7 @@ export default function UsuariosPage() {
         <div className="mx-auto w-full max-w-[1700px]">
           <div className="mb-5 flex flex-col gap-3 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Sistema</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Configuración</p>
               <h1 className="mt-0.5 text-[28px] font-semibold tracking-tight text-slate-900">Cuentas de acceso</h1>
               <p className="mt-1 max-w-xl text-[13px] text-slate-600">Altas, roles y accesos del equipo operativo.</p>
             </div>

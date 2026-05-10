@@ -136,7 +136,10 @@ export default function GruposPage() {
       <ModernHeader />
       <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
-          <h1 className="mb-4 text-[34px] font-semibold tracking-tight text-[#1570ef]">Grupos</h1>
+          <div className="mb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5d6578]">Configuración</p>
+            <h1 className="mt-1 text-[34px] font-semibold tracking-tight text-[#1570ef]">Grupos</h1>
+          </div>
 
           <div className="overflow-hidden rounded-2xl border border-[#e6eaf4] bg-white shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e6eaf4] bg-[#fafbff] px-4 py-3 sm:px-5">

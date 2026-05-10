@@ -50,7 +50,7 @@ export default function ClientsPage() {
     
     // Choferes no pueden acceder a esta página
     if (userProfile === "Chofer") {
-      router.push("/chofer")
+      router.push("/repartidor")
       return
     }
   }, [router])
@@ -198,7 +198,7 @@ export default function ClientsPage() {
         <div className="mx-auto w-full max-w-[1700px]">
           <div className="mb-5 flex flex-col gap-3 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Catálogo</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Configuración</p>
               <h1 className="mt-0.5 text-[28px] font-semibold tracking-tight text-slate-900">Vendedores</h1>
               <p className="mt-1 max-w-xl text-[13px] text-slate-600">Cuentas comerciales y datos de integración.</p>
             </div>

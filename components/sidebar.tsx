@@ -1,6 +1,21 @@
 "use client"
 
-import { Truck, FileText, Package, Wrench, Users, DollarSign, Route, ChevronDown, ChevronRight, List, FileCheck, Upload, PackageSearch, Printer, FileUp, Search, Layers, FileBarChart } from "lucide-react"
+import {
+  Truck,
+  Users,
+  DollarSign,
+  Route,
+  ChevronDown,
+  ChevronRight,
+  FileCheck,
+  Upload,
+  Printer,
+  Layers,
+  FileBarChart,
+  Settings,
+  Briefcase,
+  Store,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { logDev } from "@/lib/logger"
 import { useState, useEffect } from "react"
@@ -8,8 +23,8 @@ import { useRouter, usePathname } from "next/navigation"
 
 const allMenuItems = [
   { icon: Truck, label: "Pedidos", active: false, hasSubmenu: true },
-  { icon: Wrench, label: "Sistema", active: false, hasSubmenu: true },
-  { icon: Users, label: "Vendedores", active: true },
+  { icon: Settings, label: "Configuración", active: false, hasSubmenu: true },
+  { icon: Briefcase, label: "Administración", active: false, hasSubmenu: true },
   { icon: Route, label: "Repartidores", active: false, hasSubmenu: true },
 ]
 
@@ -19,11 +34,15 @@ const enviosSubmenu = [
   { icon: Printer, label: "Reimpresión de etiquetas" },
 ]
 
-const sistemaSubmenu = [
+const configuracionSubmenu = [
   { icon: Users, label: "Usuarios" },
   { icon: Layers, label: "Grupos" },
+  { icon: Store, label: "Vendedores" },
+]
+
+const administracionSubmenu = [
   { icon: FileBarChart, label: "Informes" },
-  { icon: DollarSign, label: "Tarifas" },
+  { icon: DollarSign, label: "Tarifa" },
 ]
 
 const ruteateSubmenu = [
@@ -34,67 +53,79 @@ const ruteateSubmenu = [
 export function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
-  const [sistemaOpen, setSistemaOpen] = useState(false)
+  const [configuracionOpen, setConfiguracionOpen] = useState(false)
+  const [administracionOpen, setAdministracionOpen] = useState(false)
   const [enviosOpen, setEnviosOpen] = useState(false)
   const [ruteateOpen, setRuteateOpen] = useState(false)
   const [userProfile, setUserProfile] = useState<string | null>(null)
-  
+
   useEffect(() => {
-    // Obtener el perfil del usuario del sessionStorage
     const profile = sessionStorage.getItem("userProfile")
     setUserProfile(profile)
   }, [])
-  
-  // Coordinador no ve: Sistema > Tarifas
-  const enviosSubmenuFiltered =
-    userProfile === "Coordinador"
-      ? enviosSubmenu
-      : enviosSubmenu
-  const sistemaSubmenuFiltered =
-    userProfile === "Coordinador"
-      ? sistemaSubmenu.filter((s) => s.label !== "Tarifas")
-      : sistemaSubmenu
 
-  // Filtrar elementos del menú según el perfil del usuario
+  const enviosSubmenuFiltered =
+    userProfile === "Coordinador" ? enviosSubmenu : enviosSubmenu
+  const administracionSubmenuFiltered =
+    userProfile === "Coordinador"
+      ? administracionSubmenu.filter((s) => s.label !== "Tarifa")
+      : administracionSubmenu
+
   const getFilteredMenuItems = () => {
     if (!userProfile) return allMenuItems
-    
-    // Usuarios tipo "Cliente" no pueden ver "Sistema" ni "Clientes"
+
     if (userProfile === "Cliente") {
       return allMenuItems.filter(
-        (item) => item.label !== "Sistema" && item.label !== "Vendedores"
+        (item) => item.label !== "Configuración" && item.label !== "Administración"
       )
     }
-    
-    // Resto de usuarios pueden ver todo
+
     return allMenuItems
   }
-  
+
   const menuItems = getFilteredMenuItems()
-  
-  // Determinar el item activo basado en la ruta actual
+
   const getActiveItem = () => {
     if (pathname?.includes("/sistema/usuarios")) return "Usuarios"
     if (pathname?.includes("/sistema/grupos")) return "Grupos"
     if (pathname?.includes("/sistema/informes")) return "Informes"
-    if (pathname?.includes("/sistema/tarifas")) return "Tarifas"
+    if (pathname?.includes("/sistema/tarifas")) return "Tarifa"
     if (pathname?.includes("/vendedores")) return "Vendedores"
     if (pathname?.includes("/pedidos/reimpresion-etiquetas")) return "Reimpresión de etiquetas"
-    if (pathname?.includes("/pedidos/cargar") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) return "Cargar pedidos"
+    if (
+      pathname?.includes("/pedidos/cargar") ||
+      pathname?.includes("/subir-individual") ||
+      pathname?.includes("/subir-envio") ||
+      pathname?.includes("/subir-flex-manual")
+    ) {
+      return "Cargar pedidos"
+    }
     if (pathname?.includes("/pedidos")) return "Pedidos"
     if (pathname?.includes("/repartidores/ubicacion")) return "Ubicación"
     if (pathname?.includes("/repartidores/cierre")) return "Cierre"
     return null
   }
-  
+
   const activeItem = getActiveItem()
-  
-  // Abrir automáticamente los submenús si estamos en una página del submenú
+
   useEffect(() => {
-    if (pathname?.includes("/sistema/usuarios") || pathname?.includes("/sistema/tarifas") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes")) {
-      setSistemaOpen(true)
+    if (
+      pathname?.includes("/sistema/usuarios") ||
+      pathname?.includes("/sistema/grupos") ||
+      pathname?.includes("/vendedores")
+    ) {
+      setConfiguracionOpen(true)
     }
-    if (pathname?.includes("/pedidos") || pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) {
+    if (pathname?.includes("/sistema/informes") || pathname?.includes("/sistema/tarifas")) {
+      setAdministracionOpen(true)
+    }
+    if (
+      pathname?.includes("/pedidos") ||
+      pathname?.includes("/reimprimir-noflex") ||
+      pathname?.includes("/subir-individual") ||
+      pathname?.includes("/subir-envio") ||
+      pathname?.includes("/subir-flex-manual")
+    ) {
       setEnviosOpen(true)
     }
     if (pathname?.includes("/repartidores")) {
@@ -102,54 +133,62 @@ export function Sidebar() {
     }
   }, [pathname])
 
+  const closeAllExcept = (key: "envios" | "config" | "admin" | "ruteate") => {
+    setEnviosOpen(key === "envios")
+    setConfiguracionOpen(key === "config")
+    setAdministracionOpen(key === "admin")
+    setRuteateOpen(key === "ruteate")
+  }
+
   return (
     <aside className="w-64 bg-sidebar text-sidebar-foreground" suppressHydrationWarning>
-      {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4" suppressHydrationWarning>
         <img src="/logos/nexo-iso-white.png" alt="Nexo" className="h-8 w-8" />
         <span className="text-lg font-semibold">Nexo</span>
       </div>
 
-      {/* Menu Items */}
       <nav className="py-2">
         {menuItems.map((item) => {
           const Icon = item.icon
-          const isSistema = item.label === "Sistema"
+          const isConfiguracion = item.label === "Configuración"
+          const isAdministracion = item.label === "Administración"
           const isEnvios = item.label === "Pedidos"
           const isRuteate = item.label === "Repartidores"
           const hasSubmenu = item.hasSubmenu || false
-          
+
           return (
             <div key={item.label}>
               <button
                 onClick={() => {
-                  if (isSistema) {
-                    setSistemaOpen(!sistemaOpen)
+                  if (isConfiguracion) {
+                    setConfiguracionOpen(!configuracionOpen)
+                    setAdministracionOpen(false)
+                    setEnviosOpen(false)
+                    setRuteateOpen(false)
+                  } else if (isAdministracion) {
+                    setAdministracionOpen(!administracionOpen)
+                    setConfiguracionOpen(false)
                     setEnviosOpen(false)
                     setRuteateOpen(false)
                   } else if (isEnvios) {
                     setEnviosOpen(!enviosOpen)
-                    setSistemaOpen(false)
+                    setConfiguracionOpen(false)
+                    setAdministracionOpen(false)
                     setRuteateOpen(false)
                   } else if (isRuteate) {
                     setRuteateOpen(!ruteateOpen)
-                    setSistemaOpen(false)
+                    setConfiguracionOpen(false)
+                    setAdministracionOpen(false)
                     setEnviosOpen(false)
-                  } else {
-                    setSistemaOpen(false)
-                    setEnviosOpen(false)
-                    setRuteateOpen(false)
-                    if (item.label === "Vendedores") {
-                      router.push("/vendedores")
-                    }
                   }
                 }}
                 className={cn(
                   "flex w-full items-center justify-between px-4 py-3 text-sm transition-colors hover:bg-sidebar-accent",
                   activeItem === item.label && "bg-sidebar-accent",
-                  (isSistema && sistemaOpen) && "bg-sidebar-accent",
+                  (isConfiguracion && configuracionOpen) && "bg-sidebar-accent",
+                  (isAdministracion && administracionOpen) && "bg-sidebar-accent",
                   (isEnvios && enviosOpen) && "bg-sidebar-accent",
-                  (isRuteate && ruteateOpen) && "bg-sidebar-accent",
+                  (isRuteate && ruteateOpen) && "bg-sidebar-accent"
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -157,7 +196,10 @@ export function Sidebar() {
                   <span>{item.label}</span>
                 </div>
                 {hasSubmenu ? (
-                  (isSistema && sistemaOpen) || (isEnvios && enviosOpen) || (isRuteate && ruteateOpen) ? (
+                  (isConfiguracion && configuracionOpen) ||
+                  (isAdministracion && administracionOpen) ||
+                  (isEnvios && enviosOpen) ||
+                  (isRuteate && ruteateOpen) ? (
                     <ChevronDown className="h-4 w-4" />
                   ) : (
                     <ChevronRight className="h-4 w-4" />
@@ -168,8 +210,7 @@ export function Sidebar() {
                   </svg>
                 )}
               </button>
-              
-              {/* Submenu de Envíos */}
+
               {isEnvios && enviosOpen && (
                 <div className="bg-sidebar/80">
                   {enviosSubmenuFiltered.map((subItem) => {
@@ -187,13 +228,14 @@ export function Sidebar() {
                           } else {
                             logDev(`Navegar a: ${subItem.label}`)
                           }
+                          closeAllExcept("envios")
                         }}
                         className={cn(
                           "flex w-full items-center gap-3 px-4 py-2.5 pl-12 text-sm transition-colors hover:bg-sidebar-accent whitespace-nowrap",
-                          activeItem === subItem.label && "bg-sidebar-accent",
+                          activeItem === subItem.label && "bg-sidebar-accent"
                         )}
                       >
-                        <div className="flex h-4 w-4 items-center justify-center flex-shrink-0">
+                        <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center">
                           <div className="h-0.5 w-2 bg-sidebar-foreground/40" />
                         </div>
                         <SubIcon className="h-4 w-4 flex-shrink-0" />
@@ -203,11 +245,10 @@ export function Sidebar() {
                   })}
                 </div>
               )}
-              
-              {/* Submenu de Sistema */}
-              {isSistema && sistemaOpen && (
+
+              {isConfiguracion && configuracionOpen && (
                 <div className="bg-sidebar/80">
-                  {sistemaSubmenuFiltered.map((subItem) => {
+                  {configuracionSubmenu.map((subItem) => {
                     const SubIcon = subItem.icon
                     return (
                       <button
@@ -217,15 +258,14 @@ export function Sidebar() {
                             router.push("/sistema/usuarios")
                           } else if (subItem.label === "Grupos") {
                             router.push("/sistema/grupos")
-                          } else if (subItem.label === "Informes") {
-                            router.push("/sistema/informes")
-                          } else if (subItem.label === "Tarifas") {
-                            router.push("/sistema/tarifas")
+                          } else if (subItem.label === "Vendedores") {
+                            router.push("/vendedores")
                           }
+                          closeAllExcept("config")
                         }}
                         className={cn(
                           "flex w-full items-center gap-3 px-4 py-2.5 pl-12 text-sm transition-colors hover:bg-sidebar-accent",
-                          activeItem === subItem.label && "bg-sidebar-accent",
+                          activeItem === subItem.label && "bg-sidebar-accent"
                         )}
                       >
                         <div className="flex h-4 w-4 items-center justify-center">
@@ -238,8 +278,38 @@ export function Sidebar() {
                   })}
                 </div>
               )}
-              
-              {/* Submenu de Choferes */}
+
+              {isAdministracion && administracionOpen && (
+                <div className="bg-sidebar/80">
+                  {administracionSubmenuFiltered.map((subItem) => {
+                    const SubIcon = subItem.icon
+                    return (
+                      <button
+                        key={subItem.label}
+                        onClick={() => {
+                          if (subItem.label === "Informes") {
+                            router.push("/sistema/informes")
+                          } else if (subItem.label === "Tarifa") {
+                            router.push("/sistema/tarifas")
+                          }
+                          closeAllExcept("admin")
+                        }}
+                        className={cn(
+                          "flex w-full items-center gap-3 px-4 py-2.5 pl-12 text-sm transition-colors hover:bg-sidebar-accent",
+                          activeItem === subItem.label && "bg-sidebar-accent"
+                        )}
+                      >
+                        <div className="flex h-4 w-4 items-center justify-center">
+                          <div className="h-0.5 w-2 bg-sidebar-foreground/40" />
+                        </div>
+                        <SubIcon className="h-4 w-4" />
+                        <span>{subItem.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
               {isRuteate && ruteateOpen && (
                 <div className="bg-sidebar/80">
                   {ruteateSubmenu.map((subItem) => {
@@ -253,10 +323,11 @@ export function Sidebar() {
                           } else if (subItem.label === "Cierre") {
                             router.push("/repartidores/cierre")
                           }
+                          closeAllExcept("ruteate")
                         }}
                         className={cn(
                           "flex w-full items-center gap-3 px-4 py-2.5 pl-12 text-sm transition-colors hover:bg-sidebar-accent",
-                          activeItem === subItem.label && "bg-sidebar-accent",
+                          activeItem === subItem.label && "bg-sidebar-accent"
                         )}
                       >
                         <div className="flex h-4 w-4 items-center justify-center">
@@ -276,4 +347,3 @@ export function Sidebar() {
     </aside>
   )
 }
-

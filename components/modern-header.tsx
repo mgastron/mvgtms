@@ -1,6 +1,21 @@
 "use client"
 
-import { Truck, Wrench, Users, DollarSign, Route, Upload, Printer, FileUp, FileCheck, Search, Menu, X, Layers, FileBarChart } from "lucide-react"
+import {
+  Truck,
+  Users,
+  DollarSign,
+  Route,
+  Upload,
+  Printer,
+  FileCheck,
+  Menu,
+  X,
+  Layers,
+  FileBarChart,
+  Settings,
+  Briefcase,
+  Store,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
@@ -24,21 +39,23 @@ const allMenuItems = [
     ],
   },
   {
-    icon: Wrench,
-    label: "Sistema",
+    icon: Settings,
+    label: "Configuración",
     hasSubmenu: true,
     submenu: [
       { icon: Users, label: "Usuarios", path: "/sistema/usuarios" },
       { icon: Layers, label: "Grupos", path: "/sistema/grupos" },
-      { icon: FileBarChart, label: "Informes", path: "/sistema/informes" },
-      { icon: DollarSign, label: "Tarifas", path: "/sistema/tarifas" },
+      { icon: Store, label: "Vendedores", path: "/vendedores" },
     ],
   },
   {
-    icon: Users,
-    label: "Vendedores",
-    hasSubmenu: false,
-    path: "/vendedores",
+    icon: Briefcase,
+    label: "Administración",
+    hasSubmenu: true,
+    submenu: [
+      { icon: FileBarChart, label: "Informes", path: "/sistema/informes" },
+      { icon: DollarSign, label: "Tarifa", path: "/sistema/tarifas" },
+    ],
   },
   {
     icon: Route,
@@ -62,7 +79,7 @@ export function ModernHeader() {
     setUserProfile(profile)
   }, [])
 
-  const coordinadorOcultarSubmenuLabels = ["Tarifas"]
+  const coordinadorOcultarSubmenuLabels = ["Tarifa"]
 
   const getFilteredMenuItems = () => {
     if (userProfile === "Chofer") return allMenuItems.filter((item) => item.label !== "Repartidores")
@@ -84,7 +101,7 @@ export function ModernHeader() {
     if (pathname?.includes("/sistema/usuarios")) return "Usuarios"
     if (pathname?.includes("/sistema/grupos")) return "Grupos"
     if (pathname?.includes("/sistema/informes")) return "Informes"
-    if (pathname?.includes("/sistema/tarifas")) return "Tarifas"
+    if (pathname?.includes("/sistema/tarifas")) return "Tarifa"
     if (pathname?.includes("/vendedores")) return "Vendedores"
     if (pathname?.includes("/pedidos/reimpresion-etiquetas")) return "Reimpresión de etiquetas"
     if (pathname?.includes("/pedidos/cargar") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) {
@@ -100,8 +117,12 @@ export function ModernHeader() {
     if (pathname?.startsWith("/utilidades")) return null
     if (pathname?.includes("/sistema/estado-ordenes")) return null
     if (pathname?.includes("/pedidos") || pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir")) return "Pedidos"
-    if (pathname?.includes("/sistema/usuarios") || pathname?.includes("/sistema/grupos") || pathname?.includes("/sistema/informes") || pathname?.includes("/sistema/tarifas")) return "Sistema"
-    if (pathname?.includes("/vendedores")) return "Vendedores"
+    if (pathname?.includes("/sistema/usuarios") || pathname?.includes("/sistema/grupos") || pathname?.includes("/vendedores")) {
+      return "Configuración"
+    }
+    if (pathname?.includes("/sistema/informes") || pathname?.includes("/sistema/tarifas")) {
+      return "Administración"
+    }
     if (pathname?.includes("/repartidores")) return "Repartidores"
     return null
   }

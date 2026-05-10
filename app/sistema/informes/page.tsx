@@ -231,9 +231,12 @@ export default function InformesPage() {
       <ModernHeader />
       <main className={`px-4 pb-6 pt-3 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
-          <div className="mb-4 flex items-center gap-3">
-            <FileBarChart className="h-8 w-8 shrink-0 text-[#1570ef]" aria-hidden />
-            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Informes</h1>
+          <div className="mb-4 flex flex-col gap-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5d6578]">Administración</p>
+            <div className="flex items-center gap-3">
+              <FileBarChart className="h-8 w-8 shrink-0 text-[#1570ef]" aria-hidden />
+              <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Informes</h1>
+            </div>
           </div>
 
           <div className="ml-2 w-full max-w-[640px] space-y-5 rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm sm:p-6">
