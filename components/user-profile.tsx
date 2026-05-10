@@ -99,6 +99,8 @@ export function UserProfile({ variant = "default" }: UserProfileProps) {
     sessionStorage.removeItem("isAuthenticated")
     sessionStorage.removeItem("username")
     sessionStorage.removeItem("userProfile")
+    sessionStorage.removeItem("userGrupoId")
+    sessionStorage.removeItem("vendedorActivoCodigo")
     router.push("/")
   }
 

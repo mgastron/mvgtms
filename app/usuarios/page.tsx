@@ -35,6 +35,7 @@ interface User {
   perfil: string
   contraseña: string
   codigoCliente?: string
+  grupoId?: number | null
   habilitado: boolean
   bloqueado: boolean
 }
@@ -104,6 +105,7 @@ export default function UsuariosPage() {
             perfil: u.perfil || "",
             contraseña: u.contraseña || u.password || "",
             codigoCliente: u.codigoCliente || undefined,
+            grupoId: u.grupoId != null ? Number(u.grupoId) : undefined,
             habilitado: u.habilitado !== undefined ? u.habilitado : true,
             bloqueado: u.bloqueado !== undefined ? u.bloqueado : false,
           }))
@@ -452,7 +454,8 @@ export default function UsuariosPage() {
                   usuario: userData.usuario,
                   contraseña: userData.contraseña,
                   perfil: userData.tipoUsuario,
-                  codigoCliente: userData.codigoCliente || null,
+                  codigoCliente: userData.codigoCliente ?? null,
+                  grupoId: userData.grupoId ?? null,
                   habilitado: true,
                   bloqueado: false,
                 }),
@@ -472,6 +475,7 @@ export default function UsuariosPage() {
                           perfil: updatedUser.perfil,
                           contraseña: updatedUser.contraseña,
                           codigoCliente: updatedUser.codigoCliente || undefined,
+                          grupoId: updatedUser.grupoId != null ? Number(updatedUser.grupoId) : undefined,
                           habilitado: updatedUser.habilitado,
                           bloqueado: updatedUser.bloqueado,
                         }
@@ -497,7 +501,8 @@ export default function UsuariosPage() {
                   usuario: userData.usuario,
                   contraseña: userData.contraseña,
                   perfil: userData.tipoUsuario,
-                  codigoCliente: userData.codigoCliente || null,
+                  codigoCliente: userData.codigoCliente ?? null,
+                  grupoId: userData.grupoId ?? null,
                   habilitado: true,
                   bloqueado: false,
                 }),
@@ -516,6 +521,7 @@ export default function UsuariosPage() {
                     perfil: newUser.perfil,
                     contraseña: newUser.contraseña,
                     codigoCliente: newUser.codigoCliente || undefined,
+                    grupoId: newUser.grupoId != null ? Number(newUser.grupoId) : undefined,
                     habilitado: newUser.habilitado,
                     bloqueado: newUser.bloqueado,
                   },

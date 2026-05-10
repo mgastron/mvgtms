@@ -38,6 +38,10 @@ public class Usuario {
     @Column(name = "codigo_cliente", length = 50)
     private String codigoCliente;
 
+    /** Vendedor (perfil Cliente): acceso a todo el grupo; el front filtra por vendedor elegido. */
+    @Column(name = "grupo_id")
+    private Long grupoId;
+
     @Column(name = "habilitado", nullable = false)
     private Boolean habilitado = true;
 

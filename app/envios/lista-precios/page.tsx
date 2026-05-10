@@ -43,6 +43,7 @@ export default function ListaPreciosEnvioPage() {
   const router = useRouter()
   const [userProfile, setUserProfile] = useState<string | null>(null)
   const [userCodigoCliente, setUserCodigoCliente] = useState<string | null>(null)
+  const [userGrupoId, setUserGrupoId] = useState<number | null>(null)
   const [clienteNombre, setClienteNombre] = useState<string>("")
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [listaPrecio, setListaPrecio] = useState<ListaPrecio | null>(null)
@@ -78,7 +79,6 @@ export default function ListaPreciosEnvioPage() {
 
     setUserProfile(profile)
 
-    // Si el usuario es Cliente, obtener su código de cliente y nombre desde el backend
     if (profile === "Cliente") {
       const loadUserInfo = async () => {
         const username = sessionStorage.getItem("username")
@@ -87,26 +87,52 @@ export default function ListaPreciosEnvioPage() {
         try {
           const apiBaseUrl = getApiBaseUrl()
           const userResponse = await fetch(`${apiBaseUrl}/usuarios?size=1000`)
-          if (userResponse.ok) {
-            const userData = await userResponse.json()
-            const content = userData.content || []
-            const user = content.find((u: any) => u.usuario === username)
-            if (user && user.codigoCliente) {
-              setUserCodigoCliente(user.codigoCliente)
-              setFormData((prev) => ({ ...prev, cliente: user.codigoCliente }))
+          if (!userResponse.ok) return
+          const userData = await userResponse.json()
+          const content = userData.content || []
+          const user = content.find((u: any) => u.usuario === username)
+          if (!user) return
 
-              try {
-                const clienteResponse = await fetch(`${apiBaseUrl}/clientes?codigo=${encodeURIComponent(user.codigoCliente)}&size=1`)
-                if (clienteResponse.ok) {
-                  const clienteData = await clienteResponse.json()
-                  if (clienteData.content && clienteData.content.length > 0) {
-                    const cliente = clienteData.content[0]
-                    if (cliente.nombreFantasia) setClienteNombre(cliente.nombreFantasia)
-                  }
+          const gid = user.grupoId != null && user.grupoId !== "" ? Number(user.grupoId) : null
+          if (gid != null && !Number.isNaN(gid)) {
+            setUserGrupoId(gid)
+            setUserCodigoCliente(null)
+            const cr = await fetch(`${apiBaseUrl}/clientes?grupoId=${gid}&size=1000`)
+            if (!cr.ok) return
+            const cd = await cr.json()
+            const rows = Array.isArray(cd) ? cd : cd.content || []
+            const clientesData: Cliente[] = rows.map((c: any) => ({
+              id: c.id,
+              codigo: c.codigo,
+              nombreFantasia: c.nombreFantasia,
+              listaPreciosId: c.listaPreciosId,
+            }))
+            setClientes(clientesData)
+            const saved = sessionStorage.getItem("vendedorActivoCodigo")
+            const codigoElegido =
+              saved && clientesData.some((c) => c.codigo === saved)
+                ? saved
+                : clientesData[0]?.codigo || ""
+            setFormData((prev) => ({ ...prev, cliente: codigoElegido }))
+            const sel = clientesData.find((c) => c.codigo === codigoElegido)
+            setClienteNombre(sel?.nombreFantasia || "")
+          } else if (user.codigoCliente) {
+            setUserGrupoId(null)
+            setUserCodigoCliente(user.codigoCliente)
+            setFormData((prev) => ({ ...prev, cliente: user.codigoCliente }))
+            try {
+              const clienteResponse = await fetch(
+                `${apiBaseUrl}/clientes?codigo=${encodeURIComponent(user.codigoCliente)}&size=1`
+              )
+              if (clienteResponse.ok) {
+                const clienteData = await clienteResponse.json()
+                if (clienteData.content && clienteData.content.length > 0) {
+                  const cliente = clienteData.content[0]
+                  if (cliente.nombreFantasia) setClienteNombre(cliente.nombreFantasia)
                 }
-              } catch (error) {
-                warnDev("Error al cargar cliente del backend:", error)
               }
+            } catch (error) {
+              warnDev("Error al cargar cliente del backend:", error)
             }
           }
         } catch (error) {
@@ -155,10 +181,13 @@ export default function ListaPreciosEnvioPage() {
     if (field === "cliente") {
       const cliente = clientes.find((c) => c.codigo === value)
       if (cliente) {
+        setClienteNombre(cliente.nombreFantasia || "")
+        if (userProfile === "Cliente" && userGrupoId != null) {
+          sessionStorage.setItem("vendedorActivoCodigo", value)
+        }
         setClienteSeleccionado(cliente)
         loadListaPrecios(cliente.listaPreciosId)
       }
-      // Limpiar errores y resultados al cambiar el cliente
       setErrorCP(null)
       setResultadoCalculo(null)
     }
@@ -221,17 +250,41 @@ export default function ListaPreciosEnvioPage() {
     }
   }
 
-  // Cargar lista de precios cuando se selecciona un cliente o cuando es usuario Cliente
   useEffect(() => {
-    const clienteId = userProfile === "Cliente" ? userCodigoCliente : formData.cliente
-    
-    if (clienteId) {
-      // Buscar el cliente para obtener su listaPreciosId
+    const tieneCliente =
+      (userProfile === "Cliente" && userGrupoId != null && !!formData.cliente) ||
+      (userProfile === "Cliente" && userGrupoId == null && !!userCodigoCliente) ||
+      (userProfile !== "Cliente" && !!formData.cliente)
+
+    if (tieneCliente) {
       const buscarCliente = async () => {
         let cliente: Cliente | null = null
 
-        // Si es usuario Cliente, ya tenemos el código
-        if (userProfile === "Cliente" && userCodigoCliente) {
+        if (userProfile === "Cliente" && userGrupoId != null) {
+          cliente = clientes.find((c) => c.codigo === formData.cliente) || null
+          if (!cliente) {
+            try {
+              const apiBaseUrl = getApiBaseUrl()
+              const response = await fetch(
+                `${apiBaseUrl}/clientes?codigo=${encodeURIComponent(formData.cliente)}&size=1`
+              )
+              if (response.ok) {
+                const data = await response.json()
+                if (data.content && data.content.length > 0) {
+                  const row = data.content[0]
+                  cliente = {
+                    id: row.id,
+                    codigo: row.codigo,
+                    nombreFantasia: row.nombreFantasia,
+                    listaPreciosId: row.listaPreciosId,
+                  }
+                }
+              }
+            } catch (error) {
+              warnDev("Error al cargar cliente del backend:", error)
+            }
+          }
+        } else if (userProfile === "Cliente" && userCodigoCliente) {
           try {
             const apiBaseUrl = getApiBaseUrl()
             const response = await fetch(`${apiBaseUrl}/clientes?codigo=${encodeURIComponent(userCodigoCliente)}&size=1`)
@@ -245,7 +298,6 @@ export default function ListaPreciosEnvioPage() {
             warnDev("Error al cargar cliente del backend:", error)
           }
         } else {
-          // Si no es usuario Cliente, buscar en la lista de clientes cargados
           cliente = clientes.find((c) => c.codigo === formData.cliente) || null
         }
 
@@ -263,7 +315,7 @@ export default function ListaPreciosEnvioPage() {
       setListaPrecio(null)
       setZonas([])
     }
-  }, [formData.cliente, userProfile, userCodigoCliente, clientes])
+  }, [formData.cliente, userProfile, userCodigoCliente, userGrupoId, clientes])
 
   const handleCalcular = () => {
     if (!formData.cp || !formData.cp.trim()) {
@@ -335,7 +387,7 @@ export default function ListaPreciosEnvioPage() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="block text-[14px] font-medium text-[#4d5571]">Cuenta</label>
-                {userProfile === "Cliente" ? (
+                {userProfile === "Cliente" && userGrupoId == null ? (
                   <Input
                     value={clienteNombre || ""}
                     disabled

@@ -17,6 +17,8 @@ public class UsuarioDTO {
     private String contraseña;
     private String perfil;
     private String codigoCliente;
+    /** Vendedor asociado a un grupo de clientes (alternativa a {@link #codigoCliente} solo). */
+    private Long grupoId;
     private Boolean habilitado;
     private Boolean bloqueado;
     private Double latitud;

@@ -80,6 +80,12 @@ export default function EnviosPage() {
   const router = useRouter()
   const [userProfile, setUserProfile] = useState<string | null>(null)
   const [userCodigoCliente, setUserCodigoCliente] = useState<string | null>(null)
+  const [userGrupoId, setUserGrupoId] = useState<number | null>(null)
+  const [grupoClientesVendedor, setGrupoClientesVendedor] = useState<Array<{ codigo: string; nombreFantasia: string }>>([])
+  /** Vendedor del grupo elegido: "" = todos los del grupo; código = un solo cliente (legacy usa solo userCodigoCliente). */
+  const [vendedorDelGrupoCodigo, setVendedorDelGrupoCodigo] = useState<string>("")
+  /** Evita pedir envíos sin filtro de cuenta antes de resolver grupo/código del vendedor. */
+  const [clienteAuthResolved, setClienteAuthResolved] = useState(false)
   const [choferId, setChoferId] = useState<number | null>(null)
   const [envios, setEnvios] = useState<Envio[]>([])
   const [totalPages, setTotalPages] = useState(0)
@@ -247,9 +253,15 @@ export default function EnviosPage() {
         params.append("grupoId", filters.grupoId.trim())
       }
 
-      // Si el usuario es Cliente, agregar filtro de código de cliente
-      if (userProfile === "Cliente" && userCodigoCliente) {
-        params.append("codigoCliente", userCodigoCliente)
+      if (userProfile === "Cliente") {
+        if (userGrupoId != null) {
+          params.append("grupoId", String(userGrupoId))
+          if (vendedorDelGrupoCodigo.trim()) {
+            params.append("codigoCliente", vendedorDelGrupoCodigo.trim())
+          }
+        } else if (userCodigoCliente) {
+          params.append("codigoCliente", userCodigoCliente)
+        }
       }
 
       // Si el usuario es Chofer, agregar filtro para ver solo sus envíos asignados
@@ -260,6 +272,7 @@ export default function EnviosPage() {
       const apiBaseUrl = getApiBaseUrl()
 
       // Solo usar caché cuando no hay ningún filtro activo (fechas, estado, origen, tracking, idVenta)
+      const clienteUsaGrupo = userProfile === "Cliente" && userGrupoId != null
       const sinFiltros =
         !filters.fechaDesde &&
         !filters.fechaHasta &&
@@ -271,11 +284,12 @@ export default function EnviosPage() {
         !filters.nombreFantasia?.trim() &&
         !filters.destinoNombre?.trim() &&
         !filters.destinoDireccion?.trim() &&
-        !filters.codigoPostal?.trim()
+        !filters.codigoPostal?.trim() &&
+        !clienteUsaGrupo
 
       if (page === 0 && enviosCache.length > 0 && sinFiltros) {
         let enviosFiltrados = enviosCache
-        if (userProfile === "Cliente" && userCodigoCliente) {
+        if (userProfile === "Cliente" && userCodigoCliente && userGrupoId == null) {
           enviosFiltrados = enviosFiltrados.filter((envio: any) => {
             const clienteCodigo = envio.cliente?.split(" - ")[0]?.trim() || envio.cliente
             return clienteCodigo?.toLowerCase() === userCodigoCliente.toLowerCase()
@@ -318,8 +332,7 @@ export default function EnviosPage() {
       // Aplicar filtros localmente
       let enviosFiltrados = enviosGuardados
       
-      // Filtrar por cliente si es necesario
-      if (userProfile === "Cliente" && userCodigoCliente) {
+      if (userProfile === "Cliente" && userCodigoCliente && userGrupoId == null) {
         enviosFiltrados = enviosFiltrados.filter((envio: any) => {
           const clienteCodigo = envio.cliente?.split(" - ")[0]?.trim() || envio.cliente
           return clienteCodigo?.toLowerCase() === userCodigoCliente.toLowerCase()
@@ -361,11 +374,14 @@ export default function EnviosPage() {
 
     setUserProfile(profile)
 
-    // Si el usuario es Cliente, obtener su código de cliente desde el backend
     if (profile === "Cliente") {
+      setClienteAuthResolved(false)
       const loadUserInfo = async () => {
         const username = sessionStorage.getItem("username")
-        if (!username) return
+        if (!username) {
+          setClienteAuthResolved(true)
+          return
+        }
 
         try {
           const apiBaseUrl = getApiBaseUrl()
@@ -374,13 +390,59 @@ export default function EnviosPage() {
             const data = await response.json()
             const content = data.content || []
             const user = content.find((u: any) => u.usuario === username)
-            if (user && user.codigoCliente) setUserCodigoCliente(user.codigoCliente)
+            if (!user) {
+              setClienteAuthResolved(true)
+              return
+            }
+
+            const gid = user.grupoId != null && user.grupoId !== "" ? Number(user.grupoId) : null
+            if (gid != null && !Number.isNaN(gid)) {
+              sessionStorage.setItem("userGrupoId", String(gid))
+              setUserGrupoId(gid)
+              setUserCodigoCliente(null)
+              const cr = await fetch(`${apiBaseUrl}/clientes?grupoId=${gid}&size=1000`)
+              if (cr.ok) {
+                const cd = await cr.json()
+                const rows = Array.isArray(cd) ? cd : cd.content || []
+                const list = rows
+                  .map((c: any) => ({
+                    codigo: String(c.codigo ?? "").trim(),
+                    nombreFantasia: String(c.nombreFantasia ?? "").trim(),
+                  }))
+                  .filter((c: { codigo: string }) => c.codigo)
+                setGrupoClientesVendedor(list)
+                const saved = sessionStorage.getItem("vendedorActivoCodigo")
+                if (saved && list.some((c: { codigo: string }) => c.codigo === saved)) {
+                  setVendedorDelGrupoCodigo(saved)
+                } else {
+                  setVendedorDelGrupoCodigo("")
+                  sessionStorage.removeItem("vendedorActivoCodigo")
+                }
+              } else {
+                setGrupoClientesVendedor([])
+                setVendedorDelGrupoCodigo("")
+              }
+            } else if (user.codigoCliente) {
+              sessionStorage.removeItem("userGrupoId")
+              setUserGrupoId(null)
+              setGrupoClientesVendedor([])
+              setVendedorDelGrupoCodigo("")
+              setUserCodigoCliente(user.codigoCliente)
+            } else {
+              setUserGrupoId(null)
+              setUserCodigoCliente(null)
+              setGrupoClientesVendedor([])
+            }
           }
         } catch (error) {
           warnDev("No se pudo cargar información del backend:", error)
+        } finally {
+          setClienteAuthResolved(true)
         }
       }
       loadUserInfo()
+    } else {
+      setClienteAuthResolved(true)
     }
 
     // Si el usuario es Chofer, obtener su ID (para filtrar solo sus envíos asignados)
@@ -408,9 +470,10 @@ export default function EnviosPage() {
   // Cargar envíos cuando cambian los filtros o la página (Chofer: esperar a tener choferId)
   useEffect(() => {
     if (!userProfile) return
+    if (userProfile === "Cliente" && !clienteAuthResolved) return
     if (userProfile === "Chofer" && choferId == null) return
     loadEnvios(currentPage, itemsPerPage)
-  }, [currentPage, itemsPerPage, filters, userProfile, userCodigoCliente, choferId])
+  }, [currentPage, itemsPerPage, filters, userProfile, userCodigoCliente, userGrupoId, vendedorDelGrupoCodigo, choferId, clienteAuthResolved])
 
   // Los envíos ya vienen filtrados del backend, no necesitamos filtrar localmente
   const filteredEnvios = envios
@@ -592,9 +655,15 @@ export default function EnviosPage() {
         params.append("grupoId", filters.grupoId.trim())
       }
 
-      // Si el usuario es Cliente, agregar filtro de código de cliente
-      if (userProfile === "Cliente" && userCodigoCliente) {
-        params.append("codigoCliente", userCodigoCliente)
+      if (userProfile === "Cliente") {
+        if (userGrupoId != null) {
+          params.append("grupoId", String(userGrupoId))
+          if (vendedorDelGrupoCodigo.trim()) {
+            params.append("codigoCliente", vendedorDelGrupoCodigo.trim())
+          }
+        } else if (userCodigoCliente) {
+          params.append("codigoCliente", userCodigoCliente)
+        }
       }
 
       // OPTIMIZACIÓN: Obtener TODOS los envíos que cumplan los filtros (sin paginación)
@@ -768,7 +837,16 @@ export default function EnviosPage() {
         filtrosAplicados.push(`Zonas de entrega: ${filters.zonasEntrega}`)
       }
       
-      if (userProfile === "Cliente" && userCodigoCliente) {
+      if (userProfile === "Cliente" && userGrupoId != null) {
+        const v =
+          vendedorDelGrupoCodigo.trim() &&
+          grupoClientesVendedor.find((c) => c.codigo === vendedorDelGrupoCodigo.trim())
+        filtrosAplicados.push(
+          v
+            ? `Vendedor: ${v.nombreFantasia || v.codigo}`
+            : "Vendedor: todos los del grupo"
+        )
+      } else if (userProfile === "Cliente" && userCodigoCliente) {
         filtrosAplicados.push(`Cuenta interna: ${userCodigoCliente}`)
       }
       
@@ -928,6 +1006,36 @@ export default function EnviosPage() {
               Descargar tabla
             </Button>
           </div>
+
+          {userProfile === "Cliente" && userGrupoId != null && grupoClientesVendedor.length > 0 && (
+            <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-[#e6eaf4] bg-white px-4 py-3 shadow-sm">
+              <div className="min-w-[240px] flex-1 space-y-1">
+                <label className="block text-[13px] font-medium text-[#4d5571]">Mostrar pedidos de</label>
+                <Select
+                  value={vendedorDelGrupoCodigo.trim() === "" ? "__todos__" : vendedorDelGrupoCodigo.trim()}
+                  onValueChange={(v) => {
+                    const cod = v === "__todos__" ? "" : v
+                    setVendedorDelGrupoCodigo(cod)
+                    if (cod) sessionStorage.setItem("vendedorActivoCodigo", cod)
+                    else sessionStorage.removeItem("vendedorActivoCodigo")
+                    setCurrentPage(0)
+                  }}
+                >
+                  <SelectTrigger className="h-10 text-[14px]">
+                    <SelectValue placeholder="Elegí vendedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__todos__">Todos los del grupo</SelectItem>
+                    {grupoClientesVendedor.map((c) => (
+                      <SelectItem key={c.codigo} value={c.codigo}>
+                        {c.nombreFantasia ? `${c.nombreFantasia} (${c.codigo})` : c.codigo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
 
             {/* Filters Section */}
           <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm space-y-4">

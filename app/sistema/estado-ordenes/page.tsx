@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RefreshCw, Eye, CheckCircle2, XCircle, AlertCircle, Inbox } from "lucide-react"
 import { Montserrat } from "next/font/google"
 import { getApiBaseUrl } from "@/lib/api-config"
-import { logDev, errorDev } from "@/lib/logger"
+import { logDev, errorDev, warnDev } from "@/lib/logger"
 import { EnvioDetailModal } from "@/components/envio-detail-modal"
 import {
   AlertDialog,
@@ -42,6 +42,11 @@ interface PedidoTiendaNube {
 export default function EstadoOrdenesPage() {
   const router = useRouter()
   const [userProfile, setUserProfile] = useState<string | null>(null)
+  const [userGrupoId, setUserGrupoId] = useState<number | null>(null)
+  const [grupoClienteRows, setGrupoClienteRows] = useState<Array<{ id: number; codigo: string; nombreFantasia: string }>>([])
+  const [vendedorDelGrupoCodigo, setVendedorDelGrupoCodigo] = useState<string>("")
+  const [legacyClienteId, setLegacyClienteId] = useState<number | null>(null)
+  const [clienteScopeReady, setClienteScopeReady] = useState(false)
   const [pedidos, setPedidos] = useState<PedidoTiendaNube[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -93,6 +98,85 @@ export default function EstadoOrdenesPage() {
         router.push("/pedidos")
         return
       }
+    }
+
+    if (profile === "Cliente") {
+      setClienteScopeReady(false)
+      const loadClienteScope = async () => {
+        const username = sessionStorage.getItem("username")
+        if (!username) {
+          setClienteScopeReady(true)
+          return
+        }
+        try {
+          const apiBaseUrl = getApiBaseUrl()
+          const ur = await fetch(`${apiBaseUrl}/usuarios?size=1000`)
+          if (!ur.ok) {
+            setClienteScopeReady(true)
+            return
+          }
+          const ud = await ur.json()
+          const user = (ud.content || []).find((u: any) => u.usuario === username)
+          if (!user) {
+            setClienteScopeReady(true)
+            return
+          }
+          const gid = user.grupoId != null && user.grupoId !== "" ? Number(user.grupoId) : null
+          if (gid != null && !Number.isNaN(gid)) {
+            setUserGrupoId(gid)
+            setLegacyClienteId(null)
+            const cr = await fetch(`${apiBaseUrl}/clientes?grupoId=${gid}&size=1000`)
+            if (cr.ok) {
+              const cd = await cr.json()
+              const rows = Array.isArray(cd) ? cd : cd.content || []
+              const list = rows
+                .map((c: any) => ({
+                  id: Number(c.id),
+                  codigo: String(c.codigo ?? "").trim(),
+                  nombreFantasia: String(c.nombreFantasia ?? "").trim(),
+                }))
+                .filter((c: { id: number; codigo: string }) => c.id > 0 && c.codigo)
+              setGrupoClienteRows(list)
+              const saved = sessionStorage.getItem("vendedorActivoCodigo")
+              if (saved && list.some((c: { codigo: string }) => c.codigo === saved)) {
+                setVendedorDelGrupoCodigo(saved)
+              } else {
+                setVendedorDelGrupoCodigo("")
+              }
+            } else {
+              setGrupoClienteRows([])
+            }
+          } else if (user.codigoCliente) {
+            setUserGrupoId(null)
+            setGrupoClienteRows([])
+            setVendedorDelGrupoCodigo("")
+            const cr = await fetch(
+              `${apiBaseUrl}/clientes?codigo=${encodeURIComponent(user.codigoCliente)}&size=1`
+            )
+            if (cr.ok) {
+              const cd = await cr.json()
+              const row = cd.content?.[0]
+              if (row?.id != null) setLegacyClienteId(Number(row.id))
+              else setLegacyClienteId(null)
+            } else setLegacyClienteId(null)
+          } else {
+            setUserGrupoId(null)
+            setGrupoClienteRows([])
+            setLegacyClienteId(null)
+          }
+        } catch (e) {
+          warnDev("No se pudo cargar alcance de cliente para verificador:", e)
+        } finally {
+          setClienteScopeReady(true)
+        }
+      }
+      loadClienteScope()
+    } else {
+      setClienteScopeReady(true)
+      setUserGrupoId(null)
+      setGrupoClienteRows([])
+      setLegacyClienteId(null)
+      setVendedorDelGrupoCodigo("")
     }
   }, [router])
 
@@ -494,10 +578,10 @@ export default function EstadoOrdenesPage() {
   }
 
   useEffect(() => {
-    if (userProfile) {
+    if (userProfile && clienteScopeReady) {
       loadPedidos()
     }
-  }, [userProfile])
+  }, [userProfile, clienteScopeReady])
 
   // Formatear fecha (solo fecha)
   const formatFecha = (fechaStr: string | null | undefined) => {
@@ -941,9 +1025,28 @@ export default function EstadoOrdenesPage() {
     }
   }
 
+  const pedidosEnAlcance = useMemo(() => {
+    if (userProfile !== "Cliente") return pedidos
+    if (!clienteScopeReady) return []
+    if (userGrupoId != null && grupoClienteRows.length > 0) {
+      const ids = new Set(grupoClienteRows.map((r) => r.id))
+      let base = pedidos.filter((p) => ids.has(p.clienteId))
+      const cod = vendedorDelGrupoCodigo.trim()
+      if (cod) {
+        const row = grupoClienteRows.find((r) => r.codigo === cod)
+        if (row) base = base.filter((p) => p.clienteId === row.id)
+      }
+      return base
+    }
+    if (legacyClienteId != null) {
+      return pedidos.filter((p) => p.clienteId === legacyClienteId)
+    }
+    return pedidos
+  }, [pedidos, userProfile, userGrupoId, grupoClienteRows, vendedorDelGrupoCodigo, legacyClienteId, clienteScopeReady])
+
   // Filtrar pedidos según los filtros aplicados
   const filteredPedidos = useMemo(() => {
-    return pedidos.filter((item) => {
+    return pedidosEnAlcance.filter((item) => {
       const pedido = item.pedido
 
       // Filtro por nombre fantasia
@@ -1094,7 +1197,7 @@ export default function EstadoOrdenesPage() {
 
       return true
     })
-  }, [pedidos, filters])
+  }, [pedidosEnAlcance, filters])
 
   // Calcular paginación
   const totalPages = Math.ceil(filteredPedidos.length / itemsPerPage)
@@ -1105,7 +1208,7 @@ export default function EstadoOrdenesPage() {
   // Obtener valores únicos para los selects
   const estadosUnicos = useMemo(() => {
     const estados = new Set<string>()
-    pedidos.forEach((item) => {
+    pedidosEnAlcance.forEach((item) => {
       const pedido = item.pedido
       let estado = "Desconocido"
       if (pedido.status) {
@@ -1124,23 +1227,21 @@ export default function EstadoOrdenesPage() {
       if (estado) estados.add(estado)
     })
     return Array.from(estados).sort()
-  }, [pedidos])
+  }, [pedidosEnAlcance])
 
   // Obtener nombres de clientes que tienen vinculación (no Mercado Libre)
   // Por ahora solo mostramos los que tienen pedidos de Tienda Nube, Shopify o VTEX
   const nombresFantasiaUnicos = useMemo(() => {
     const nombres = new Set<string>()
-    pedidos.forEach((item) => {
-      // Solo incluir clientes que tienen pedidos de plataformas que no sean Mercado Libre
-      // Por ahora todos los pedidos vienen de Tienda Nube, pero esto puede expandirse
+    pedidosEnAlcance.forEach((item) => {
       if (item.clienteNombre) nombres.add(item.clienteNombre)
     })
     return Array.from(nombres).sort()
-  }, [pedidos])
+  }, [pedidosEnAlcance])
 
   const estadosFulfillmentUnicos = useMemo(() => {
     const estados = new Set<string>()
-    pedidos.forEach((item) => {
+    pedidosEnAlcance.forEach((item) => {
       const pedido = item.pedido
       if (pedido.fulfillments && pedido.fulfillments.length > 0) {
         pedido.fulfillments.forEach((fulfillment: any) => {
@@ -1149,7 +1250,7 @@ export default function EstadoOrdenesPage() {
       }
     })
     return Array.from(estados).sort()
-  }, [pedidos])
+  }, [pedidosEnAlcance])
 
   const filterInputClass =
     "h-10 rounded-xl border border-[#e6eaf4] bg-white text-[14px] font-medium text-[#1f2433] shadow-sm placeholder:font-normal placeholder:text-[#8890a8] focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"
@@ -1194,6 +1295,34 @@ export default function EstadoOrdenesPage() {
               Actualizar
             </Button>
           </div>
+
+          {userProfile === "Cliente" && userGrupoId != null && grupoClienteRows.length > 0 && (
+            <div className="rounded-xl border border-[#e6eaf4] bg-white px-4 py-3 shadow-sm">
+              <label className="mb-1.5 block text-[13px] font-medium text-[#4d5571]">Mostrar pedidos de</label>
+              <Select
+                value={vendedorDelGrupoCodigo.trim() === "" ? "__todos__" : vendedorDelGrupoCodigo.trim()}
+                onValueChange={(v) => {
+                  const cod = v === "__todos__" ? "" : v
+                  setVendedorDelGrupoCodigo(cod)
+                  if (cod) sessionStorage.setItem("vendedorActivoCodigo", cod)
+                  else sessionStorage.removeItem("vendedorActivoCodigo")
+                  setCurrentPage(1)
+                }}
+              >
+                <SelectTrigger className="h-10 max-w-md text-[14px]">
+                  <SelectValue placeholder="Elegí vendedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__todos__">Todos los del grupo</SelectItem>
+                  {grupoClienteRows.map((c) => (
+                    <SelectItem key={c.id} value={c.codigo}>
+                      {c.nombreFantasia ? `${c.nombreFantasia} (${c.codigo})` : c.codigo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {error && (
             <div

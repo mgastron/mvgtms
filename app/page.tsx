@@ -29,6 +29,8 @@ export default function LoginPage() {
       sessionStorage.setItem("isAuthenticated", "true")
       sessionStorage.setItem("username", username)
       sessionStorage.setItem("userProfile", "Administrativo")
+      sessionStorage.removeItem("userGrupoId")
+      sessionStorage.removeItem("vendedorActivoCodigo")
       router.push("/vendedores")
       return
     }
@@ -48,7 +50,13 @@ export default function LoginPage() {
             sessionStorage.setItem("isAuthenticated", "true")
             sessionStorage.setItem("username", username)
             sessionStorage.setItem("userProfile", userProfile)
-            
+            if (user.grupoId != null && user.grupoId !== "") {
+              sessionStorage.setItem("userGrupoId", String(user.grupoId))
+            } else {
+              sessionStorage.removeItem("userGrupoId")
+            }
+            sessionStorage.removeItem("vendedorActivoCodigo")
+
             // Redirigir según el perfil (Chofer va a ver solo sus envíos asignados)
             if (userProfile === "Chofer") {
               router.push("/repartidor")

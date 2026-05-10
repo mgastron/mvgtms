@@ -86,6 +86,7 @@ public class UsuarioService {
         usuario.setContraseña(usuarioDTO.getContraseña());
         usuario.setPerfil(usuarioDTO.getPerfil());
         usuario.setCodigoCliente(usuarioDTO.getCodigoCliente());
+        usuario.setGrupoId(usuarioDTO.getGrupoId());
         usuario.setHabilitado(usuarioDTO.getHabilitado());
         usuario.setBloqueado(usuarioDTO.getBloqueado());
 
@@ -134,6 +135,7 @@ public class UsuarioService {
         dto.setContraseña(usuario.getContraseña());
         dto.setPerfil(usuario.getPerfil());
         dto.setCodigoCliente(usuario.getCodigoCliente());
+        dto.setGrupoId(usuario.getGrupoId());
         dto.setHabilitado(usuario.getHabilitado());
         dto.setBloqueado(usuario.getBloqueado());
         dto.setLatitud(usuario.getLatitud());
@@ -152,6 +154,7 @@ public class UsuarioService {
         usuario.setContraseña(dto.getContraseña());
         usuario.setPerfil(dto.getPerfil());
         usuario.setCodigoCliente(dto.getCodigoCliente());
+        usuario.setGrupoId(dto.getGrupoId());
         usuario.setHabilitado(dto.getHabilitado() != null ? dto.getHabilitado() : true);
         usuario.setBloqueado(dto.getBloqueado() != null ? dto.getBloqueado() : false);
         usuario.setLatitud(dto.getLatitud());

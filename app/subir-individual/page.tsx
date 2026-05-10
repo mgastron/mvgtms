@@ -30,6 +30,7 @@ export default function SubirIndividualPage() {
   const isEmbed = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("embed") === "1"
   const [userProfile, setUserProfile] = useState<string | null>(null)
   const [userCodigoCliente, setUserCodigoCliente] = useState<string | null>(null)
+  const [userGrupoId, setUserGrupoId] = useState<number | null>(null)
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [formData, setFormData] = useState({
     cliente: "",
@@ -60,62 +61,71 @@ export default function SubirIndividualPage() {
 
     setUserProfile(profile)
 
-    // Si el usuario es Cliente, obtener su código de cliente y nombre desde el backend
     if (profile === "Cliente") {
-      const loadUserInfo = async () => {
+      const loadClienteScope = async () => {
         const username = sessionStorage.getItem("username")
         if (!username) return
-
-        let codigoClienteUsuario: string | null = null
-
         try {
           const apiBaseUrl = getApiBaseUrl()
           const response = await fetch(`${apiBaseUrl}/usuarios?size=1000`)
-          if (response.ok) {
-            const data = await response.json()
-            const content = data.content || []
-            const user = content.find((u: any) => u.usuario === username)
-            if (user && user.codigoCliente) {
-              codigoClienteUsuario = user.codigoCliente
-              setUserCodigoCliente(user.codigoCliente)
-            }
-          }
-        } catch (error) {
-          warnDev("No se pudo cargar información del backend:", error)
-        }
-
-        if (codigoClienteUsuario) {
-          try {
-            const apiBaseUrl = getApiBaseUrl()
-            const response = await fetch(`${apiBaseUrl}/clientes?codigo=${encodeURIComponent(codigoClienteUsuario)}&size=1`)
-            if (response.ok) {
-              const data = await response.json()
-              if (data.content && data.content.length > 0) {
-                const client = data.content[0]
-                if (client.nombreFantasia) {
-                  setFormData((prev) => ({
-                    ...prev,
-                    cliente: client.nombreFantasia,
-                    clienteNombre: client.nombreFantasia
-                  }))
-                  return
-                }
+          if (!response.ok) return
+          const data = await response.json()
+          const user = (data.content || []).find((u: any) => u.usuario === username)
+          if (!user) return
+          const gid = user.grupoId != null && user.grupoId !== "" ? Number(user.grupoId) : null
+          if (gid != null && !Number.isNaN(gid)) {
+            setUserGrupoId(gid)
+            setUserCodigoCliente(null)
+            const cr = await fetch(`${apiBaseUrl}/clientes?grupoId=${gid}&size=1000`)
+            if (!cr.ok) return
+            const cd = await cr.json()
+            const rows = Array.isArray(cd) ? cd : cd.content || []
+            const list: Cliente[] = rows.map((c: any) => ({
+              id: c.id,
+              codigo: c.codigo,
+              nombreFantasia: c.nombreFantasia || "",
+            }))
+            setClientes(list)
+            const saved = sessionStorage.getItem("vendedorActivoCodigo")
+            const cod =
+              saved && list.some((c) => c.codigo === saved) ? saved : list[0]?.codigo || ""
+            const sel = list.find((c) => c.codigo === cod)
+            setFormData((prev) => ({
+              ...prev,
+              cliente: cod,
+              clienteNombre: sel?.nombreFantasia || cod,
+            }))
+          } else if (user.codigoCliente) {
+            setUserGrupoId(null)
+            setUserCodigoCliente(user.codigoCliente)
+            const r = await fetch(
+              `${apiBaseUrl}/clientes?codigo=${encodeURIComponent(user.codigoCliente)}&size=1`
+            )
+            if (r.ok) {
+              const d = await r.json()
+              const client = d.content?.[0]
+              if (client?.nombreFantasia) {
+                setFormData((prev) => ({
+                  ...prev,
+                  cliente: client.nombreFantasia,
+                  clienteNombre: client.nombreFantasia,
+                }))
+                return
               }
             }
-          } catch (error) {
-            warnDev("No se pudo cargar cliente del backend:", error)
+            setFormData((prev) => ({
+              ...prev,
+              cliente: user.codigoCliente,
+              clienteNombre: user.codigoCliente,
+            }))
           }
-          setFormData((prev) => ({
-            ...prev,
-            cliente: codigoClienteUsuario,
-            clienteNombre: codigoClienteUsuario
-          }))
+        } catch (error) {
+          warnDev("No se pudo cargar usuario/clientes:", error)
         }
       }
-      loadUserInfo()
+      loadClienteScope()
     }
 
-    // Si el usuario NO es Chofer ni Cliente, cargar lista de clientes
     if (profile !== "Chofer" && profile !== "Cliente") {
       const loadClientes = async () => {
         try {
@@ -414,8 +424,9 @@ export default function SubirIndividualPage() {
     
     // Determinar el cliente para guardar (código si es Cliente, o el valor seleccionado si no)
     let clienteParaGuardar = formData.clienteNombre || formData.cliente
-    if (userProfile === "Cliente" && userCodigoCliente) {
-      // Si es usuario Cliente, guardar en formato "codigo - nombre" para consistencia
+    if (userProfile === "Cliente" && userGrupoId != null && formData.cliente) {
+      clienteParaGuardar = `${formData.cliente} - ${formData.clienteNombre || formData.cliente}`
+    } else if (userProfile === "Cliente" && userCodigoCliente) {
       clienteParaGuardar = `${userCodigoCliente} - ${formData.clienteNombre || formData.cliente}`
     }
     
@@ -514,11 +525,13 @@ export default function SubirIndividualPage() {
   }
 
   const handleClear = () => {
-    // Si el usuario es Cliente, mantener el nombre del cliente
-    const clienteValue = userProfile === "Cliente" && formData.clienteNombre 
-      ? formData.clienteNombre 
-      : (userCodigoCliente || "")
-    
+    const clienteValue =
+      userProfile === "Cliente" && userGrupoId != null
+        ? formData.cliente
+        : userProfile === "Cliente" && formData.clienteNombre
+          ? formData.clienteNombre
+          : userCodigoCliente || ""
+
     setFormData({
       cliente: clienteValue,
       clienteNombre: userProfile === "Cliente" ? formData.clienteNombre : "",
@@ -559,13 +572,16 @@ export default function SubirIndividualPage() {
       </div>
       <div className="space-y-1 sm:space-y-1.5">
         <label className={labelClass}>Vendedor{userProfile === "Cliente" ? " *" : ""}</label>
-        {userProfile === "Cliente" ? (
+        {userProfile === "Cliente" && userGrupoId == null ? (
           <Input value={formData.cliente} disabled className={cn(inputFieldClass, "bg-[#f5f7fb] text-[#1f2433]")} />
         ) : (
           <Select
             value={formData.cliente}
             onValueChange={(value) => {
               const clienteSeleccionado = clientes.find((c) => c.codigo === value)
+              if (userProfile === "Cliente" && userGrupoId != null) {
+                sessionStorage.setItem("vendedorActivoCodigo", value)
+              }
               setFormData((prev) => ({
                 ...prev,
                 cliente: value,

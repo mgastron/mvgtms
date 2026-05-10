@@ -43,6 +43,10 @@ export default function ReimprimirNoflexPage() {
   const router = useRouter()
   const [userProfile, setUserProfile] = useState<string | null>(null)
   const [userCodigoCliente, setUserCodigoCliente] = useState<string | null>(null)
+  const [userGrupoId, setUserGrupoId] = useState<number | null>(null)
+  const [vendedorDelGrupoCodigo, setVendedorDelGrupoCodigo] = useState<string>("")
+  const [grupoClientesVendedor, setGrupoClientesVendedor] = useState<Array<{ codigo: string; nombreFantasia: string }>>([])
+  const [clienteAuthResolved, setClienteAuthResolved] = useState(false)
   const [envios, setEnvios] = useState<EnvioNoflex[]>([])
   const [filteredEnvios, setFilteredEnvios] = useState<EnvioNoflex[]>([])
   const [selectedEnvios, setSelectedEnvios] = useState<Set<number>>(new Set())
@@ -74,12 +78,14 @@ export default function ReimprimirNoflexPage() {
 
     setUserProfile(profile)
 
-    // Si el usuario es Cliente, obtener su código de cliente desde el backend
     if (profile === "Cliente") {
+      setClienteAuthResolved(false)
       const loadUserInfo = async () => {
         const username = sessionStorage.getItem("username")
-        if (!username) return
-
+        if (!username) {
+          setClienteAuthResolved(true)
+          return
+        }
         try {
           const apiBaseUrl = getApiBaseUrl()
           const response = await fetch(`${apiBaseUrl}/usuarios?size=1000`)
@@ -87,24 +93,67 @@ export default function ReimprimirNoflexPage() {
             const data = await response.json()
             const content = data.content || []
             const user = content.find((u: any) => u.usuario === username)
-            if (user && user.codigoCliente) setUserCodigoCliente(user.codigoCliente)
+            if (user) {
+              const gid = user.grupoId != null && user.grupoId !== "" ? Number(user.grupoId) : null
+              if (gid != null && !Number.isNaN(gid)) {
+                setUserGrupoId(gid)
+                setUserCodigoCliente(null)
+                const cr = await fetch(`${apiBaseUrl}/clientes?grupoId=${gid}&size=1000`)
+                if (cr.ok) {
+                  const cd = await cr.json()
+                  const rows = Array.isArray(cd) ? cd : cd.content || []
+                  const list = rows
+                    .map((c: any) => ({
+                      codigo: String(c.codigo ?? "").trim(),
+                      nombreFantasia: String(c.nombreFantasia ?? "").trim(),
+                    }))
+                    .filter((c: { codigo: string }) => c.codigo)
+                  setGrupoClientesVendedor(list)
+                  const saved = sessionStorage.getItem("vendedorActivoCodigo")
+                  if (saved && list.some((c: { codigo: string }) => c.codigo === saved)) {
+                    setVendedorDelGrupoCodigo(saved)
+                  } else {
+                    setVendedorDelGrupoCodigo("")
+                  }
+                }
+              } else if (user.codigoCliente) {
+                setUserGrupoId(null)
+                setGrupoClientesVendedor([])
+                setVendedorDelGrupoCodigo("")
+                setUserCodigoCliente(user.codigoCliente)
+              }
+            }
           }
         } catch (error) {
           warnDev("No se pudo cargar información del backend:", error)
+        } finally {
+          setClienteAuthResolved(true)
         }
       }
       loadUserInfo()
+    } else {
+      setClienteAuthResolved(true)
     }
-
-    // No cargar aquí; lo hace el effect que depende de userProfile + filtros
-  }, [router, userProfile, userCodigoCliente])
+  }, [router])
 
   // Cargar envíos al tener perfil (y código cliente si es Cliente) y cuando cambien filtros del API
   useEffect(() => {
     if (!userProfile) return
-    if (userProfile === "Cliente" && !userCodigoCliente) return
+    if (userProfile === "Cliente" && !clienteAuthResolved) return
+    if (userProfile === "Cliente" && userGrupoId == null && !userCodigoCliente) return
     loadEnvios()
-  }, [userProfile, userCodigoCliente, filters.tipoFecha, filters.fechaDesde, filters.fechaHasta, filters.origen, filters.zonasEntrega])
+  }, [
+    userProfile,
+    userCodigoCliente,
+    userGrupoId,
+    vendedorDelGrupoCodigo,
+    clienteAuthResolved,
+    filters.tipoFecha,
+    filters.fechaDesde,
+    filters.fechaHasta,
+    filters.origen,
+    filters.zonasEntrega,
+  ])
 
   // Función para cargar envíos desde el backend (usa filtros actuales para el API)
   const loadEnvios = async () => {
@@ -125,8 +174,15 @@ export default function ReimprimirNoflexPage() {
         zonasEntrega: filters.zonasEntrega && filters.zonasEntrega !== "todos" ? filters.zonasEntrega : "",
       })
 
-      if (userProfile === "Cliente" && userCodigoCliente) {
-        params.append("codigoCliente", userCodigoCliente)
+      if (userProfile === "Cliente") {
+        if (userGrupoId != null) {
+          params.append("grupoId", String(userGrupoId))
+          if (vendedorDelGrupoCodigo.trim()) {
+            params.append("codigoCliente", vendedorDelGrupoCodigo.trim())
+          }
+        } else if (userCodigoCliente) {
+          params.append("codigoCliente", userCodigoCliente)
+        }
       }
 
       const response = await fetch(`${apiBaseUrl}/envios?${params.toString()}`)
@@ -175,10 +231,8 @@ export default function ReimprimirNoflexPage() {
   useEffect(() => {
     let filtered = [...envios]
 
-    // Si el usuario es Cliente, filtrar solo sus envíos
-    if (userProfile === "Cliente" && userCodigoCliente) {
+    if (userProfile === "Cliente" && userCodigoCliente && userGrupoId == null) {
       filtered = filtered.filter((envio) => {
-        // Comparar por código de cliente (puede estar en formato "codigo - nombre" o solo "codigo")
         const clienteCodigo = envio.cliente.split(" - ")[0].trim()
         return clienteCodigo.toLowerCase() === userCodigoCliente.toLowerCase()
       })
@@ -290,7 +344,7 @@ export default function ReimprimirNoflexPage() {
 
     setFilteredEnvios(filtered)
     setCurrentPage(0) // Resetear a primera página cuando cambian los filtros
-  }, [envios, filters, userProfile, userCodigoCliente])
+  }, [envios, filters, userProfile, userCodigoCliente, userGrupoId])
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
@@ -958,6 +1012,33 @@ export default function ReimprimirNoflexPage() {
               {isLoading ? "Cargando…" : "Actualizar"}
             </Button>
           </div>
+
+          {userProfile === "Cliente" && userGrupoId != null && grupoClientesVendedor.length > 0 && (
+            <div className="mb-4 rounded-xl border border-[#e6eaf4] bg-white px-4 py-3 shadow-sm">
+              <label className="mb-1.5 block text-[13px] font-medium text-[#4d5571]">Mostrar envíos de</label>
+              <Select
+                value={vendedorDelGrupoCodigo.trim() === "" ? "__todos__" : vendedorDelGrupoCodigo.trim()}
+                onValueChange={(v) => {
+                  const cod = v === "__todos__" ? "" : v
+                  setVendedorDelGrupoCodigo(cod)
+                  if (cod) sessionStorage.setItem("vendedorActivoCodigo", cod)
+                  else sessionStorage.removeItem("vendedorActivoCodigo")
+                }}
+              >
+                <SelectTrigger className="h-10 max-w-md text-[14px]">
+                  <SelectValue placeholder="Elegí vendedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__todos__">Todos los del grupo</SelectItem>
+                  {grupoClientesVendedor.map((c) => (
+                    <SelectItem key={c.codigo} value={c.codigo}>
+                      {c.nombreFantasia ? `${c.nombreFantasia} (${c.codigo})` : c.codigo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="rounded-2xl border border-[#e6eaf4] bg-white p-4 shadow-sm space-y-2">
             <h2 className="text-[22px] font-semibold leading-tight text-[#4f46ce]">Filtros</h2>

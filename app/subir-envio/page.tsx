@@ -32,6 +32,7 @@ export default function SubirEnvioPage() {
   const isEmbed = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("embed") === "1"
   const [userProfile, setUserProfile] = useState<string | null>(null)
   const [userCodigoCliente, setUserCodigoCliente] = useState<string | null>(null)
+  const [userGrupoId, setUserGrupoId] = useState<number | null>(null)
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [formData, setFormData] = useState({
     cliente: "",
@@ -57,33 +58,54 @@ export default function SubirEnvioPage() {
 
     setUserProfile(profile)
 
-    // Si el usuario es Cliente, obtener su código de cliente desde el backend
     if (profile === "Cliente") {
-      const loadUserInfo = async () => {
+      const loadClienteScope = async () => {
         const username = sessionStorage.getItem("username")
         if (!username) return
-
         try {
           const apiBaseUrl = getApiBaseUrl()
           const response = await fetch(`${apiBaseUrl}/usuarios?size=1000`)
-          if (response.ok) {
-            const data = await response.json()
-            const content = data.content || []
-            const user = content.find((u: any) => u.usuario === username)
-            if (user && user.codigoCliente) {
-              setUserCodigoCliente(user.codigoCliente)
-              setFormData((prev) => ({ ...prev, cliente: user.codigoCliente }))
+          if (!response.ok) return
+          const data = await response.json()
+          const user = (data.content || []).find((u: any) => u.usuario === username)
+          if (!user) return
+          const gid = user.grupoId != null && user.grupoId !== "" ? Number(user.grupoId) : null
+          if (gid != null && !Number.isNaN(gid)) {
+            setUserGrupoId(gid)
+            setUserCodigoCliente(null)
+            const cr = await fetch(`${apiBaseUrl}/clientes?grupoId=${gid}&size=1000`)
+            if (!cr.ok) return
+            const cd = await cr.json()
+            const rows = Array.isArray(cd) ? cd : cd.content || []
+            const list: Cliente[] = rows.map((c: any) => ({
+              id: c.id,
+              codigo: c.codigo,
+              nombreFantasia: c.nombreFantasia,
+            }))
+            setClientes(list)
+            const saved = sessionStorage.getItem("vendedorActivoCodigo")
+            const cod =
+              saved && list.some((c) => c.codigo === saved) ? saved : list[0]?.codigo || ""
+            setFormData((prev) => ({ ...prev, cliente: cod }))
+          } else if (user.codigoCliente) {
+            setUserGrupoId(null)
+            setUserCodigoCliente(user.codigoCliente)
+            const r = await fetch(`${apiBaseUrl}/clientes?codigo=${encodeURIComponent(user.codigoCliente)}`)
+            if (r.ok) {
+              const d = await r.json()
+              if (d.content?.[0]) {
+                const cliente = d.content[0]
+                setClientes([{ id: cliente.id, codigo: cliente.codigo, nombreFantasia: cliente.nombreFantasia }])
+                setFormData((prev) => ({ ...prev, cliente: cliente.codigo }))
+              }
             }
           }
         } catch (error) {
-          warnDev("Error al cargar usuario del backend:", error)
+          warnDev("Error al cargar usuario/clientes:", error)
         }
       }
-      loadUserInfo()
-    }
-
-    // Cargar clientes (solo si no es usuario Cliente o si es Cliente pero necesitamos cargar su cliente)
-    if (profile !== "Cliente") {
+      loadClienteScope()
+    } else if (profile !== "Cliente") {
       const loadClientes = async () => {
         try {
           const apiBaseUrl = getApiBaseUrl()
@@ -103,53 +125,13 @@ export default function SubirEnvioPage() {
         }
       }
       loadClientes()
-    } else {
-      // Si es Cliente, cargar solo su cliente desde el backend
-      const loadCliente = async () => {
-        const username = sessionStorage.getItem("username")
-        if (!username) return
-
-        let codigoCliente: string | null = null
-
-        try {
-          const apiBaseUrl = getApiBaseUrl()
-          const response = await fetch(`${apiBaseUrl}/usuarios?size=1000`)
-          if (response.ok) {
-            const data = await response.json()
-            const content = data.content || []
-            const user = content.find((u: any) => u.usuario === username)
-            if (user && user.codigoCliente) codigoCliente = user.codigoCliente
-          }
-        } catch (error) {
-          warnDev("Error al cargar usuario del backend:", error)
-        }
-
-        if (codigoCliente) {
-          try {
-            const apiBaseUrl = getApiBaseUrl()
-            const response = await fetch(`${apiBaseUrl}/clientes?codigo=${codigoCliente}`)
-            if (response.ok) {
-              const data = await response.json()
-              if (data.content && data.content.length > 0) {
-                const cliente = data.content[0]
-                setClientes([{
-                  id: cliente.id,
-                  codigo: cliente.codigo,
-                  nombreFantasia: cliente.nombreFantasia,
-                }])
-                setFormData((prev) => ({ ...prev, cliente: cliente.codigo }))
-              }
-            }
-          } catch (error) {
-            warnDev("Error al cargar cliente del backend:", error)
-          }
-        }
-      }
-      loadCliente()
     }
   }, [router])
 
   const handleInputChange = (field: string, value: string) => {
+    if (field === "cliente" && userProfile === "Cliente" && userGrupoId != null) {
+      sessionStorage.setItem("vendedorActivoCodigo", value)
+    }
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -485,9 +467,9 @@ export default function SubirEnvioPage() {
             <div className="space-y-5">
               <div className="space-y-2">
                 <label className="block text-[14px] font-medium text-[#4d5571]">Vendedor</label>
-                {userProfile === "Cliente" ? (
+                {userProfile === "Cliente" && userGrupoId == null ? (
                   <Input
-                    value={clientes.find(c => c.codigo === formData.cliente)?.nombreFantasia || ""}
+                    value={clientes.find((c) => c.codigo === formData.cliente)?.nombreFantasia || ""}
                     disabled
                     className="h-10 text-[14px] text-[#525b76]"
                   />

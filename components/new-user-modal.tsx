@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getApiBaseUrl } from "@/lib/api-config"
-import { logDev, warnDev, errorDev } from "@/lib/logger"
+import { warnDev, errorDev } from "@/lib/logger"
 
 interface NewUserModalProps {
   isOpen: boolean
@@ -20,6 +20,7 @@ interface NewUserModalProps {
     perfil: string
     contraseña: string
     codigoCliente?: string
+    grupoId?: number | null
   } | null
 }
 
@@ -32,71 +33,52 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
     usuario: "",
     contraseña: "",
     codigoCliente: "",
+    grupoId: "",
   })
-  const [clients, setClients] = useState<Array<{ codigo: string; nombreFantasia: string }>>([])
-  const [loadingClients, setLoadingClients] = useState(false)
+  const [grupos, setGrupos] = useState<Array<{ id: number; nombre: string }>>([])
+  const [loadingGrupos, setLoadingGrupos] = useState(false)
 
   const totalSteps = 3
   const isEditing = !!editingUser
 
-  // Cargar clientes desde el backend cuando se abre el modal o cuando cambia el tipo de usuario a "Cliente"
+  // Vendedor (tipo Cliente): cargar grupos de clientes para asignar el usuario al grupo
   const tipoUsuario = formData.tipoUsuario
   useEffect(() => {
     if (!isOpen) {
-      // Resetear la lista cuando se cierra el modal
-      setClients([])
+      setGrupos([])
       return
     }
 
     if (tipoUsuario === "Cliente") {
-      const loadClients = async () => {
-        setLoadingClients(true)
+      const loadGrupos = async () => {
+        setLoadingGrupos(true)
         try {
           const apiBaseUrl = getApiBaseUrl()
-          logDev("Cargando clientes desde:", apiBaseUrl)
-          const response = await fetch(`${apiBaseUrl}/clientes?size=1000`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          })
-          
+          const response = await fetch(`${apiBaseUrl}/grupos`, { method: "GET" })
           if (response.ok) {
             const data = await response.json()
-            logDev("Respuesta del backend de clientes:", data)
-            
-            if (data.content && Array.isArray(data.content) && data.content.length > 0) {
-              const clientesList = data.content.map((c: any) => ({
-                codigo: c.codigo || "",
-                nombreFantasia: c.nombreFantasia || "",
-              })).filter((c: any) => c.codigo) // Filtrar clientes sin código
-              
-              logDev("Clientes cargados del backend:", clientesList.length, "clientes")
-              setClients(clientesList)
-            } else {
-              warnDev("El backend respondió pero no hay clientes en data.content o está vacío")
-              setClients([])
-            }
+            const list = Array.isArray(data) ? data : []
+            setGrupos(
+              list
+                .map((g: any) => ({ id: Number(g.id), nombre: String(g.nombre ?? "") }))
+                .filter((g: { id: number; nombre: string }) => g.id > 0 && g.nombre)
+            )
           } else {
-            const errorText = await response.text()
-            errorDev("Error del backend:", response.status, response.statusText, errorText)
-            setClients([])
-            alert(`Error al cargar clientes: ${response.status} ${response.statusText}`)
+            setGrupos([])
+            alert(`Error al cargar grupos: ${response.status}`)
           }
         } catch (error) {
-          errorDev("Error al cargar clientes del backend:", error)
-          setClients([])
-          alert("No se pudo cargar la lista de clientes. Asegúrate de que el backend esté accesible.")
+          errorDev("Error al cargar grupos:", error)
+          setGrupos([])
+          alert("No se pudo cargar la lista de grupos.")
         } finally {
-          setLoadingClients(false)
+          setLoadingGrupos(false)
         }
       }
-      
-      loadClients()
+      loadGrupos()
     } else {
-      // Si no es Cliente, limpiar la lista de clientes
-      setClients([])
-      setLoadingClients(false)
+      setGrupos([])
+      setLoadingGrupos(false)
     }
   }, [isOpen, tipoUsuario])
 
@@ -110,6 +92,7 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
         usuario: editingUser.usuario || "",
         contraseña: editingUser.contraseña || "",
         codigoCliente: (editingUser as any).codigoCliente || "",
+        grupoId: editingUser.grupoId != null ? String(editingUser.grupoId) : "",
       })
       // Si estamos editando, empezar desde el paso 1 pero mostrar todos los datos
       setCurrentStep(1)
@@ -122,10 +105,38 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
         usuario: "",
         contraseña: "",
         codigoCliente: "",
+        grupoId: "",
       })
       setCurrentStep(1)
     }
   }, [isOpen, editingUser])
+
+  // Vendedor legacy (solo codigoCliente): inferir grupo desde el cliente para preseleccionar
+  useEffect(() => {
+    if (!isOpen || !editingUser || formData.tipoUsuario !== "Cliente") return
+    if (formData.grupoId) return
+    const cod = (editingUser as { codigoCliente?: string }).codigoCliente
+    if (!cod?.trim()) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const apiBaseUrl = getApiBaseUrl()
+        const res = await fetch(`${apiBaseUrl}/clientes?codigo=${encodeURIComponent(cod.trim())}&size=1`)
+        if (!res.ok || cancelled) return
+        const data = await res.json()
+        const row = data.content?.[0]
+        const gid = row?.grupoId != null ? Number(row.grupoId) : null
+        if (gid && !cancelled) {
+          setFormData((prev) => ({ ...prev, grupoId: String(gid) }))
+        }
+      } catch {
+        warnDev("No se pudo inferir grupo del cliente legacy")
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isOpen, editingUser, formData.tipoUsuario, formData.grupoId])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -144,7 +155,7 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
         return
       }
       // Si es tipo Cliente, validar que se haya seleccionado un código de cliente
-      if (formData.tipoUsuario === "Cliente" && !formData.codigoCliente) {
+      if (formData.tipoUsuario === "Cliente" && !formData.grupoId) {
         return
       }
     }
@@ -174,6 +185,7 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
       usuario: "",
       contraseña: "",
       codigoCliente: "",
+      grupoId: "",
     })
     onClose()
   }
@@ -303,33 +315,36 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
                   </Select>
                 </div>
                 
-                {/* Selector de cliente cuando se selecciona tipo "Cliente" */}
+                {/* Vendedor (perfil Cliente): grupo de clientes */}
                 {formData.tipoUsuario === "Cliente" && (
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">
-                      Código de usuario: <span className="text-red-500">*</span>
+                      Grupo de usuario: <span className="text-red-500">*</span>
                     </label>
                     <Select
-                      value={formData.codigoCliente}
-                      onValueChange={(value) => handleInputChange("codigoCliente", value)}
+                      value={formData.grupoId}
+                      onValueChange={(value) => handleInputChange("grupoId", value)}
                     >
                       <SelectTrigger className="h-10 rounded-lg border-2 border-[#6B46FF] bg-white text-gray-600 focus:ring-2 focus:ring-[#6B46FF]/20">
-                        <SelectValue placeholder="Seleccionar cliente" />
+                        <SelectValue placeholder="Seleccionar grupo" />
                       </SelectTrigger>
                       <SelectContent>
-                        {loadingClients ? (
-                          <div className="px-2 py-1.5 text-sm text-gray-500">Cargando clientes...</div>
-                        ) : clients.length === 0 ? (
-                          <div className="px-2 py-1.5 text-sm text-gray-500">No hay clientes disponibles</div>
+                        {loadingGrupos ? (
+                          <div className="px-2 py-1.5 text-sm text-gray-500">Cargando grupos…</div>
+                        ) : grupos.length === 0 ? (
+                          <div className="px-2 py-1.5 text-sm text-gray-500">No hay grupos disponibles</div>
                         ) : (
-                          clients.map((client) => (
-                            <SelectItem key={client.codigo} value={client.codigo}>
-                              {client.codigo} - {client.nombreFantasia}
+                          grupos.map((g) => (
+                            <SelectItem key={g.id} value={String(g.id)}>
+                              {g.nombre}
                             </SelectItem>
                           ))
                         )}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-gray-500">
+                      El vendedor verá los pedidos y utilidades de todos los clientes de este grupo y podrá elegir con cuál filtrar.
+                    </p>
                   </div>
                 )}
               </div>
@@ -392,7 +407,7 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
               onClick={handleNext}
               disabled={
                 (currentStep === 1 && (!formData.nombre.trim() || !formData.apellido.trim())) ||
-                (currentStep === 2 && (!formData.tipoUsuario || (formData.tipoUsuario === "Cliente" && !formData.codigoCliente))) ||
+                (currentStep === 2 && (!formData.tipoUsuario || (formData.tipoUsuario === "Cliente" && !formData.grupoId))) ||
                 (currentStep === 3 && (!formData.usuario.trim() || !formData.contraseña.trim()))
               }
               className="bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
@@ -403,9 +418,13 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
             <Button
               onClick={() => {
                 if (onSave) {
+                  const isVendedor = formData.tipoUsuario === "Cliente"
+                  const gid = isVendedor && formData.grupoId ? Number(formData.grupoId) : null
                   onSave({
                     ...formData,
                     id: editingUser?.id,
+                    grupoId: gid,
+                    codigoCliente: isVendedor && gid ? null : formData.codigoCliente || null,
                   })
                 }
                 handleClose()
