@@ -24,6 +24,8 @@ public class EnvioFilterDTO {
     private String fotos;
     private String asignado;
     private String nombreFantasia;
+    /** Filtra envíos cuyo texto {@code cliente} corresponde a un cliente de este grupo. */
+    private Long grupoId;
     private String destinoNombre;
     private String destinoDireccion;
     private String cobranzas;

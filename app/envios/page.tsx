@@ -15,6 +15,11 @@ import { logDev, warnDev, errorDev } from "@/lib/logger"
 import { toast } from "sonner"
 import { Montserrat } from "next/font/google"
 
+interface GrupoOption {
+  id: number
+  nombre: string
+}
+
 interface Envio {
   id: number
   fecha: string // Fecha de carga
@@ -85,6 +90,7 @@ export default function EnviosPage() {
   const [selectedEnvio, setSelectedEnvio] = useState<Envio | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [enviosCache, setEnviosCache] = useState<Envio[]>([]) // Cache para última semana
+  const [grupos, setGrupos] = useState<GrupoOption[]>([])
   const [filters, setFilters] = useState({
     tipoFecha: "fechaLlegue",
     fechaDesde: "",
@@ -99,6 +105,7 @@ export default function EnviosPage() {
     envioTurbo: "todos",
     fotos: "todos",
     asignado: "todos",
+    grupoId: "",
     nombreFantasia: "",
     destinoNombre: "",
     destinoDireccion: "",
@@ -147,6 +154,25 @@ export default function EnviosPage() {
     loadCache()
   }, [])
 
+  useEffect(() => {
+    const loadGrupos = async () => {
+      try {
+        const apiBaseUrl = getApiBaseUrl()
+        const res = await fetch(`${apiBaseUrl}/grupos`)
+        if (res.ok) {
+          const data = await res.json()
+          setGrupos(Array.isArray(data) ? data : [])
+        } else {
+          setGrupos([])
+        }
+      } catch (e) {
+        warnDev("No se pudieron cargar grupos para el filtro de pedidos:", e)
+        setGrupos([])
+      }
+    }
+    loadGrupos()
+  }, [])
+
   // OPTIMIZACIÓN: Cargar envíos con renderizado inmediato
   const loadEnvios = async (page: number = 0, size: number = 50, showLoading: boolean = true) => {
     if (showLoading) {
@@ -169,6 +195,9 @@ export default function EnviosPage() {
         fechaDesde: filters.fechaDesde || "",
         fechaHasta: filters.fechaHasta || "",
       })
+      if (filters.grupoId?.trim()) {
+        params.append("grupoId", filters.grupoId.trim())
+      }
 
       // Si el usuario es Cliente, agregar filtro de código de cliente
       if (userProfile === "Cliente" && userCodigoCliente) {
@@ -189,7 +218,8 @@ export default function EnviosPage() {
         filters.estado === "todos" &&
         filters.origen === "todos" &&
         !filters.tracking?.trim() &&
-        !filters.idVenta?.trim()
+        !filters.idVenta?.trim() &&
+        !filters.grupoId?.trim()
 
       if (page === 0 && enviosCache.length > 0 && sinFiltros) {
         let enviosFiltrados = enviosCache
@@ -354,6 +384,7 @@ export default function EnviosPage() {
       envioTurbo: "todos",
       fotos: "todos",
       asignado: "todos",
+      grupoId: "",
       nombreFantasia: "",
       destinoNombre: "",
       destinoDireccion: "",
@@ -503,6 +534,9 @@ export default function EnviosPage() {
         fechaDesde: filters.fechaDesde || "",
         fechaHasta: filters.fechaHasta || "",
       })
+      if (filters.grupoId?.trim()) {
+        params.append("grupoId", filters.grupoId.trim())
+      }
 
       // Si el usuario es Cliente, agregar filtro de código de cliente
       if (userProfile === "Cliente" && userCodigoCliente) {
@@ -657,6 +691,11 @@ export default function EnviosPage() {
       
       if (filters.nombreFantasia) {
         filtrosAplicados.push(`Vendedor (nombre): ${filters.nombreFantasia}`)
+      }
+
+      if (filters.grupoId?.trim()) {
+        const g = grupos.find((x) => String(x.id) === filters.grupoId.trim())
+        filtrosAplicados.push(`Grupo: ${g?.nombre ?? filters.grupoId}`)
       }
       
       if (filters.destinoNombre) {
@@ -1034,6 +1073,32 @@ export default function EnviosPage() {
 
                     {userProfile !== "Cliente" ? (
                       <div className="space-y-1">
+                        <label className="block text-[14px] font-medium text-[#4d5571]">Grupos (nombre)</label>
+                        <Select
+                          value={filters.grupoId?.trim() ? filters.grupoId : "todos"}
+                          onValueChange={(value) =>
+                            handleFilterChange("grupoId", value === "todos" ? "" : value)
+                          }
+                        >
+                          <SelectTrigger className="h-11 text-[14px]">
+                            <SelectValue placeholder="Todos los grupos" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="todos">Todos los grupos</SelectItem>
+                            {grupos.map((g) => (
+                              <SelectItem key={g.id} value={String(g.id)}>
+                                {g.nombre}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <div />
+                    )}
+
+                    {userProfile !== "Cliente" ? (
+                      <div className="space-y-1">
                         <label className="block text-[14px] font-medium text-[#4d5571]">Vendedor (nombre)</label>
                         <Input
                           value={filters.nombreFantasia}
@@ -1082,8 +1147,6 @@ export default function EnviosPage() {
                         </SelectContent>
                       </Select>
                     </div>
-
-                    <div />
                   </div>
                 </div>
               )}

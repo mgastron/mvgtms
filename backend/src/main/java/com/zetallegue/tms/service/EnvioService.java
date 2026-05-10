@@ -8,6 +8,7 @@ import com.zetallegue.tms.dto.HistorialEnvioDTO;
 import com.zetallegue.tms.dto.ObservacionEnvioDTO;
 import com.zetallegue.tms.dto.ImagenEnvioDTO;
 import com.zetallegue.tms.dto.PageResponseDTO;
+import com.zetallegue.tms.model.Cliente;
 import com.zetallegue.tms.model.Usuario;
 import com.zetallegue.tms.repository.UsuarioRepository;
 import com.zetallegue.tms.model.Envio;
@@ -18,7 +19,10 @@ import com.zetallegue.tms.repository.EnvioRepository;
 import com.zetallegue.tms.repository.HistorialEnvioRepository;
 import com.zetallegue.tms.repository.ObservacionEnvioRepository;
 import com.zetallegue.tms.repository.ImagenEnvioRepository;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -1236,6 +1240,28 @@ public class EnvioService {
                         cb.lower(root.get("cliente")),
                         "%" + filter.getNombreFantasia().toLowerCase() + "%"
                 ));
+            }
+
+            // Filtro por grupo: correlacionar envio.cliente con clientes del grupo (código - nombre, o solo nombre)
+            if (filter.getGrupoId() != null) {
+                Subquery<Integer> grupoSq = query.subquery(Integer.class);
+                Root<Cliente> cr = grupoSq.from(Cliente.class);
+                grupoSq.select(cb.literal(1));
+                Path<String> envioCliente = root.get("cliente");
+                Predicate porPrefijoCodigo = cb.like(envioCliente, cb.concat(cr.get("codigo"), cb.literal(" - %")));
+                Predicate porNombreFantasia = cb.and(
+                        cb.isNotNull(cr.get("nombreFantasia")),
+                        cb.equal(cb.lower(envioCliente), cb.lower(cr.get("nombreFantasia")))
+                );
+                Predicate porRazonSocial = cb.and(
+                        cb.isNotNull(cr.get("razonSocial")),
+                        cb.equal(cb.lower(envioCliente), cb.lower(cr.get("razonSocial")))
+                );
+                grupoSq.where(
+                        cb.equal(cr.get("grupoId"), filter.getGrupoId()),
+                        cb.or(porPrefijoCodigo, porNombreFantasia, porRazonSocial)
+                );
+                predicates.add(cb.exists(grupoSq));
             }
 
             // Filtro por destino nombre
