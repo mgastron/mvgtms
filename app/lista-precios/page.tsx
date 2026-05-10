@@ -111,7 +111,7 @@ export default function ListaPreciosPage() {
     
     // Clientes no pueden acceder a Administración (tarifas)
     if (userProfile === "Cliente") {
-      router.push("/vendedores")
+      router.push("/pedidos")
       return
     }
 

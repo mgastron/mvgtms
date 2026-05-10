@@ -53,6 +53,11 @@ export default function ClientsPage() {
       router.push("/repartidor")
       return
     }
+
+    if (userProfile === "Cliente") {
+      router.push("/pedidos")
+      return
+    }
   }, [router])
   const [filters, setFilters] = useState({
     nombreFantasia: "",

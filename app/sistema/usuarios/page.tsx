@@ -1,4 +1,3 @@
 "use client"
 
-export { default } from "../../usuarios/page"
-
+export { default } from "../../configuracion/usuarios/page"

@@ -22,12 +22,18 @@ const nextConfig = {
       { source: "/subir-envio", destination: "/pedidos/cargar/modelo", permanent: true },
       { source: "/subir-flex-manual", destination: "/pedidos/cargar/flex", permanent: true },
 
-      // Sistema
-      { source: "/usuarios", destination: "/sistema/usuarios", permanent: true },
-      { source: "/lista-precios", destination: "/sistema/tarifas", permanent: true },
+      // Rutas antiguas /sistema/* y /vendedores → nuevas URLs
+      { source: "/sistema/usuarios", destination: "/configuracion/usuarios", permanent: true },
+      { source: "/sistema/grupos", destination: "/configuracion/grupos", permanent: true },
+      { source: "/sistema/informes", destination: "/administracion/informes", permanent: true },
+      { source: "/sistema/tarifas", destination: "/administracion/tarifa", permanent: true },
+      { source: "/sistema/estado-ordenes", destination: "/administracion/estado-ordenes", permanent: true },
+      { source: "/vendedores", destination: "/configuracion/vendedores", permanent: true },
 
-      // Vendedores
-      { source: "/clientes", destination: "/vendedores", permanent: true },
+      // Atajos legacy
+      { source: "/usuarios", destination: "/configuracion/usuarios", permanent: true },
+      { source: "/lista-precios", destination: "/administracion/tarifa", permanent: true },
+      { source: "/clientes", destination: "/configuracion/vendedores", permanent: true },
 
       // Repartidores
       { source: "/ruteate/geochoferes", destination: "/repartidores/ubicacion", permanent: true },

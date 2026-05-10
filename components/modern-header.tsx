@@ -43,9 +43,9 @@ const allMenuItems = [
     label: "Configuración",
     hasSubmenu: true,
     submenu: [
-      { icon: Users, label: "Usuarios", path: "/sistema/usuarios" },
-      { icon: Layers, label: "Grupos", path: "/sistema/grupos" },
-      { icon: Store, label: "Vendedores", path: "/vendedores" },
+      { icon: Users, label: "Usuarios", path: "/configuracion/usuarios" },
+      { icon: Layers, label: "Grupos", path: "/configuracion/grupos" },
+      { icon: Store, label: "Vendedores", path: "/configuracion/vendedores" },
     ],
   },
   {
@@ -53,8 +53,8 @@ const allMenuItems = [
     label: "Administración",
     hasSubmenu: true,
     submenu: [
-      { icon: FileBarChart, label: "Informes", path: "/sistema/informes" },
-      { icon: DollarSign, label: "Tarifa", path: "/sistema/tarifas" },
+      { icon: FileBarChart, label: "Informes", path: "/administracion/informes" },
+      { icon: DollarSign, label: "Tarifa", path: "/administracion/tarifa" },
     ],
   },
   {
@@ -98,11 +98,11 @@ export function ModernHeader() {
   const menuItems = getFilteredMenuItems()
 
   const getActiveItem = () => {
-    if (pathname?.includes("/sistema/usuarios")) return "Usuarios"
-    if (pathname?.includes("/sistema/grupos")) return "Grupos"
-    if (pathname?.includes("/sistema/informes")) return "Informes"
-    if (pathname?.includes("/sistema/tarifas")) return "Tarifa"
-    if (pathname?.includes("/vendedores")) return "Vendedores"
+    if (pathname?.includes("/configuracion/usuarios")) return "Usuarios"
+    if (pathname?.includes("/configuracion/grupos")) return "Grupos"
+    if (pathname?.includes("/administracion/informes")) return "Informes"
+    if (pathname?.includes("/administracion/tarifa")) return "Tarifa"
+    if (pathname?.includes("/configuracion/vendedores")) return "Vendedores"
     if (pathname?.includes("/pedidos/reimpresion-etiquetas")) return "Reimpresión de etiquetas"
     if (pathname?.includes("/pedidos/cargar") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) {
       return "Cargar pedidos"
@@ -115,12 +115,16 @@ export function ModernHeader() {
 
   const getActiveMainItem = () => {
     if (pathname?.startsWith("/utilidades")) return null
-    if (pathname?.includes("/sistema/estado-ordenes")) return null
+    if (pathname?.includes("/administracion/estado-ordenes")) return null
     if (pathname?.includes("/pedidos") || pathname?.includes("/reimprimir-noflex") || pathname?.includes("/subir")) return "Pedidos"
-    if (pathname?.includes("/sistema/usuarios") || pathname?.includes("/sistema/grupos") || pathname?.includes("/vendedores")) {
+    if (
+      pathname?.includes("/configuracion/usuarios") ||
+      pathname?.includes("/configuracion/grupos") ||
+      pathname?.includes("/configuracion/vendedores")
+    ) {
       return "Configuración"
     }
-    if (pathname?.includes("/sistema/informes") || pathname?.includes("/sistema/tarifas")) {
+    if (pathname?.includes("/administracion/informes") || pathname?.includes("/administracion/tarifa")) {
       return "Administración"
     }
     if (pathname?.includes("/repartidores")) return "Repartidores"

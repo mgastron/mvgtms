@@ -15,7 +15,7 @@ function MercadoLibreAuthContent() {
 
   useEffect(() => {
     if (!clienteId || !token) {
-      router.push("/clientes")
+      router.push("/configuracion/vendedores")
       return
     }
   }, [clienteId, token, router])

@@ -31,7 +31,7 @@ export default function LoginPage() {
       sessionStorage.setItem("userProfile", "Administrativo")
       sessionStorage.removeItem("userGrupoId")
       sessionStorage.removeItem("vendedorActivoCodigo")
-      router.push("/vendedores")
+      router.push("/configuracion/vendedores")
       return
     }
 
@@ -61,7 +61,7 @@ export default function LoginPage() {
             if (userProfile === "Chofer") {
               router.push("/repartidor")
             } else {
-              router.push("/vendedores")
+              router.push("/configuracion/vendedores")
             }
             return
           }

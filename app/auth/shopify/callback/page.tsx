@@ -18,7 +18,7 @@ function ShopifyCallbackContent() {
     if (!code || !state || !shop || !hmac) {
       errorDev("Faltan parámetros en el callback de Shopify")
       alert("No fue posible completar la autorización. Faltan parámetros.")
-      router.push("/clientes")
+      router.push("/configuracion/vendedores")
       return
     }
 
@@ -34,17 +34,17 @@ function ShopifyCallbackContent() {
         if (response.ok) {
           const data = await response.json()
           // Redirigir a la página de cuentas con mensaje de éxito
-          router.push("/clientes?shopifyLinked=true")
+          router.push("/configuracion/vendedores?shopifyLinked=true")
         } else {
           const errorData = await response.json().catch(() => ({ message: "Error desconocido" }))
           const errorMessage = errorData.message || "Error al procesar el callback de Shopify"
           alert(`No fue posible vincular la integración de Shopify. ${errorMessage}`)
-          router.push("/clientes")
+          router.push("/configuracion/vendedores")
         }
       } catch (error: any) {
         errorDev("Error al procesar callback:", error)
         alert("Error de conexión. Reintente.")
-        router.push("/clientes")
+        router.push("/configuracion/vendedores")
       }
     }
 

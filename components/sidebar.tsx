@@ -86,11 +86,11 @@ export function Sidebar() {
   const menuItems = getFilteredMenuItems()
 
   const getActiveItem = () => {
-    if (pathname?.includes("/sistema/usuarios")) return "Usuarios"
-    if (pathname?.includes("/sistema/grupos")) return "Grupos"
-    if (pathname?.includes("/sistema/informes")) return "Informes"
-    if (pathname?.includes("/sistema/tarifas")) return "Tarifa"
-    if (pathname?.includes("/vendedores")) return "Vendedores"
+    if (pathname?.includes("/configuracion/usuarios")) return "Usuarios"
+    if (pathname?.includes("/configuracion/grupos")) return "Grupos"
+    if (pathname?.includes("/administracion/informes")) return "Informes"
+    if (pathname?.includes("/administracion/tarifa")) return "Tarifa"
+    if (pathname?.includes("/configuracion/vendedores")) return "Vendedores"
     if (pathname?.includes("/pedidos/reimpresion-etiquetas")) return "Reimpresión de etiquetas"
     if (
       pathname?.includes("/pedidos/cargar") ||
@@ -110,13 +110,17 @@ export function Sidebar() {
 
   useEffect(() => {
     if (
-      pathname?.includes("/sistema/usuarios") ||
-      pathname?.includes("/sistema/grupos") ||
-      pathname?.includes("/vendedores")
+      pathname?.includes("/configuracion/usuarios") ||
+      pathname?.includes("/configuracion/grupos") ||
+      pathname?.includes("/configuracion/vendedores")
     ) {
       setConfiguracionOpen(true)
     }
-    if (pathname?.includes("/sistema/informes") || pathname?.includes("/sistema/tarifas")) {
+    if (
+      pathname?.includes("/administracion/informes") ||
+      pathname?.includes("/administracion/tarifa") ||
+      pathname?.includes("/administracion/estado-ordenes")
+    ) {
       setAdministracionOpen(true)
     }
     if (
@@ -255,11 +259,11 @@ export function Sidebar() {
                         key={subItem.label}
                         onClick={() => {
                           if (subItem.label === "Usuarios") {
-                            router.push("/sistema/usuarios")
+                            router.push("/configuracion/usuarios")
                           } else if (subItem.label === "Grupos") {
-                            router.push("/sistema/grupos")
+                            router.push("/configuracion/grupos")
                           } else if (subItem.label === "Vendedores") {
-                            router.push("/vendedores")
+                            router.push("/configuracion/vendedores")
                           }
                           closeAllExcept("config")
                         }}
@@ -288,9 +292,9 @@ export function Sidebar() {
                         key={subItem.label}
                         onClick={() => {
                           if (subItem.label === "Informes") {
-                            router.push("/sistema/informes")
+                            router.push("/administracion/informes")
                           } else if (subItem.label === "Tarifa") {
-                            router.push("/sistema/tarifas")
+                            router.push("/administracion/tarifa")
                           }
                           closeAllExcept("admin")
                         }}

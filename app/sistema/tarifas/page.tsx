@@ -1,4 +1,3 @@
 "use client"
 
-export { default } from "../../lista-precios/page"
-
+export { default } from "../../administracion/tarifa/page"

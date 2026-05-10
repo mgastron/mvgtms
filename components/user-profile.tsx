@@ -173,7 +173,7 @@ export function UserProfile({ variant = "default" }: UserProfileProps) {
                 type="button"
                 onClick={() => {
                   setIsOpen(false)
-                  router.push("/sistema/estado-ordenes")
+                  router.push("/administracion/estado-ordenes")
                 }}
                 className="flex w-full items-start gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
               >

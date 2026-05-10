@@ -41,7 +41,7 @@ function MercadoLibreCallbackContent() {
           
           // Redirigir a la página de cuentas después de 2 segundos
           setTimeout(() => {
-            router.push("/clientes")
+            router.push("/configuracion/vendedores")
           }, 2000)
         } else {
           const errorData = await response.json().catch(() => ({ message: "Error desconocido" }))
@@ -92,7 +92,7 @@ function MercadoLibreCallbackContent() {
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Error</h2>
             <p className="text-gray-600 mb-4">{message}</p>
             <button
-              onClick={() => router.push("/clientes")}
+              onClick={() => router.push("/configuracion/vendedores")}
               className="bg-[#1B4F9C] hover:bg-[#153d7a] text-white font-semibold py-2 px-6 rounded-lg transition-colors"
             >
               Volver a Vendedores

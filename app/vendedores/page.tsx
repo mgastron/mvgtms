@@ -1,4 +1,3 @@
 "use client"
 
-export { default } from "../clientes/page"
-
+export { default } from "../configuracion/vendedores/page"

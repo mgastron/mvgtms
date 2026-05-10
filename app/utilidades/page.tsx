@@ -28,7 +28,7 @@ const ALL_ITEMS: UtilidadItem[] = [
   {
     title: "Verificador de integraciones",
     description: "Pedidos de tiendas para revisar sincronización e integraciones.",
-    path: "/sistema/estado-ordenes",
+    path: "/administracion/estado-ordenes",
   },
 ]
 
@@ -45,7 +45,7 @@ export default function UtilidadesPage() {
     userProfile === "Chofer"
       ? []
       : userProfile === "Coordinador"
-        ? ALL_ITEMS.filter((it) => it.path !== "/sistema/estado-ordenes")
+        ? ALL_ITEMS.filter((it) => it.path !== "/administracion/estado-ordenes")
         : ALL_ITEMS
 
   return (

@@ -67,7 +67,7 @@ export default function UsuariosPage() {
     
     // Clientes no pueden acceder a Configuración / Administración
     if (userProfile === "Cliente") {
-      router.push("/vendedores")
+      router.push("/pedidos")
       return
     }
   }, [router])
