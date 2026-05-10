@@ -131,11 +131,7 @@ export function ModernHeader() {
   const activeMainItem = getActiveMainItem()
   const activeMainMenu = menuItems.find((item) => item.label === activeMainItem)
 
-  const handleMainNavClick = (item: typeof allMenuItems[0]) => {
-    if (!item.hasSubmenu) {
-      if (item.path) router.push(item.path)
-      return
-    }
+  const handleMainNavClick = (item: (typeof allMenuItems)[number]) => {
     const firstPath = item.submenu?.[0]?.path
     if (firstPath) router.push(firstPath)
   }
