@@ -6,6 +6,7 @@ import { ModernHeader } from "@/components/modern-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SearchableCombobox, type ComboboxOption } from "@/components/searchable-combobox"
 import { ChevronDown, ChevronUp, Download } from "lucide-react"
 import { QRThumbnail } from "@/components/qr-thumbnail"
 import { EnvioDetailModal } from "@/components/envio-detail-modal"
@@ -91,6 +92,7 @@ export default function EnviosPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [enviosCache, setEnviosCache] = useState<Envio[]>([]) // Cache para última semana
   const [grupos, setGrupos] = useState<GrupoOption[]>([])
+  const [vendedorOptions, setVendedorOptions] = useState<ComboboxOption[]>([])
   const [filters, setFilters] = useState({
     tipoFecha: "fechaLlegue",
     fechaDesde: "",
@@ -173,6 +175,50 @@ export default function EnviosPage() {
     loadGrupos()
   }, [])
 
+  useEffect(() => {
+    if (userProfile === "Cliente" || !userProfile) {
+      setVendedorOptions([])
+      return
+    }
+    const loadVendedores = async () => {
+      try {
+        const apiBaseUrl = getApiBaseUrl()
+        const res = await fetch(`${apiBaseUrl}/clientes?size=1000`)
+        if (!res.ok) {
+          setVendedorOptions([])
+          return
+        }
+        const data = await res.json()
+        const rows = Array.isArray(data) ? data : data.content
+        if (!Array.isArray(rows)) {
+          setVendedorOptions([])
+          return
+        }
+        const seen = new Set<string>()
+        const opts: ComboboxOption[] = []
+        for (const c of rows) {
+          const n = String(c.nombreFantasia ?? "").trim()
+          if (!n) continue
+          const key = n.toLowerCase()
+          if (seen.has(key)) continue
+          seen.add(key)
+          opts.push({ value: n, label: n })
+        }
+        opts.sort((a, b) => a.label.localeCompare(b.label, "es"))
+        setVendedorOptions(opts)
+      } catch (e) {
+        warnDev("No se pudieron cargar vendedores para el filtro de pedidos:", e)
+        setVendedorOptions([])
+      }
+    }
+    loadVendedores()
+  }, [userProfile])
+
+  const grupoComboboxOptions = useMemo<ComboboxOption[]>(
+    () => grupos.map((g) => ({ value: String(g.id), label: g.nombre })),
+    [grupos]
+  )
+
   // OPTIMIZACIÓN: Cargar envíos con renderizado inmediato
   const loadEnvios = async (page: number = 0, size: number = 50, showLoading: boolean = true) => {
     if (showLoading) {
@@ -219,7 +265,8 @@ export default function EnviosPage() {
         filters.origen === "todos" &&
         !filters.tracking?.trim() &&
         !filters.idVenta?.trim() &&
-        !filters.grupoId?.trim()
+        !filters.grupoId?.trim() &&
+        !filters.nombreFantasia?.trim()
 
       if (page === 0 && enviosCache.length > 0 && sinFiltros) {
         let enviosFiltrados = enviosCache
@@ -1074,24 +1121,14 @@ export default function EnviosPage() {
                     {userProfile !== "Cliente" ? (
                       <div className="space-y-1">
                         <label className="block text-[14px] font-medium text-[#4d5571]">Grupos (nombre)</label>
-                        <Select
-                          value={filters.grupoId?.trim() ? filters.grupoId : "todos"}
-                          onValueChange={(value) =>
-                            handleFilterChange("grupoId", value === "todos" ? "" : value)
-                          }
-                        >
-                          <SelectTrigger className="h-11 text-[14px]">
-                            <SelectValue placeholder="Todos los grupos" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="todos">Todos los grupos</SelectItem>
-                            {grupos.map((g) => (
-                              <SelectItem key={g.id} value={String(g.id)}>
-                                {g.nombre}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <SearchableCombobox
+                          value={filters.grupoId?.trim() ?? ""}
+                          onValueChange={(v) => handleFilterChange("grupoId", v)}
+                          options={grupoComboboxOptions}
+                          clearLabel="Todos los grupos"
+                          placeholder="Buscar grupo…"
+                          className="text-[14px]"
+                        />
                       </div>
                     ) : (
                       <div />
@@ -1100,11 +1137,13 @@ export default function EnviosPage() {
                     {userProfile !== "Cliente" ? (
                       <div className="space-y-1">
                         <label className="block text-[14px] font-medium text-[#4d5571]">Vendedor (nombre)</label>
-                        <Input
+                        <SearchableCombobox
                           value={filters.nombreFantasia}
-                          onChange={(e) => handleFilterChange("nombreFantasia", e.target.value)}
-                          placeholder="Seleccioná el nombre fantasía"
-                          className="h-11 text-[14px]"
+                          onValueChange={(v) => handleFilterChange("nombreFantasia", v)}
+                          options={vendedorOptions}
+                          clearLabel="Todos los vendedores"
+                          placeholder="Buscar vendedor…"
+                          className="text-[14px]"
                         />
                       </div>
                     ) : (
