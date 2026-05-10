@@ -888,6 +888,16 @@ export default function EnviosPage() {
     return `${dia}/${mes}/${año} ${horas}:${minutos}`
   }
 
+  const formatFechaSoloDia = (fechaISO?: string) => {
+    if (!fechaISO) return "—"
+    const fecha = new Date(fechaISO)
+    if (Number.isNaN(fecha.getTime())) return "—"
+    const dia = fecha.getDate().toString().padStart(2, "0")
+    const mes = (fecha.getMonth() + 1).toString().padStart(2, "0")
+    const año = fecha.getFullYear()
+    return `${dia}/${mes}/${año}`
+  }
+
   const getZonaBadgeClasses = (zona: string) => {
     switch (zona) {
       case "CABA":
@@ -1243,16 +1253,14 @@ export default function EnviosPage() {
                   <span className="text-[#6B46FF] font-bold">{totalElements}</span>
                   <span className="ml-2 text-gray-500">registros</span>
                 </div>
-                <table className="w-full border-collapse table-fixed" style={{ tableLayout: 'fixed', minWidth: '1180px' }}>
+                <table className="w-full border-collapse table-fixed" style={{ tableLayout: 'fixed', minWidth: '960px' }}>
                   <thead>
                     <tr className="bg-white border-b border-[#edf0f7]">
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Estado</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Tracking</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>ID_NX</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '60px' }}>Origen</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '130px' }}>Vendedor</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '105px' }}>IDML</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Fecha de venta</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Fecha Colecta</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '200px' }}>Dirección</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '130px' }}>Destino nombre</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '70px' }}>CP</th>
@@ -1264,7 +1272,7 @@ export default function EnviosPage() {
                   <tbody>
                     {paginatedEnvios.length === 0 ? (
                       <tr>
-                        <td colSpan={13} className="px-3 py-8 text-center text-sm text-gray-500">
+                        <td colSpan={11} className="px-3 py-8 text-center text-sm text-gray-500">
                           Sin resultados para los filtros aplicados.
                         </td>
                       </tr>
@@ -1310,15 +1318,15 @@ export default function EnviosPage() {
                             )}
                           </td>
                           <td className="px-2 py-3 text-sm font-mono text-gray-700 whitespace-normal break-words">{envio.tracking}</td>
-                          <td className="px-2 py-3 text-sm font-mono text-gray-700 whitespace-normal break-words">{envio.idMvg ?? "—"}</td>
                           <td className="px-2 py-3 text-sm">
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                               {envio.origen}
                             </span>
                           </td>
                           <td className="px-2 py-3 text-sm font-medium text-gray-900 whitespace-normal break-words">{envio.cliente}</td>
-                          <td className="px-2 py-3 text-sm text-gray-500 whitespace-normal break-words">{envio.idml || "-"}</td>
-                          <td className="px-2 py-3 text-sm text-gray-600 whitespace-normal break-words">{formatFecha(envio.fechaVenta || envio.fecha)}</td>
+                          <td className="px-2 py-3 text-sm text-gray-600 whitespace-normal break-words">
+                            {formatFechaSoloDia(envio.fechaColecta)}
+                          </td>
                           <td className="px-2 py-3 text-sm text-gray-700 whitespace-normal break-words">{envio.direccion || "—"}</td>
                           <td className="px-2 py-3 text-sm font-medium text-gray-900 whitespace-normal break-words">{envio.nombreDestinatario}</td>
                           <td className="px-2 py-3 text-sm font-mono text-gray-600 whitespace-normal break-words">

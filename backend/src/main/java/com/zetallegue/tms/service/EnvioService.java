@@ -19,6 +19,7 @@ import com.zetallegue.tms.repository.EnvioRepository;
 import com.zetallegue.tms.repository.HistorialEnvioRepository;
 import com.zetallegue.tms.repository.ObservacionEnvioRepository;
 import com.zetallegue.tms.repository.ImagenEnvioRepository;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
