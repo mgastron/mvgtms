@@ -28,6 +28,8 @@ public class EnvioFilterDTO {
     private Long grupoId;
     private String destinoNombre;
     private String destinoDireccion;
+    /** Filtro por columna código postal (no usa el texto de {@code direccion}). */
+    private String codigoPostal;
     private String cobranzas;
     private String codigoCliente; // Para filtrar por cliente cuando el usuario es "Cliente"
     private Long choferId; // Para filtrar por chofer asignado cuando el usuario es "Chofer"

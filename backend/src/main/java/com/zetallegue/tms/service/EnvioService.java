@@ -19,6 +19,7 @@ import com.zetallegue.tms.repository.EnvioRepository;
 import com.zetallegue.tms.repository.HistorialEnvioRepository;
 import com.zetallegue.tms.repository.ObservacionEnvioRepository;
 import com.zetallegue.tms.repository.ImagenEnvioRepository;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -1102,6 +1103,23 @@ public class EnvioService {
         return resultados;
     }
 
+    /**
+     * Expresión sobre {@code direccion} sin bloques típicos de código postal en el texto libre,
+     * para que el filtro de destino dirección no dispare por el CP que figura en la cadena (solo por calle/número).
+     * Se encadenan varios {@code regexp_replace} porque en PostgreSQL, sin flag {@code g}, cada llamada quita una coincidencia.
+     */
+    private Expression<String> direccionSinPatronesCp(CriteriaBuilder cb, Path<String> direccion) {
+        Expression<String> e = cb.coalesce(direccion, cb.literal(""));
+        final String patron = "(?i),?\\s*CP\\s*:?\\s*[\\dA-Za-z\\s-]+|C\\d{4}[A-Za-z]{3}|,?\\s*cod(igo)?\\s*postal\\s*:?\\s*[\\dA-Za-z\\s-]+";
+        for (int i = 0; i < 6; i++) {
+            e = cb.function("regexp_replace", String.class, e, cb.literal(patron), cb.literal(""));
+        }
+        for (int i = 0; i < 3; i++) {
+            e = cb.function("regexp_replace", String.class, e, cb.literal("\\s{2,}"), cb.literal(" "));
+        }
+        return e;
+    }
+
     private Specification<Envio> buildSpecification(EnvioFilterDTO filter) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -1272,12 +1290,24 @@ public class EnvioService {
                 ));
             }
 
-            // Filtro por destino dirección
+            // Filtro por destino dirección: buscar en calle/número sin considerar CP embebido en el texto (CP:, CPA C1234ABC, etc.)
             if (filter.getDestinoDireccion() != null && !filter.getDestinoDireccion().trim().isEmpty()) {
-                predicates.add(cb.like(
-                        cb.lower(root.get("direccion")),
-                        "%" + filter.getDestinoDireccion().toLowerCase() + "%"
-                ));
+                String term = "%" + filter.getDestinoDireccion().trim().toLowerCase() + "%";
+                Expression<String> direccionLimpia = direccionSinPatronesCp(cb, root.get("direccion"));
+                predicates.add(cb.like(cb.lower(direccionLimpia), term));
+            }
+
+            // Filtro por código postal (columna dedicada)
+            if (filter.getCodigoPostal() != null && !filter.getCodigoPostal().trim().isEmpty()) {
+                String raw = filter.getCodigoPostal().trim().toLowerCase();
+                String soloDigitos = raw.replaceAll("\\D", "");
+                Path<String> cpCol = root.get("codigoPostal");
+                Predicate porTexto = cb.like(cb.lower(cpCol), "%" + raw + "%");
+                if (!soloDigitos.isEmpty() && !soloDigitos.equals(raw)) {
+                    predicates.add(cb.or(porTexto, cb.like(cb.lower(cpCol), "%" + soloDigitos + "%")));
+                } else {
+                    predicates.add(porTexto);
+                }
             }
 
             // Filtro por zona de entrega

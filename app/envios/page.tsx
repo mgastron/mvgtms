@@ -111,6 +111,7 @@ export default function EnviosPage() {
     nombreFantasia: "",
     destinoNombre: "",
     destinoDireccion: "",
+    codigoPostal: "",
     cobranzas: "todos",
   })
 
@@ -237,6 +238,7 @@ export default function EnviosPage() {
         nombreFantasia: filters.nombreFantasia || "",
         destinoNombre: filters.destinoNombre || "",
         destinoDireccion: filters.destinoDireccion || "",
+        codigoPostal: filters.codigoPostal || "",
         zonasEntrega: filters.zonasEntrega || "",
         fechaDesde: filters.fechaDesde || "",
         fechaHasta: filters.fechaHasta || "",
@@ -266,7 +268,10 @@ export default function EnviosPage() {
         !filters.tracking?.trim() &&
         !filters.idVenta?.trim() &&
         !filters.grupoId?.trim() &&
-        !filters.nombreFantasia?.trim()
+        !filters.nombreFantasia?.trim() &&
+        !filters.destinoNombre?.trim() &&
+        !filters.destinoDireccion?.trim() &&
+        !filters.codigoPostal?.trim()
 
       if (page === 0 && enviosCache.length > 0 && sinFiltros) {
         let enviosFiltrados = enviosCache
@@ -435,6 +440,7 @@ export default function EnviosPage() {
       nombreFantasia: "",
       destinoNombre: "",
       destinoDireccion: "",
+      codigoPostal: "",
       cobranzas: "todos",
     })
     setCurrentPage(0)
@@ -577,6 +583,7 @@ export default function EnviosPage() {
         nombreFantasia: filters.nombreFantasia || "",
         destinoNombre: filters.destinoNombre || "",
         destinoDireccion: filters.destinoDireccion || "",
+        codigoPostal: filters.codigoPostal || "",
         zonasEntrega: filters.zonasEntrega || "",
         fechaDesde: filters.fechaDesde || "",
         fechaHasta: filters.fechaHasta || "",
@@ -751,6 +758,10 @@ export default function EnviosPage() {
       
       if (filters.destinoDireccion) {
         filtrosAplicados.push(`Destino Dirección: ${filters.destinoDireccion}`)
+      }
+
+      if (filters.codigoPostal?.trim()) {
+        filtrosAplicados.push(`CP: ${filters.codigoPostal.trim()}`)
       }
       
       if (filters.zonasEntrega) {
@@ -1100,7 +1111,7 @@ export default function EnviosPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-6 gap-3">
+                  <div className="grid grid-cols-6 gap-3 lg:grid-cols-7">
                     <div className="space-y-1">
                       <label className="block text-[14px] font-medium text-[#4d5571]">Asignado</label>
                       <Select
@@ -1165,7 +1176,17 @@ export default function EnviosPage() {
                       <Input
                         value={filters.destinoDireccion}
                         onChange={(e) => handleFilterChange("destinoDireccion", e.target.value)}
-                        placeholder="Escribí la dirección del destino"
+                        placeholder="Calle y número (no CP)"
+                        className="h-11 text-[14px]"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[14px] font-medium text-[#4d5571]">CP</label>
+                      <Input
+                        value={filters.codigoPostal}
+                        onChange={(e) => handleFilterChange("codigoPostal", e.target.value)}
+                        placeholder="Código postal"
                         className="h-11 text-[14px]"
                       />
                     </div>
