@@ -328,7 +328,7 @@ export default function ListaPreciosEnvioPage() {
       <ModernHeader />
       <main className="px-4 pb-6 pt-4">
         <div className="mx-auto w-full max-w-[1700px]">
-          <h1 className="mb-5 text-[34px] font-semibold tracking-tight text-[#1570ef]">Lista de precios</h1>
+          <h1 className="mb-5 text-[34px] font-semibold tracking-tight text-[#1570ef]">Cotiza un viaje...</h1>
 
           <div className="flex w-full flex-col items-stretch gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="ml-2 w-full max-w-[560px] shrink-0 rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm">

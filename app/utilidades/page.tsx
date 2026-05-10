@@ -14,16 +14,21 @@ type UtilidadItem = {
   path: string
 }
 
-const ITEMS: UtilidadItem[] = [
+const ALL_ITEMS: UtilidadItem[] = [
   {
     title: "Buscador de pedidos",
     description: "Buscar pedidos por tracking u otros datos.",
     path: "/utilidades/buscador",
   },
   {
-    title: "Cotizá un viaje",
+    title: "Cotiza un viaje...",
     description: "Tarifas y cotización según destino (lista de precios).",
     path: "/utilidades/lista-precios",
+  },
+  {
+    title: "Verificador de integraciones",
+    description: "Pedidos de tiendas para revisar sincronización e integraciones.",
+    path: "/sistema/estado-ordenes",
   },
 ]
 
@@ -36,6 +41,13 @@ export default function UtilidadesPage() {
     setUserProfile(profile)
   }, [])
 
+  const items =
+    userProfile === "Chofer"
+      ? []
+      : userProfile === "Coordinador"
+        ? ALL_ITEMS.filter((it) => it.path !== "/sistema/estado-ordenes")
+        : ALL_ITEMS
+
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
       <ModernHeader />
@@ -46,7 +58,7 @@ export default function UtilidadesPage() {
             <p className="text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">Cuenta</p>
             <h1 className="text-[32px] font-semibold tracking-tight text-[#1570ef]">Utilidades</h1>
             <p className="mt-1 text-[14px] text-[#5d6578]">
-              Buscador de pedidos y cotización de viajes.
+              Buscador de pedidos, cotización de viajes y verificación de integraciones.
             </p>
           </div>
 
@@ -56,8 +68,8 @@ export default function UtilidadesPage() {
               <p className="mt-1 text-sm text-[#5d6578]">Estas utilidades no están disponibles para repartidores.</p>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {ITEMS.map((it) => (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {items.map((it) => (
                 <button
                   key={it.path}
                   type="button"

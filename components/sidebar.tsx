@@ -24,7 +24,7 @@ const sistemaSubmenu = [
   { icon: Layers, label: "Grupos" },
   { icon: FileBarChart, label: "Informes" },
   { icon: DollarSign, label: "Tarifas" },
-  { icon: FileCheck, label: "Estado Órdenes" },
+  { icon: FileCheck, label: "Verificador de integraciones" },
 ]
 
 const ruteateSubmenu = [
@@ -46,14 +46,14 @@ export function Sidebar() {
     setUserProfile(profile)
   }, [])
   
-  // Coordinador no ve: Sistema > Tarifas, Estado Órdenes
+  // Coordinador no ve: Sistema > Tarifas, Verificador de integraciones
   const enviosSubmenuFiltered =
     userProfile === "Coordinador"
       ? enviosSubmenu
       : enviosSubmenu
   const sistemaSubmenuFiltered =
     userProfile === "Coordinador"
-      ? sistemaSubmenu.filter((s) => s.label !== "Tarifas" && s.label !== "Estado Órdenes")
+      ? sistemaSubmenu.filter((s) => s.label !== "Tarifas" && s.label !== "Verificador de integraciones")
       : sistemaSubmenu
 
   // Filtrar elementos del menú según el perfil del usuario
@@ -79,7 +79,7 @@ export function Sidebar() {
     if (pathname?.includes("/sistema/grupos")) return "Grupos"
     if (pathname?.includes("/sistema/informes")) return "Informes"
     if (pathname?.includes("/sistema/tarifas")) return "Tarifas"
-    if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
+    if (pathname?.includes("/sistema/estado-ordenes")) return "Verificador de integraciones"
     if (pathname?.includes("/vendedores")) return "Vendedores"
     if (pathname?.includes("/pedidos/reimpresion-etiquetas")) return "Reimpresión de etiquetas"
     if (pathname?.includes("/pedidos/cargar") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) return "Cargar pedidos"
@@ -223,7 +223,7 @@ export function Sidebar() {
                             router.push("/sistema/informes")
                           } else if (subItem.label === "Tarifas") {
                             router.push("/sistema/tarifas")
-                          } else if (subItem.label === "Estado Órdenes") {
+                          } else if (subItem.label === "Verificador de integraciones") {
                             router.push("/sistema/estado-ordenes")
                           }
                         }}

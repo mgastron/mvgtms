@@ -88,7 +88,7 @@ export default function EstadoOrdenesPage() {
     
     if (profile) {
       setUserProfile(profile)
-      // Coordinador no puede acceder a Estado Órdenes
+      // Coordinador no puede acceder al verificador de integraciones
       if (profile === "Coordinador") {
         router.push("/pedidos")
         return
@@ -1184,7 +1184,7 @@ export default function EstadoOrdenesPage() {
       <main className={`px-4 pb-6 pt-3 ${montserrat.className}`} suppressHydrationWarning>
         <div className="mx-auto w-full max-w-[1700px] space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Estado órdenes</h1>
+            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Verificador de integraciones</h1>
             <Button
               onClick={loadPedidos}
               disabled={isLoading}

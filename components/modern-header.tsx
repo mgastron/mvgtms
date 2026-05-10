@@ -32,7 +32,7 @@ const allMenuItems = [
       { icon: Layers, label: "Grupos", path: "/sistema/grupos" },
       { icon: FileBarChart, label: "Informes", path: "/sistema/informes" },
       { icon: DollarSign, label: "Tarifas", path: "/sistema/tarifas" },
-      { icon: FileCheck, label: "Estado Órdenes", path: "/sistema/estado-ordenes" },
+      { icon: FileCheck, label: "Verificador de integraciones", path: "/sistema/estado-ordenes" },
     ],
   },
   {
@@ -63,7 +63,7 @@ export function ModernHeader() {
     setUserProfile(profile)
   }, [])
 
-  const coordinadorOcultarSubmenuLabels = ["Lista de precios", "Tarifas", "Estado Órdenes"]
+  const coordinadorOcultarSubmenuLabels = ["Lista de precios", "Tarifas", "Verificador de integraciones"]
 
   const getFilteredMenuItems = () => {
     if (userProfile === "Chofer") return allMenuItems.filter((item) => item.label !== "Repartidores")
@@ -86,7 +86,7 @@ export function ModernHeader() {
     if (pathname?.includes("/sistema/grupos")) return "Grupos"
     if (pathname?.includes("/sistema/informes")) return "Informes"
     if (pathname?.includes("/sistema/tarifas")) return "Tarifas"
-    if (pathname?.includes("/sistema/estado-ordenes")) return "Estado Órdenes"
+    if (pathname?.includes("/sistema/estado-ordenes")) return "Verificador de integraciones"
     if (pathname?.includes("/vendedores")) return "Vendedores"
     if (pathname?.includes("/pedidos/reimpresion-etiquetas")) return "Reimpresión de etiquetas"
     if (pathname?.includes("/pedidos/cargar") || pathname?.includes("/subir-individual") || pathname?.includes("/subir-envio") || pathname?.includes("/subir-flex-manual")) {

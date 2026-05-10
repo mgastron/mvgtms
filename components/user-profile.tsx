@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { User, LogOut, ChevronDown, Search, MapPinned } from "lucide-react"
+import { User, LogOut, ChevronDown, Search, MapPinned, FileCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
@@ -166,6 +166,19 @@ export function UserProfile({ variant = "default" }: UserProfileProps) {
               <MapPinned className="h-4 w-4 text-gray-500 shrink-0" />
               Cotizá un viaje
             </button>
+            {userInfo.perfil !== "Coordinador" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false)
+                  router.push("/sistema/estado-ordenes")
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <FileCheck className="h-4 w-4 text-gray-500 shrink-0" />
+                Verificador de integraciones
+              </button>
+            )}
 
             <button
               onClick={handleLogout}
