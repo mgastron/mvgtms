@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { cn } from "@/lib/utils"
 import { logDev, warnDev, errorDev } from "@/lib/logger"
 import {
   AlertDialog,
@@ -109,6 +110,20 @@ const PENDIENTES_DEPOSITO: Chofer = {
   apellido: 'DEPÓSITO',
   usuario: 'PENDIENTES_DEPOSITO',
 }
+
+/** Estética Nexo Pedidos (diferenciada del layout morado / tarjetas del referente; sin cambiar lógica) */
+const lbl = "block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500"
+const fld =
+  "h-9 text-sm border-slate-200 bg-slate-50/90 text-slate-900 shadow-none read-only:cursor-default focus-visible:border-teal-500/40 focus-visible:ring-1 focus-visible:ring-teal-500/25"
+const btnPrimary = "bg-teal-600 hover:bg-teal-700 text-white shadow-sm hover:shadow-md transition-colors"
+const btnGhost = "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+const tblWrap =
+  "overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 shadow-sm ring-1 ring-slate-100/60"
+const tblHead = "bg-slate-100/90"
+const tblTh = "px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
+const tblRow = "border-b border-slate-100/80 transition-colors hover:bg-teal-50/30"
+const panelBar = "border-b border-slate-200/80 bg-slate-100/80 px-4 py-2.5"
+const panelBarTitle = "text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
 
 export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuccess, onEstadoChange }: EnvioDetailModalProps) {
   // Normalizar valores null a cadenas vacías para evitar errores de React
@@ -1034,25 +1049,27 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 animate-in fade-in-0 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 animate-in fade-in-0 backdrop-blur-md"
       onClick={onClose}
       role="button"
       tabIndex={-1}
     >
       <div
-        className="bg-white rounded-2xl w-[95vw] h-[90vh] max-w-7xl flex flex-col animate-in zoom-in-95 shadow-2xl border border-gray-200/50 overflow-hidden"
+        className="flex max-h-[90vh] w-[96vw] max-w-7xl flex-col overflow-hidden rounded-[28px] border border-slate-200/90 bg-white shadow-[0_28px_90px_-16px_rgba(15,23,42,0.45)] ring-1 ring-white/70 animate-in zoom-in-95"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header (Nexo) */}
-        <div className="border-b border-gray-200 bg-white">
-          <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        {/* Cabecera */}
+        <div className="border-b border-slate-200/90 bg-gradient-to-r from-slate-50 via-white to-teal-50/30">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">Pedido</p>
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="text-[18px] font-semibold text-[#1f2433]">{envio.tracking}</span>
-                <span className="text-[13px] font-semibold text-[#1459e9]">{envio.estado || "A retirar"}</span>
-                <span className="text-[12px] text-gray-400">·</span>
-                <span className="text-[13px] font-medium text-[#4d5571]">{envio.cliente}</span>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Pedido</p>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="font-mono text-[20px] font-semibold tracking-tight text-slate-900">{envio.tracking}</span>
+                <span className="rounded-full bg-teal-100 px-2.5 py-0.5 text-[12px] font-semibold text-teal-900 ring-1 ring-teal-200/80">
+                  {envio.estado || "A retirar"}
+                </span>
+                <span className="text-slate-300">·</span>
+                <span className="max-w-[min(100%,420px)] truncate text-[13px] font-medium text-slate-600">{envio.cliente}</span>
               </div>
             </div>
 
@@ -1062,14 +1079,14 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                   <Button
                     type="button"
                     onClick={handleAsignar}
-                    className="h-9 rounded-xl bg-[#1459e9] px-4 text-[13px] font-semibold text-white hover:bg-[#114bce]"
+                    className={`h-9 rounded-xl px-4 text-[13px] font-semibold ${btnPrimary}`}
                   >
                     Asignar
                   </Button>
                   <Button
                     type="button"
                     onClick={handleOpenAddEstado}
-                    className="h-9 rounded-xl bg-white px-4 text-[13px] font-semibold text-[#1459e9] border border-[#e6eaf4] hover:bg-[#f7faff]"
+                    className={`h-9 rounded-xl px-4 text-[13px] font-semibold ${btnGhost}`}
                   >
                     Actualizar estado
                   </Button>
@@ -1077,7 +1094,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
               )}
               <button
                 onClick={onClose}
-                className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-1.5 transition-all"
+                className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
                 aria-label="Cerrar"
               >
                 <X className="h-5 w-5" />
@@ -1085,8 +1102,10 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             </div>
           </div>
 
-          {/* Navegación por secciones */}
-          <div className="px-6 pb-3 flex flex-wrap items-center gap-2">
+          {/* Pestañas: barra segmentada (no pills azules / no subrayado morado) */}
+          <div className="px-6 pb-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="inline-flex flex-wrap gap-0.5 rounded-2xl bg-slate-100/95 p-1 ring-1 ring-slate-200/80">
             {[
               { id: "general", label: "Resumen" },
               { id: "historial", label: "Actividad" },
@@ -1103,26 +1122,27 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                   key={item.id}
                   onClick={() => setActiveTab(item.id as any)}
                   className={
-                    "h-9 rounded-full px-4 text-[13px] font-semibold transition-colors " +
+                    "h-9 rounded-xl px-4 text-[13px] font-semibold transition-all " +
                     (isActive
-                      ? "bg-[#dbeafe] text-[#1459e9]"
-                      : "bg-white text-[#5d6578] border border-[#e6eaf4] hover:bg-[#f7faff] hover:text-[#1459e9]")
+                      ? "bg-white text-teal-900 shadow-sm ring-1 ring-slate-200/90"
+                      : "text-slate-600 hover:bg-white/60 hover:text-slate-900")
                   }
                 >
                   {item.label}
                 </button>
               )
             })}
+              </div>
 
             {section === "documentos" && (
-              <div className="ml-auto flex items-center gap-2">
+              <div className="ml-auto flex items-center gap-1.5 rounded-2xl bg-slate-100/90 p-1 ring-1 ring-slate-200/70">
                 <button
                   onClick={() => setActiveTab("observaciones")}
                   className={
-                    "h-9 rounded-full px-4 text-[13px] font-semibold transition-colors " +
+                    "h-8 rounded-lg px-3 text-[12px] font-semibold transition-all " +
                     (activeTab === "observaciones"
-                      ? "bg-[#eef4ff] text-[#1459e9]"
-                      : "bg-white text-[#5d6578] border border-[#e6eaf4] hover:bg-[#f7faff]")
+                      ? "bg-white text-teal-900 shadow-sm ring-1 ring-slate-200/80"
+                      : "text-slate-600 hover:bg-white/70")
                   }
                 >
                   Observaciones
@@ -1130,10 +1150,10 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                 <button
                   onClick={() => setActiveTab("imagenes")}
                   className={
-                    "h-9 rounded-full px-4 text-[13px] font-semibold transition-colors " +
+                    "h-8 rounded-lg px-3 text-[12px] font-semibold transition-all " +
                     (activeTab === "imagenes"
-                      ? "bg-[#eef4ff] text-[#1459e9]"
-                      : "bg-white text-[#5d6578] border border-[#e6eaf4] hover:bg-[#f7faff]")
+                      ? "bg-white text-teal-900 shadow-sm ring-1 ring-slate-200/80"
+                      : "text-slate-600 hover:bg-white/70")
                   }
                 >
                   Imágenes
@@ -1142,14 +1162,14 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             )}
 
             {section === "gestion" && envio?.estado === "Entregado" && (
-              <div className="ml-auto flex items-center gap-2">
+              <div className="ml-auto flex items-center gap-1.5 rounded-2xl bg-slate-100/90 p-1 ring-1 ring-slate-200/70">
                 <button
                   onClick={() => setActiveTab("asignacion")}
                   className={
-                    "h-9 rounded-full px-4 text-[13px] font-semibold transition-colors " +
+                    "h-8 rounded-lg px-3 text-[12px] font-semibold transition-all " +
                     (activeTab === "asignacion"
-                      ? "bg-[#eef4ff] text-[#1459e9]"
-                      : "bg-white text-[#5d6578] border border-[#e6eaf4] hover:bg-[#f7faff]")
+                      ? "bg-white text-teal-900 shadow-sm ring-1 ring-slate-200/80"
+                      : "text-slate-600 hover:bg-white/70")
                   }
                 >
                   Asignación
@@ -1157,21 +1177,22 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                 <button
                   onClick={() => setActiveTab("entregado")}
                   className={
-                    "h-9 rounded-full px-4 text-[13px] font-semibold transition-colors " +
+                    "h-8 rounded-lg px-3 text-[12px] font-semibold transition-all " +
                     (activeTab === "entregado"
-                      ? "bg-[#eef4ff] text-[#1459e9]"
-                      : "bg-white text-[#5d6578] border border-[#e6eaf4] hover:bg-[#f7faff]")
+                      ? "bg-white text-teal-900 shadow-sm ring-1 ring-slate-200/80"
+                      : "text-slate-600 hover:bg-white/70")
                   }
                 >
                   Entregado
                 </button>
               </div>
             )}
+            </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-6 bg-gradient-to-br from-gray-50/30 to-white">
+        <div className="flex-1 overflow-auto bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(45,212,191,0.08),transparent_50%),linear-gradient(180deg,#f8fafc_0%,#ffffff_45%,#f1f5f9_100%)] p-6">
           <div
             className={
               activeTab === "general"
@@ -1187,53 +1208,53 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
               }
             >
               {activeTab === "general" && (
-                <div className="space-y-4">
+                <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-sm ring-1 ring-slate-100/80 backdrop-blur-[2px]">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Tracking</label>
-                    <Input value={normalizeValue(envio.tracking)} className="h-9 text-sm border-gray-300 bg-white font-mono shadow-sm" readOnly />
+                    <label className={lbl}>Tracking</label>
+                    <Input value={normalizeValue(envio.tracking)} className={cn(fld, "font-mono shadow-sm")} readOnly />
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">IDML</label>
+                      <label className={lbl}>IDML</label>
                       <Input
                         value={normalizeValue(envio.idml)}
-                        className="h-9 text-sm border-gray-300 bg-white shadow-sm"
+                        className={cn(fld, "shadow-sm")}
                         readOnly
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">ID_NX</label>
-                      <Input value={normalizeValue(envio.idMvg)} className="h-9 text-sm border-gray-300 bg-white font-mono font-semibold shadow-sm" readOnly />
+                      <label className={lbl}>ID_NX</label>
+                      <Input value={normalizeValue(envio.idMvg)} className={cn(fld, "font-mono font-semibold shadow-sm")} readOnly />
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Vendedor</label>
-                    <Input value={normalizeValue(envio.cliente)} className="h-9 text-sm border-gray-300 bg-white font-semibold shadow-sm" readOnly />
+                    <label className={lbl}>Vendedor</label>
+                    <Input value={normalizeValue(envio.cliente)} className={cn(fld, "font-semibold shadow-sm")} readOnly />
                   </div>
 
                   {/* Fila 2: fecha ingreso, fecha venta, fecha despacho */}
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Fecha Ingreso</label>
+                      <label className={lbl}>Fecha Ingreso</label>
                       <Input
                         value={envio.fecha ? new Date(envio.fecha).toLocaleDateString("es-AR") : "11/01/2026"}
-                        className="h-9 text-sm border-gray-300 bg-white shadow-sm"
+                        className={cn(fld, "shadow-sm")}
                         readOnly
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Fecha Venta</label>
+                      <label className={lbl}>Fecha Venta</label>
                       <Input
                         value={envio.fechaVenta ? new Date(envio.fechaVenta).toLocaleString("es-AR") : "00/00/0000 00:00:00"}
-                        className="h-9 text-sm border-gray-300 bg-white shadow-sm"
+                        className={cn(fld, "shadow-sm")}
                         readOnly
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Fecha de llegada</label>
+                      <label className={lbl}>Fecha de llegada</label>
                       <Input
                         value={envio.fechaLlegue ? new Date(envio.fechaLlegue).toLocaleDateString("es-AR") : "—"}
-                        className="h-9 text-sm border-gray-300 bg-white shadow-sm"
+                        className={cn(fld, "shadow-sm")}
                         readOnly
                       />
                     </div>
@@ -1242,15 +1263,15 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                   {/* Fila 3: valor declarado del paquete, deadline, cant. bultos */}
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Valor declarado del paquete</label>
+                      <label className={lbl}>Valor declarado del paquete</label>
                       <Input 
                         value={envio.totalACobrar ? `$ ${parseFloat(envio.totalACobrar).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$ 0.00"} 
-                        className="h-9 text-sm border-gray-300 bg-white shadow-sm" 
+                        className={cn(fld, "shadow-sm")} 
                         readOnly 
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Deadline</label>
+                      <label className={lbl}>Deadline</label>
                       <Input 
                         value={envio.deadline 
                           ? (() => {
@@ -1266,60 +1287,60 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                               return formatted + ' Max:' + formatted;
                             })()
                           : "00/00/0000 Max:00/00/0000"} 
-                        className="h-9 text-sm border-gray-300 bg-white shadow-sm" 
+                        className={cn(fld, "shadow-sm")} 
                         readOnly 
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Cant. Bultos</label>
-                      <Input value="1" className="h-9 text-sm border-gray-300 bg-white shadow-sm" readOnly />
+                      <label className={lbl}>Cant. Bultos</label>
+                      <Input value="1" className={cn(fld, "shadow-sm")} readOnly />
                     </div>
                   </div>
 
                   {/* Fila 4: Peso total, metodo de envio, costo de envío (oculto para Coordinador) y recibido por */}
                   <div className={userProfile === "Coordinador" ? "grid gap-4 sm:grid-cols-2" : "grid gap-4 sm:grid-cols-2 lg:grid-cols-4"}>
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Peso total</label>
+                      <label className={lbl}>Peso total</label>
                       <Input 
                         value={normalizeValue(envio.peso) || "0"} 
-                        className="h-9 text-sm border-gray-300 bg-white shadow-sm" 
+                        className={cn(fld, "shadow-sm")} 
                         readOnly 
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Método de envío</label>
+                      <label className={lbl}>Método de envío</label>
                       <Input 
                         value={normalizeValue(envio.metodoEnvio)} 
-                        className="h-9 text-sm border-gray-300 bg-white shadow-sm" 
+                        className={cn(fld, "shadow-sm")} 
                         readOnly 
                       />
                     </div>
                     {userProfile !== "Coordinador" && (
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-normal text-gray-600">Costo de envío</label>
+                        <label className={lbl}>Costo de envío</label>
                         <Input 
                           value={envio.costoEnvio 
                             ? `$ ${parseFloat(envio.costoEnvio).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
                             : "$ 0.00"} 
-                          className="h-9 text-sm border-gray-300 bg-white shadow-sm" 
+                          className={cn(fld, "shadow-sm")} 
                           readOnly 
                         />
                       </div>
                     )}
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-normal text-gray-600">Recibido por</label>
-                      <Input value="Placeholder" className="h-9 text-sm border-gray-300 bg-white shadow-sm text-gray-400 italic" readOnly />
+                      <label className={lbl}>Recibido por</label>
+                      <Input value="Placeholder" className={cn(fld, "italic text-slate-400 shadow-sm")} readOnly />
                     </div>
                   </div>
 
-                  <div className="space-y-3 border-t border-gray-200 pt-3">
+                  <div className="space-y-3 border-t border-slate-200/80 pt-4">
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Observaciones</label>
-                      <Input value={normalizeValue(envio.observaciones)} className="h-9 text-sm border-gray-300 bg-white shadow-sm" readOnly />
+                      <label className={lbl}>Observaciones</label>
+                      <Input value={normalizeValue(envio.observaciones)} className={cn(fld, "shadow-sm")} readOnly />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Referencia de domicilio</label>
-                      <Input value={normalizeValue(envio.cambioRetiro)} className="h-9 text-sm border-gray-300 bg-white shadow-sm" readOnly />
+                      <label className={lbl}>Referencia de domicilio</label>
+                      <Input value={normalizeValue(envio.cambioRetiro)} className={cn(fld, "shadow-sm")} readOnly />
                     </div>
                   </div>
                 </div>
@@ -1330,36 +1351,36 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                 <div className="space-y-4">
                   <Button
                     onClick={handleOpenAddEstado}
-                    className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white h-9 text-xs font-semibold shadow-md hover:shadow-lg transition-all"
+                    className={cn(btnPrimary, "h-9 text-xs font-semibold")}
                   >
                     AGREGAR NUEVO ESTADO
                   </Button>
                   
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <div className={tblWrap}>
                     <table className="w-full">
-                      <thead className="bg-gray-100">
+                      <thead className={tblHead}>
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Estado</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Fecha</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Hora estimada</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Quien</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Eliminar</th>
+                          <th className={tblTh}>Estado</th>
+                          <th className={tblTh}>Fecha</th>
+                          <th className={tblTh}>Hora estimada</th>
+                          <th className={tblTh}>Quien</th>
+                          <th className={tblTh}>Eliminar</th>
                         </tr>
                       </thead>
                       <tbody>
                         {historial.length === 0 ? (
                           <tr>
-                            <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">
+                            <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">
                               No hay historial disponible
                             </td>
                           </tr>
                         ) : (
                           historial.map((item) => (
-                            <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
-                              <td className="px-4 py-2 text-sm text-gray-900">{item.estado}</td>
-                              <td className="px-4 py-2 text-sm text-gray-700">{item.fecha}</td>
-                              <td className="px-4 py-2 text-sm text-gray-700">{item.horaEstimada}</td>
-                              <td className="px-4 py-2 text-sm text-gray-700">{item.quien}</td>
+                            <tr key={item.id} className={tblRow}>
+                              <td className="px-4 py-2 text-sm text-slate-900">{item.estado}</td>
+                              <td className="px-4 py-2 text-sm text-slate-700">{item.fecha}</td>
+                              <td className="px-4 py-2 text-sm text-slate-700">{item.horaEstimada}</td>
+                              <td className="px-4 py-2 text-sm text-slate-700">{item.quien}</td>
                               <td className="px-4 py-2">
                                 <button
                                   onClick={() => handleEliminarHistorial(item.id)}
@@ -1383,36 +1404,36 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                   <div className="flex justify-center">
                     <Button
                       onClick={handleOpenAddObservacion}
-                      className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white h-9 text-xs font-semibold shadow-md hover:shadow-lg transition-all"
+                      className={cn(btnPrimary, "h-9 text-xs font-semibold")}
                     >
                       AGREGAR
                     </Button>
                   </div>
                   
                   {/* Tabla de observaciones */}
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <div className={tblWrap}>
                     <table className="w-full">
-                      <thead className="bg-gray-100">
+                      <thead className={tblHead}>
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Fecha</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Observación</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Quien</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Eliminar</th>
+                          <th className={tblTh}>Fecha</th>
+                          <th className={tblTh}>Observación</th>
+                          <th className={tblTh}>Quien</th>
+                          <th className={tblTh}>Eliminar</th>
                         </tr>
                       </thead>
                       <tbody>
                         {observaciones.length === 0 ? (
                           <tr>
-                            <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500">
+                            <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-500">
                               No hay observaciones registradas
                             </td>
                           </tr>
                         ) : (
                           observaciones.map((item) => (
-                            <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
-                              <td className="px-4 py-2 text-sm text-gray-700">{item.fecha}</td>
-                              <td className="px-4 py-2 text-sm text-gray-900">{item.observacion}</td>
-                              <td className="px-4 py-2 text-sm text-gray-700">{item.quien}</td>
+                            <tr key={item.id} className={tblRow}>
+                              <td className="px-4 py-2 text-sm text-slate-700">{item.fecha}</td>
+                              <td className="px-4 py-2 text-sm text-slate-900">{item.observacion}</td>
+                              <td className="px-4 py-2 text-sm text-slate-700">{item.quien}</td>
                               <td className="px-4 py-2">
                                 <button
                                   onClick={() => handleEliminarObservacion(item.id)}
@@ -1434,28 +1455,28 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
               {activeTab === "imagenes" && (
                 <div className="space-y-6">
                   {/* Listado de fotos existentes */}
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
-                      <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Listado de fotos existentes</h3>
+                  <div className={tblWrap}>
+                    <div className={panelBar}>
+                      <h3 className={panelBarTitle}>Listado de fotos existentes</h3>
                     </div>
                     <table className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-slate-50/90">
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Imprimir</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Foto</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Quien</th>
+                          <th className={tblTh}>Imprimir</th>
+                          <th className={tblTh}>Foto</th>
+                          <th className={tblTh}>Quien</th>
                         </tr>
                       </thead>
                       <tbody>
                         {imagenes.length === 0 ? (
                           <tr>
-                            <td colSpan={3} className="px-4 py-8 text-center text-sm text-gray-500">
+                            <td colSpan={3} className="px-4 py-8 text-center text-sm text-slate-500">
                               No hay fotos existentes
                             </td>
                           </tr>
                         ) : (
                           imagenes.map((imagen) => (
-                            <tr key={imagen.id} className="border-b border-gray-100 hover:bg-gray-50">
+                            <tr key={imagen.id} className={tblRow}>
                               <td className="px-4 py-2">
                                 <button
                                   onClick={() => {
@@ -1467,16 +1488,16 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                                     link.click()
                                     document.body.removeChild(link)
                                   }}
-                                  className="p-2 text-[#6B46FF] hover:text-[#5a3ae6] hover:bg-purple-50 rounded transition-all"
+                                  className="rounded p-2 text-teal-700 transition-all hover:bg-teal-50 hover:text-teal-900"
                                   title="Descargar imagen"
                                 >
                                   <Printer className="h-5 w-5" />
                                 </button>
                               </td>
-                              <td className="px-4 py-2 text-sm text-gray-700">
+                              <td className="px-4 py-2 text-sm text-slate-700">
                                 <img src={imagen.url} alt="Foto" className="w-16 h-16 object-cover rounded" />
                               </td>
-                              <td className="px-4 py-2 text-sm text-gray-700">{imagen.quien}</td>
+                              <td className="px-4 py-2 text-sm text-slate-700">{imagen.quien}</td>
                             </tr>
                           ))
                         )}
@@ -1485,20 +1506,20 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                   </div>
 
                   {/* Listado de fotos a guardar */}
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
-                      <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Listado de fotos a guardar</h3>
+                  <div className={tblWrap}>
+                    <div className={panelBar}>
+                      <h3 className={panelBarTitle}>Listado de fotos a guardar</h3>
                     </div>
                     <table className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-slate-50/90">
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Nombre</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Acciones</th>
+                          <th className={tblTh}>Nombre</th>
+                          <th className={tblTh}>Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td colSpan={2} className="px-4 py-8 text-center text-sm text-gray-500">
+                          <td colSpan={2} className="px-4 py-8 text-center text-sm text-slate-500">
                             No hay fotos para guardar
                           </td>
                         </tr>
@@ -1507,7 +1528,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                   </div>
 
                   <div className="flex justify-center">
-                    <Button className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white h-9 text-xs font-semibold shadow-md hover:shadow-lg transition-all">
+                    <Button className={cn(btnPrimary, "h-9 text-xs font-semibold")}>
                       AGREGAR FOTO
                     </Button>
                   </div>
@@ -1519,28 +1540,28 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
               {activeTab === "entregado" && (
                 <div className="space-y-6">
                   {datosEntrega ? (
-                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                      <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
-                        <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Datos de quien recibió el envío</h3>
+                    <div className={tblWrap}>
+                      <div className={panelBar}>
+                        <h3 className={panelBarTitle}>Datos de quien recibió el envío</h3>
                       </div>
-                      <div className="p-4 space-y-4">
+                      <div className="space-y-4 p-4">
                         <div>
-                          <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide mb-1">Rol</label>
-                          <div className="text-sm text-gray-900 mt-1">{datosEntrega.rolRecibio || "-"}</div>
+                          <label className={cn(lbl, "mb-1")}>Rol</label>
+                          <div className="mt-1 text-sm text-slate-900">{datosEntrega.rolRecibio || "-"}</div>
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide mb-1">Nombre completo</label>
-                          <div className="text-sm text-gray-900 mt-1">{datosEntrega.nombreRecibio || "-"}</div>
+                          <label className={cn(lbl, "mb-1")}>Nombre completo</label>
+                          <div className="mt-1 text-sm text-slate-900">{datosEntrega.nombreRecibio || "-"}</div>
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide mb-1">DNI</label>
-                          <div className="text-sm text-gray-900 mt-1">{datosEntrega.dniRecibio || "-"}</div>
+                          <label className={cn(lbl, "mb-1")}>DNI</label>
+                          <div className="mt-1 text-sm text-slate-900">{datosEntrega.dniRecibio || "-"}</div>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-                      <p className="text-sm text-gray-500">No hay datos de entrega disponibles</p>
+                    <div className={cn(tblWrap, "p-8 text-center")}>
+                      <p className="text-sm text-slate-500">No hay datos de entrega disponibles</p>
                     </div>
                   )}
                 </div>
@@ -1552,36 +1573,36 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                   {userProfile && userProfile !== "Chofer" && userProfile !== "Cliente" && (
                     <Button
                       onClick={handleAsignar}
-                      className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white h-9 text-xs font-semibold shadow-md hover:shadow-lg transition-all"
+                      className={cn(btnPrimary, "h-9 text-xs font-semibold")}
                     >
                       ASIGNAR
                     </Button>
                   )}
 
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <div className={tblWrap}>
                     <table className="w-full">
-                      <thead className="bg-gray-100">
+                      <thead className={tblHead}>
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Asignado a</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Desde</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Fecha</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Quien asigno</th>
+                          <th className={tblTh}>Asignado a</th>
+                          <th className={tblTh}>Desde</th>
+                          <th className={tblTh}>Fecha</th>
+                          <th className={tblTh}>Quien asigno</th>
                         </tr>
                       </thead>
                       <tbody>
                         {asignaciones.length === 0 ? (
                           <tr>
-                            <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500">
+                            <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-500">
                               No hay asignaciones registradas
                             </td>
                           </tr>
                         ) : (
                           asignaciones.map((asignacion, index) => (
-                            <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                              <td className="px-4 py-2 text-sm text-gray-900">{asignacion.choferNombre}</td>
-                              <td className="px-4 py-2 text-sm text-gray-700">{asignacion.desde}</td>
-                              <td className="px-4 py-2 text-sm text-gray-700">{asignacion.fecha}</td>
-                              <td className="px-4 py-2 text-sm text-gray-700">{asignacion.quienAsigno}</td>
+                            <tr key={index} className={tblRow}>
+                              <td className="px-4 py-2 text-sm text-slate-900">{asignacion.choferNombre}</td>
+                              <td className="px-4 py-2 text-sm text-slate-700">{asignacion.desde}</td>
+                              <td className="px-4 py-2 text-sm text-slate-700">{asignacion.fecha}</td>
+                              <td className="px-4 py-2 text-sm text-slate-700">{asignacion.quienAsigno}</td>
                             </tr>
                           ))
                         )}
@@ -1593,38 +1614,38 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             </div>
 
             {activeTab === "general" && (
-            <aside className="w-full shrink-0 space-y-3 xl:sticky xl:top-2 xl:w-[min(100%,420px)] xl:self-start">
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">QR público</label>
-                  <div className="flex justify-center rounded-xl border-2 border-gray-200 bg-white p-3 shadow-lg">
+            <aside className="w-full shrink-0 space-y-4 xl:sticky xl:top-2 xl:w-[min(100%,420px)] xl:self-start">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className={lbl}>QR público</label>
+                  <div className="flex justify-center rounded-2xl border border-dashed border-slate-300/90 bg-gradient-to-br from-white to-slate-50 p-4 shadow-inner">
                     {qrImageUrl ? (
-                      <img src={qrImageUrl} alt="QR público" className="h-[140px] w-[140px]" />
+                      <img src={qrImageUrl} alt="QR público" className="h-[140px] w-[140px] rounded-lg" />
                     ) : (
-                      <div className="flex h-[140px] w-[140px] items-center justify-center rounded-lg bg-gray-100">
-                        <span className="text-xs text-gray-400">Cargando…</span>
+                      <div className="flex h-[140px] w-[140px] items-center justify-center rounded-xl bg-slate-100">
+                        <span className="text-xs text-slate-400">Cargando…</span>
                       </div>
                     )}
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Link público</label>
+                <div className="space-y-2">
+                  <label className={lbl}>Link público</label>
                   <textarea
                     readOnly
                     value={publicLink}
                     rows={3}
-                    className="w-full resize-none rounded-lg border border-gray-300 bg-white p-2.5 font-mono text-[11px] font-medium leading-snug text-[#1f2433] shadow-sm outline-none ring-offset-0 [font-variant-ligatures:none] break-all"
+                    className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/90 p-3 font-mono text-[11px] font-medium leading-snug text-slate-800 shadow-sm outline-none ring-offset-0 [font-variant-ligatures:none] break-all"
                   />
-                  <p className="text-[11px] leading-snug text-gray-500">
+                  <p className="text-[11px] leading-snug text-slate-500">
                     Compartir este enlace o el QR para seguimiento público.
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Mapa</label>
-                <div className="border-2 border-gray-200 rounded-xl overflow-hidden shadow-lg" style={{ height: "260px" }}>
-                  <div ref={mapRef} className="w-full h-full" />
+              <div className="space-y-2">
+                <label className={lbl}>Mapa</label>
+                <div className="overflow-hidden rounded-2xl border border-slate-200/90 shadow-inner ring-1 ring-slate-100" style={{ height: "260px" }}>
+                  <div ref={mapRef} className="h-full w-full" />
                 </div>
                 {!geolocalizacionEncontrada && envio.direccion && (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-center gap-2">
@@ -1634,26 +1655,26 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                 )}
               </div>
 
-              <div className="space-y-2.5 bg-gray-50/50 rounded-xl p-3.5 border border-gray-200">
+              <div className="space-y-2.5 rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm ring-1 ring-slate-100/80">
                   <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Dirección</label>
-                    <Input value={normalizeValue(envio.direccion)} className="h-8 text-xs border-gray-300 bg-white shadow-sm" readOnly />
+                    <label className={lbl}>Dirección</label>
+                    <Input value={normalizeValue(envio.direccion)} className={cn(fld, "h-8 text-xs shadow-sm")} readOnly />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">CP</label>
-                      <Input value={normalizeValue(envio.codigoPostal)} className="h-8 text-xs border-gray-300 bg-white font-mono shadow-sm" readOnly />
+                      <label className={lbl}>CP</label>
+                      <Input value={normalizeValue(envio.codigoPostal)} className={cn(fld, "h-8 text-xs font-mono shadow-sm")} readOnly />
                     </div>
                     <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Recibe</label>
-                      <Input value={normalizeValue(envio.nombreDestinatario)} className="h-8 text-xs border-gray-300 bg-white shadow-sm" readOnly />
+                      <label className={lbl}>Recibe</label>
+                      <Input value={normalizeValue(envio.nombreDestinatario)} className={cn(fld, "h-8 text-xs shadow-sm")} readOnly />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Tel</label>
+                      <label className={lbl}>Tel</label>
                       <div className="flex items-center gap-2">
-                        <Input value={normalizeValue(envio.telefono)} className="h-8 text-xs border-gray-300 bg-white flex-1 font-mono shadow-sm" readOnly />
+                        <Input value={normalizeValue(envio.telefono)} className={cn(fld, "h-8 flex-1 font-mono text-xs shadow-sm")} readOnly />
                         <button
                           onClick={handleWhatsApp}
                           className="h-8 w-8 bg-green-500 hover:bg-green-600 rounded-lg flex items-center justify-center shadow-md hover:shadow-lg transition-all"
@@ -1663,14 +1684,14 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-[#6B46FF] uppercase tracking-wide">Email</label>
-                      <Input value={normalizeValue(envio.email)} className="h-8 text-xs border-gray-300 bg-white shadow-sm" readOnly />
+                      <label className={lbl}>Email</label>
+                      <Input value={normalizeValue(envio.email)} className={cn(fld, "h-8 text-xs shadow-sm")} readOnly />
                     </div>
                   </div>
                 </div>
 
-              <div className="space-y-2.5 bg-gray-50/50 rounded-xl p-3.5 border border-gray-200">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5d6578]">Acciones</p>
+              <div className="space-y-2.5 rounded-2xl border border-slate-200/80 bg-slate-50/60 p-4 ring-1 ring-slate-100/80">
+                  <p className={cn(lbl, "text-slate-600")}>Acciones</p>
                   <div className="space-y-2">
                     <Button
                       onClick={handleDelete}
@@ -1689,7 +1710,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                     <Button
                       onClick={onClose}
                       variant="outline"
-                      className="w-full border-2 border-gray-300 hover:border-gray-400 h-9 text-xs font-semibold"
+                      className={cn(btnGhost, "w-full h-9 text-xs font-semibold")}
                     >
                       Cerrar
                     </Button>
@@ -1725,34 +1746,34 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
 
       {/* Add Estado Modal */}
       {isAddEstadoModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 animate-in fade-in-0 backdrop-blur-sm">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl shadow-2xl border border-gray-200/50 animate-in zoom-in-95">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 animate-in fade-in-0 backdrop-blur-md">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xl ring-1 ring-slate-100/80 animate-in zoom-in-95">
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Agregar Nuevo Estado</h3>
+              <h3 className="mb-4 text-lg font-semibold text-slate-900">Agregar Nuevo Estado</h3>
               
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700">Fecha</label>
+                  <label className={lbl}>Fecha</label>
                   <Input
                     type="date"
                     value={nuevoEstado.fecha}
                     onChange={(e) => setNuevoEstado({ ...nuevoEstado, fecha: e.target.value })}
-                    className="h-9 text-sm border-gray-300 bg-white shadow-sm"
+                    className={cn(fld, "shadow-sm")}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700">Horario</label>
+                  <label className={lbl}>Horario</label>
                   <Input
                     type="time"
                     value={nuevoEstado.horario}
                     onChange={(e) => setNuevoEstado({ ...nuevoEstado, horario: e.target.value })}
-                    className="h-9 text-sm border-gray-300 bg-white shadow-sm"
+                    className={cn(fld, "shadow-sm")}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700">Estado</label>
+                  <label className={lbl}>Estado</label>
                   <Select value={nuevoEstado.estado} onValueChange={(value) => setNuevoEstado({ ...nuevoEstado, estado: value })}>
-                    <SelectTrigger className="h-9 text-sm border-gray-300 bg-white shadow-sm">
+                    <SelectTrigger className={cn(fld, "shadow-sm")}>
                       <SelectValue placeholder="Seleccionar estado" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1775,7 +1796,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                 </Button>
                 <Button
                   onClick={handleAgregarEstado}
-                  className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white h-9 text-xs font-semibold shadow-md hover:shadow-lg transition-all"
+                  className={cn(btnPrimary, "h-9 text-xs font-semibold")}
                 >
                   AGREGAR
                 </Button>
@@ -1787,19 +1808,19 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
 
       {/* Add Observacion Modal */}
       {isAddObservacionModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 animate-in fade-in-0 backdrop-blur-sm">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl shadow-2xl border border-gray-200/50 animate-in zoom-in-95">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 animate-in fade-in-0 backdrop-blur-md">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xl ring-1 ring-slate-100/80 animate-in zoom-in-95">
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Agregar Observación</h3>
+              <h3 className="mb-4 text-lg font-semibold text-slate-900">Agregar Observación</h3>
               
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-gray-700">Observación</label>
+                <label className={lbl}>Observación</label>
                 <div className="relative">
-                  <Pencil className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Pencil className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 transform text-slate-400" />
                   <Input
                     value={nuevaObservacion.observacion}
                     onChange={(e) => setNuevaObservacion({ observacion: e.target.value })}
-                    className="h-9 text-sm border-gray-300 bg-white shadow-sm pl-8"
+                    className={cn(fld, "h-9 pl-8 text-sm shadow-sm")}
                     placeholder="Escribir observación..."
                   />
                 </div>
@@ -1814,7 +1835,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                 </Button>
                 <Button
                   onClick={handleGuardarObservacion}
-                  className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white h-9 text-xs font-semibold shadow-md hover:shadow-lg transition-all"
+                  className={cn(btnPrimary, "h-9 text-xs font-semibold")}
                 >
                   GUARDAR
                 </Button>
@@ -1827,35 +1848,35 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       {/* Modal de selección de chofer (stopPropagation para no cerrar el modal principal al hacer clic) */}
       {isAsignarModalOpen && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 animate-in fade-in-0 backdrop-blur-sm"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 animate-in fade-in-0 backdrop-blur-md"
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
         >
           <div
-            className="bg-white rounded-xl w-[90vw] max-w-md p-6 shadow-2xl animate-in zoom-in-95"
+            className="w-[90vw] max-w-md rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xl ring-1 ring-slate-100/80 animate-in zoom-in-95"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Asignar a:</h2>
-            <p className="text-sm text-gray-600 mb-4">Seleccioná un repartidor (obligatorio)</p>
+            <h2 className="mb-2 text-lg font-semibold text-slate-900">Asignar a:</h2>
+            <p className="mb-4 text-sm text-slate-600">Seleccioná un repartidor (obligatorio)</p>
             
             <div className="max-h-64 overflow-y-auto mb-4 space-y-2">
               {/* Mostrar "PENDIENTES DEPÓSITO" primero si el usuario no es chofer */}
               {userProfile && userProfile !== "Chofer" && (
                 <button
                   onClick={() => setChoferSeleccionado(PENDIENTES_DEPOSITO)}
-                  className={`w-full p-3 text-left rounded-lg border-2 transition-all ${
+                  className={`w-full rounded-xl border-2 p-3 text-left transition-all ${
                     choferSeleccionado?.id === PENDIENTES_DEPOSITO.id
-                      ? "border-[#6B46FF] bg-[#6B46FF]/10"
-                      : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100"
+                      ? "border-teal-500 bg-teal-50"
+                      : "border-slate-200/90 bg-slate-50/80 hover:border-teal-200/70 hover:bg-slate-50"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className={`font-medium ${choferSeleccionado?.id === PENDIENTES_DEPOSITO.id ? "text-[#6B46FF]" : "text-gray-900"}`}>
+                    <span className={`font-medium ${choferSeleccionado?.id === PENDIENTES_DEPOSITO.id ? "text-teal-800" : "text-slate-900"}`}>
                       {PENDIENTES_DEPOSITO.nombre} {PENDIENTES_DEPOSITO.apellido}
                     </span>
                     {choferSeleccionado?.id === PENDIENTES_DEPOSITO.id && (
-                      <span className="text-[#6B46FF] font-bold">✓</span>
+                      <span className="font-bold text-teal-700">✓</span>
                     )}
                   </div>
                 </button>
@@ -1865,18 +1886,18 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                 <button
                   key={chofer.id}
                   onClick={() => setChoferSeleccionado(chofer)}
-                  className={`w-full p-3 text-left rounded-lg border-2 transition-all ${
+                  className={`w-full rounded-xl border-2 p-3 text-left transition-all ${
                     choferSeleccionado?.id === chofer.id
-                      ? "border-[#6B46FF] bg-[#6B46FF]/10"
-                      : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100"
+                      ? "border-teal-500 bg-teal-50"
+                      : "border-slate-200/90 bg-slate-50/80 hover:border-teal-200/70 hover:bg-slate-50"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className={`font-medium ${choferSeleccionado?.id === chofer.id ? "text-[#6B46FF]" : "text-gray-900"}`}>
+                    <span className={`font-medium ${choferSeleccionado?.id === chofer.id ? "text-teal-800" : "text-slate-900"}`}>
                       {chofer.nombre} {chofer.apellido}
                     </span>
                     {choferSeleccionado?.id === chofer.id && (
-                      <span className="text-[#6B46FF] font-bold">✓</span>
+                      <span className="font-bold text-teal-700">✓</span>
                     )}
                   </div>
                 </button>
@@ -1890,14 +1911,14 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                   setChoferSeleccionado(null)
                 }}
                 variant="outline"
-                className="flex-1 border-2 border-gray-300 hover:border-gray-400"
+                className={cn(btnGhost, "flex-1 font-medium")}
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleConfirmarAsignacion}
                 disabled={!choferSeleccionado}
-                className="flex-1 bg-[#6B46FF] hover:bg-[#5a3ae6] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className={cn(btnPrimary, "flex-1 disabled:cursor-not-allowed disabled:opacity-50")}
               >
                 Asignar
               </Button>
