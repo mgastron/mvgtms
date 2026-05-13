@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { X, Pencil, Printer } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
+import { History, Images, LayoutList, MessageSquareText, UserCog, X, Pencil, Printer, UserRoundCheck } from "lucide-react"
 import QRCode from "qrcode"
 import jsPDF from "jspdf"
 import { Button } from "@/components/ui/button"
@@ -48,9 +49,6 @@ interface EnvioDetailModalProps {
     choferAsignadoNombre?: string
     costoEnvio?: string
     idml?: string
-    peso?: string
-    metodoEnvio?: string
-    deadline?: string
     origen?: string
     latDestino?: number | null
     lngDestino?: number | null
@@ -125,13 +123,24 @@ const tblRow = "border-b border-slate-100/80 transition-colors hover:bg-teal-50/
 const panelBar = "border-b border-slate-200/80 bg-slate-100/80 px-4 py-2.5"
 const panelBarTitle = "text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
 
+type EnvioDetailTab = "general" | "historial" | "observaciones" | "imagenes" | "asignacion"
+
+const DETAIL_NAV: { id: EnvioDetailTab; label: string; Icon: LucideIcon }[] = [
+  { id: "general", label: "Resumen", Icon: LayoutList },
+  { id: "historial", label: "Actividad", Icon: History },
+  { id: "observaciones", label: "Observaciones", Icon: MessageSquareText },
+  { id: "imagenes", label: "Imágenes", Icon: Images },
+  { id: "asignacion", label: "Asignación", Icon: UserCog },
+]
+
 export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuccess, onEstadoChange }: EnvioDetailModalProps) {
   // Normalizar valores null a cadenas vacías para evitar errores de React
   const normalizeValue = (value: string | null | undefined): string => {
     return value ?? ""
   }
   
-  const [activeTab, setActiveTab] = useState<"general" | "historial" | "observaciones" | "imagenes" | "asignacion" | "entregado">("general")
+  const [activeTab, setActiveTab] = useState<EnvioDetailTab>("general")
+  const [recepcionDialogOpen, setRecepcionDialogOpen] = useState(false)
   const [qrImageUrl, setQrImageUrl] = useState<string>("")
   const [publicLink, setPublicLink] = useState<string>("")
   const [geolocalizacionEncontrada, setGeolocalizacionEncontrada] = useState<boolean>(false)
@@ -352,6 +361,15 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       setDatosEntrega(null)
     }
   }
+
+  const handleOpenRecepcionDialog = () => {
+    setRecepcionDialogOpen(true)
+    void loadDatosEntrega()
+  }
+
+  useEffect(() => {
+    if (!isOpen) setRecepcionDialogOpen(false)
+  }, [isOpen])
 
   // Cargar perfil de usuario y choferes
   useEffect(() => {
@@ -1038,15 +1056,6 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
 
   if (!isOpen || !envio) return null
 
-  const section: "resumen" | "actividad" | "documentos" | "gestion" =
-    activeTab === "general"
-      ? "resumen"
-      : activeTab === "historial"
-        ? "actividad"
-        : activeTab === "observaciones" || activeTab === "imagenes"
-          ? "documentos"
-          : "gestion"
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 animate-in fade-in-0 backdrop-blur-md"
@@ -1101,98 +1110,37 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Pestañas: barra segmentada (no pills azules / no subrayado morado) */}
-          <div className="px-6 pb-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="inline-flex flex-wrap gap-0.5 rounded-2xl bg-slate-100/95 p-1 ring-1 ring-slate-200/80">
-            {[
-              { id: "general", label: "Resumen" },
-              { id: "historial", label: "Actividad" },
-              { id: "observaciones", label: "Documentos" },
-              { id: "asignacion", label: "Gestión" },
-            ].map((item) => {
-              const isActive =
-                (item.id === "general" && section === "resumen") ||
-                (item.id === "historial" && section === "actividad") ||
-                (item.id === "observaciones" && section === "documentos") ||
-                (item.id === "asignacion" && section === "gestion")
+        {/* Cuerpo: rail vertical (iconos siempre; texto desde md) + contenido */}
+        <div className="flex min-h-0 flex-1 flex-row">
+          <nav
+            className="flex w-[52px] shrink-0 flex-col gap-0.5 border-r border-slate-200/80 bg-gradient-to-b from-slate-100/90 via-slate-50/95 to-white py-3 md:w-52 md:gap-1 md:px-2 md:py-4"
+            aria-label="Secciones del pedido"
+          >
+            {DETAIL_NAV.map(({ id, label, Icon }) => {
+              const isActive = activeTab === id
               return (
                 <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id as any)}
-                  className={
-                    "h-9 rounded-xl px-4 text-[13px] font-semibold transition-all " +
-                    (isActive
-                      ? "bg-white text-teal-900 shadow-sm ring-1 ring-slate-200/90"
-                      : "text-slate-600 hover:bg-white/60 hover:text-slate-900")
-                  }
+                  key={id}
+                  type="button"
+                  title={label}
+                  onClick={() => setActiveTab(id)}
+                  className={cn(
+                    "flex items-center justify-center gap-0 rounded-xl py-2.5 transition-all md:justify-start md:gap-3 md:px-3",
+                    isActive
+                      ? "bg-white text-teal-900 shadow-md ring-1 ring-slate-200/90 md:border-l-[3px] md:border-l-teal-500 md:pl-[calc(0.75rem-3px)] md:ring-0"
+                      : "text-slate-500 hover:bg-white/70 hover:text-slate-800"
+                  )}
                 >
-                  {item.label}
+                  <Icon className="h-5 w-5 shrink-0 opacity-90" aria-hidden />
+                  <span className="hidden min-w-0 truncate text-left text-[13px] font-semibold md:inline">{label}</span>
                 </button>
               )
             })}
-              </div>
+          </nav>
 
-            {section === "documentos" && (
-              <div className="ml-auto flex items-center gap-1.5 rounded-2xl bg-slate-100/90 p-1 ring-1 ring-slate-200/70">
-                <button
-                  onClick={() => setActiveTab("observaciones")}
-                  className={
-                    "h-8 rounded-lg px-3 text-[12px] font-semibold transition-all " +
-                    (activeTab === "observaciones"
-                      ? "bg-white text-teal-900 shadow-sm ring-1 ring-slate-200/80"
-                      : "text-slate-600 hover:bg-white/70")
-                  }
-                >
-                  Observaciones
-                </button>
-                <button
-                  onClick={() => setActiveTab("imagenes")}
-                  className={
-                    "h-8 rounded-lg px-3 text-[12px] font-semibold transition-all " +
-                    (activeTab === "imagenes"
-                      ? "bg-white text-teal-900 shadow-sm ring-1 ring-slate-200/80"
-                      : "text-slate-600 hover:bg-white/70")
-                  }
-                >
-                  Imágenes
-                </button>
-              </div>
-            )}
-
-            {section === "gestion" && envio?.estado === "Entregado" && (
-              <div className="ml-auto flex items-center gap-1.5 rounded-2xl bg-slate-100/90 p-1 ring-1 ring-slate-200/70">
-                <button
-                  onClick={() => setActiveTab("asignacion")}
-                  className={
-                    "h-8 rounded-lg px-3 text-[12px] font-semibold transition-all " +
-                    (activeTab === "asignacion"
-                      ? "bg-white text-teal-900 shadow-sm ring-1 ring-slate-200/80"
-                      : "text-slate-600 hover:bg-white/70")
-                  }
-                >
-                  Asignación
-                </button>
-                <button
-                  onClick={() => setActiveTab("entregado")}
-                  className={
-                    "h-8 rounded-lg px-3 text-[12px] font-semibold transition-all " +
-                    (activeTab === "entregado"
-                      ? "bg-white text-teal-900 shadow-sm ring-1 ring-slate-200/80"
-                      : "text-slate-600 hover:bg-white/70")
-                  }
-                >
-                  Entregado
-                </button>
-              </div>
-            )}
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-auto bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(45,212,191,0.08),transparent_50%),linear-gradient(180deg,#f8fafc_0%,#ffffff_45%,#f1f5f9_100%)] p-6">
+          <div className="min-h-0 flex-1 overflow-auto bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(45,212,191,0.08),transparent_50%),linear-gradient(180deg,#f8fafc_0%,#ffffff_45%,#f1f5f9_100%)] p-4 md:p-6">
           <div
             className={
               activeTab === "general"
@@ -1260,77 +1208,34 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                     </div>
                   </div>
 
-                  {/* Fila 3: valor declarado del paquete, deadline, cant. bultos */}
+                  {/* Valor declarado y costo de envío (sin deadline / bultos / peso / método) */}
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div className="space-y-1.5">
                       <label className={lbl}>Valor declarado del paquete</label>
-                      <Input 
-                        value={envio.totalACobrar ? `$ ${parseFloat(envio.totalACobrar).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$ 0.00"} 
-                        className={cn(fld, "shadow-sm")} 
-                        readOnly 
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className={lbl}>Deadline</label>
-                      <Input 
-                        value={envio.deadline 
-                          ? (() => {
-                              const deadlineDate = new Date(envio.deadline);
-                              const formatted = deadlineDate.toLocaleDateString('es-AR', { 
-                                day: '2-digit', 
-                                month: '2-digit', 
-                                year: 'numeric'
-                              }) + ' ' + deadlineDate.toLocaleTimeString('es-AR', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              });
-                              return formatted + ' Max:' + formatted;
-                            })()
-                          : "00/00/0000 Max:00/00/0000"} 
-                        className={cn(fld, "shadow-sm")} 
-                        readOnly 
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className={lbl}>Cant. Bultos</label>
-                      <Input value="1" className={cn(fld, "shadow-sm")} readOnly />
-                    </div>
-                  </div>
-
-                  {/* Fila 4: Peso total, metodo de envio, costo de envío (oculto para Coordinador) y recibido por */}
-                  <div className={userProfile === "Coordinador" ? "grid gap-4 sm:grid-cols-2" : "grid gap-4 sm:grid-cols-2 lg:grid-cols-4"}>
-                    <div className="space-y-1.5">
-                      <label className={lbl}>Peso total</label>
-                      <Input 
-                        value={normalizeValue(envio.peso) || "0"} 
-                        className={cn(fld, "shadow-sm")} 
-                        readOnly 
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className={lbl}>Método de envío</label>
-                      <Input 
-                        value={normalizeValue(envio.metodoEnvio)} 
-                        className={cn(fld, "shadow-sm")} 
-                        readOnly 
+                      <Input
+                        value={
+                          envio.totalACobrar
+                            ? `$ ${parseFloat(envio.totalACobrar).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            : "$ 0.00"
+                        }
+                        className={cn(fld, "shadow-sm")}
+                        readOnly
                       />
                     </div>
                     {userProfile !== "Coordinador" && (
                       <div className="space-y-1.5">
                         <label className={lbl}>Costo de envío</label>
-                        <Input 
-                          value={envio.costoEnvio 
-                            ? `$ ${parseFloat(envio.costoEnvio).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-                            : "$ 0.00"} 
-                          className={cn(fld, "shadow-sm")} 
-                          readOnly 
+                        <Input
+                          value={
+                            envio.costoEnvio
+                              ? `$ ${parseFloat(envio.costoEnvio).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                              : "$ 0.00"
+                          }
+                          className={cn(fld, "shadow-sm")}
+                          readOnly
                         />
                       </div>
                     )}
-                    <div className="space-y-1.5">
-                      <label className={lbl}>Recibido por</label>
-                      <Input value="Placeholder" className={cn(fld, "italic text-slate-400 shadow-sm")} readOnly />
-                    </div>
                   </div>
 
                   <div className="space-y-3 border-t border-slate-200/80 pt-4">
@@ -1349,6 +1254,29 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
               {/* HISTORIAL Tab */}
               {activeTab === "historial" && (
                 <div className="space-y-4">
+                  {envio.estado === "Entregado" && (
+                    <div className="flex flex-col gap-3 rounded-2xl border border-teal-200/70 bg-gradient-to-r from-teal-50/90 via-white to-slate-50/80 p-4 shadow-sm ring-1 ring-teal-100/80 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white shadow-sm">
+                          <UserRoundCheck className="h-5 w-5" aria-hidden />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900">Pedido entregado</p>
+                          <p className="text-xs leading-snug text-slate-600">
+                            Los datos de quién recibió el paquete están en el registro de entrega (no en el resumen).
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={handleOpenRecepcionDialog}
+                        className={cn(btnPrimary, "h-9 shrink-0 px-4 text-xs font-semibold")}
+                      >
+                        Ver recepción
+                      </Button>
+                    </div>
+                  )}
+
                   <Button
                     onClick={handleOpenAddEstado}
                     className={cn(btnPrimary, "h-9 text-xs font-semibold")}
@@ -1536,37 +1464,6 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
               )}
 
               {/* ASIGNACION Tab */}
-              {/* ENTREGADO Tab - Solo visible si el envío está entregado */}
-              {activeTab === "entregado" && (
-                <div className="space-y-6">
-                  {datosEntrega ? (
-                    <div className={tblWrap}>
-                      <div className={panelBar}>
-                        <h3 className={panelBarTitle}>Datos de quien recibió el envío</h3>
-                      </div>
-                      <div className="space-y-4 p-4">
-                        <div>
-                          <label className={cn(lbl, "mb-1")}>Rol</label>
-                          <div className="mt-1 text-sm text-slate-900">{datosEntrega.rolRecibio || "-"}</div>
-                        </div>
-                        <div>
-                          <label className={cn(lbl, "mb-1")}>Nombre completo</label>
-                          <div className="mt-1 text-sm text-slate-900">{datosEntrega.nombreRecibio || "-"}</div>
-                        </div>
-                        <div>
-                          <label className={cn(lbl, "mb-1")}>DNI</label>
-                          <div className="mt-1 text-sm text-slate-900">{datosEntrega.dniRecibio || "-"}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className={cn(tblWrap, "p-8 text-center")}>
-                      <p className="text-sm text-slate-500">No hay datos de entrega disponibles</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
               {activeTab === "asignacion" && (
                 <div className="space-y-4">
                   {/* Botón de asignar (solo para usuarios no-chofer y no-cliente) */}
@@ -1721,7 +1618,72 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             )}
           </div>
         </div>
+        </div>
       </div>
+
+      {/* Detalle de recepción (solo datos de entrega; se abre desde Actividad) */}
+      {recepcionDialogOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 animate-in fade-in-0 backdrop-blur-md"
+          onClick={() => setRecepcionDialogOpen(false)}
+          role="presentation"
+        >
+          <div
+            className="mx-4 w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xl ring-1 ring-slate-100/80 animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="recepcion-dialog-title"
+          >
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-600 text-white">
+                  <UserRoundCheck className="h-4 w-4" aria-hidden />
+                </div>
+                <h3 id="recepcion-dialog-title" className="text-lg font-semibold text-slate-900">
+                  Recepción del envío
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRecepcionDialogOpen(false)}
+                className="rounded-full p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+                aria-label="Cerrar"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mb-4 text-sm text-slate-600">
+              Datos registrados al marcar el pedido como entregado.
+            </p>
+            {datosEntrega ? (
+              <div className="space-y-4 rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
+                <div>
+                  <p className={lbl}>Rol</p>
+                  <p className="mt-1 text-sm font-medium text-slate-900">{datosEntrega.rolRecibio?.trim() || "—"}</p>
+                </div>
+                <div>
+                  <p className={lbl}>Nombre quien recibió</p>
+                  <p className="mt-1 text-sm font-medium text-slate-900">{datosEntrega.nombreRecibio?.trim() || "—"}</p>
+                </div>
+                <div>
+                  <p className={lbl}>DNI</p>
+                  <p className="mt-1 font-mono text-sm font-medium text-slate-900">{datosEntrega.dniRecibio?.trim() || "—"}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="rounded-xl border border-amber-200/80 bg-amber-50/80 p-4 text-sm text-amber-900">
+                Aún no hay datos de recepción cargados o no se pudieron obtener. Probá de nuevo en unos segundos.
+              </p>
+            )}
+            <div className="mt-6 flex justify-end">
+              <Button type="button" onClick={() => setRecepcionDialogOpen(false)} className={cn(btnGhost, "h-9 px-4 text-sm font-semibold")}>
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
