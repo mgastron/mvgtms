@@ -1555,7 +1555,7 @@ export default function EstadoOrdenesPage() {
                   <span>{filteredPedidos.length === 1 ? "pedido" : "pedidos"}</span>
                 </div>
               </div>
-              <div className="max-w-full min-w-0 overflow-x-hidden">
+              <div className="max-w-full min-w-0 overflow-x-auto [-webkit-overflow-scrolling:touch]">
                 <table className="w-full table-fixed border-collapse text-[12px]">
                   <colgroup>
                     <col style={{ width: "4px" }} />

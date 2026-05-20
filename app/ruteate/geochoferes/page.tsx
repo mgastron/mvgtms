@@ -286,12 +286,12 @@ export default function GeochoferesPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-[#f7f8fc]">
+    <div className="flex min-h-screen flex-col bg-[#f7f8fc] md:h-screen">
       <ModernHeader />
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
         <aside
-          className={`flex w-80 shrink-0 flex-col border-r border-[#e6eaf4] bg-white shadow-sm ${montserrat.className}`}
+          className={`flex max-h-[42vh] w-full shrink-0 flex-col border-b border-[#e6eaf4] bg-white shadow-sm md:max-h-none md:w-80 md:border-b-0 md:border-r ${montserrat.className}`}
         >
           <div className="border-b border-[#e6eaf4] px-4 py-4">
             <h1 className="mb-3 text-[18px] font-semibold tracking-tight text-[#1570ef]">Ubicación</h1>
@@ -391,8 +391,8 @@ export default function GeochoferesPage() {
           </div>
         </aside>
 
-        <div className="relative min-h-0 min-w-0 flex-1">
-          <div ref={mapRef} className="h-full w-full" />
+        <div className="relative min-h-[48vh] min-w-0 flex-1 md:min-h-0">
+          <div ref={mapRef} className="h-full min-h-[48vh] w-full md:min-h-0" />
         </div>
       </div>
     </div>

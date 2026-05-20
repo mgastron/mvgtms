@@ -996,11 +996,11 @@ export default function EnviosPage() {
       <ModernHeader />
       <main className={`px-4 pb-6 pt-4 ${montserrat.className}`}>
         <div className="mx-auto w-full max-w-[1700px]">
-          <div className="mb-5 flex items-center justify-between">
-            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Pedidos</h1>
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-[28px] font-semibold tracking-tight text-[#1570ef] sm:text-[34px]">Pedidos</h1>
             <Button
               onClick={handleDescargarExcel}
-              className="h-12 rounded-xl bg-[#eef4ff] px-6 text-[15px] font-semibold text-[#1570ef] hover:bg-[#e3edff]"
+              className="h-11 w-full shrink-0 rounded-xl bg-[#eef4ff] px-6 text-[14px] font-semibold text-[#1570ef] hover:bg-[#e3edff] sm:h-12 sm:w-auto sm:text-[15px]"
             >
               <Download className="mr-2 h-5 w-5" />
               Descargar tabla
@@ -1041,7 +1041,7 @@ export default function EnviosPage() {
           <div className="rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm space-y-4">
             <h2 className="text-[18px] font-semibold text-[#4f46ce]">Filtros</h2>
               {/* Filtros básicos */}
-              <div className="grid grid-cols-6 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <div className="space-y-1">
                   <label className="block text-[14px] font-medium text-[#4d5571]">Tipo de fecha</label>
                   <Select
@@ -1139,7 +1139,7 @@ export default function EnviosPage() {
               {/* Filtros avanzados (mostrar/ocultar) */}
               {showAdvancedFilters && (
                 <div className="space-y-3 border-gray-200">
-                  <div className="grid grid-cols-6 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                     <div className="space-y-1">
                       <label className="block text-[14px] font-medium text-[#4d5571]">ID Venta / ID pack</label>
                       <Input
@@ -1229,7 +1229,7 @@ export default function EnviosPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-6 gap-3 lg:grid-cols-7">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 2xl:grid-cols-7">
                     <div className="space-y-1">
                       <label className="block text-[14px] font-medium text-[#4d5571]">Asignado</label>
                       <Select
@@ -1329,7 +1329,7 @@ export default function EnviosPage() {
                 </div>
               )}
 
-            <div className="flex items-center justify-between pt-1">
+            <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
               <Button
                 onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                 variant="ghost"
@@ -1347,16 +1347,16 @@ export default function EnviosPage() {
                   </>
                 )}
               </Button>
-              <div className="flex gap-3">
-                <Button onClick={handleClearFilters} variant="outline" className="h-11 px-10 text-[14px] rounded-xl">Borrar</Button>
-                <Button onClick={() => loadEnvios(0, itemsPerPage)} className="h-11 px-10 text-[14px] rounded-xl bg-[#f2efff] text-[#4f46ce] hover:bg-[#ece8ff]">Aplicar</Button>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:gap-3">
+                <Button onClick={handleClearFilters} variant="outline" className="h-11 w-full rounded-xl px-6 text-[14px] sm:w-auto sm:px-10">Borrar</Button>
+                <Button onClick={() => loadEnvios(0, itemsPerPage)} className="h-11 w-full rounded-xl bg-[#f2efff] px-6 text-[14px] text-[#4f46ce] hover:bg-[#ece8ff] sm:w-auto sm:px-10">Aplicar</Button>
               </div>
             </div>
           </div>
 
             {/* Table */}
-          <div className="mt-4 rounded-xl border border-[#e6eaf4] bg-white overflow-hidden">
-              <div className="overflow-x-auto" suppressHydrationWarning>
+          <div className="mt-4 max-w-full overflow-hidden rounded-xl border border-[#e6eaf4] bg-white">
+              <div className="max-w-full overflow-x-auto [-webkit-overflow-scrolling:touch]" suppressHydrationWarning>
                 <div className="flex items-center justify-end border-b border-[#edf0f7] bg-white px-4 py-3 text-sm font-medium text-gray-700">
                   <span className="text-[#6B46FF] font-bold">{totalElements}</span>
                   <span className="ml-2 text-gray-500">registros</span>

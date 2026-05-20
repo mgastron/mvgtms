@@ -1002,8 +1002,8 @@ export default function ReimprimirNoflexPage() {
       <ModernHeader />
       <main className="px-3 pb-4 pt-3">
         <div className="mx-auto w-full max-w-[1700px]">
-          <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-[34px] font-semibold tracking-tight text-[#1570ef]">Reimpresión de etiquetas</h1>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-[#1570ef] sm:text-[34px]">Reimpresión de etiquetas</h1>
             <Button
               onClick={() => loadEnvios()}
               disabled={isLoading}
@@ -1045,7 +1045,7 @@ export default function ReimprimirNoflexPage() {
 
             <div className="space-y-2">
               {/* Row 1 */}
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-1">
                   <label className="block text-[12px] font-medium text-[#4d5571]">Tipo de fecha</label>
                   <Select
@@ -1102,7 +1102,7 @@ export default function ReimprimirNoflexPage() {
               </div>
 
               {/* Row 2 */}
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-1">
                   <label className="block text-[12px] font-medium text-[#4d5571]">Origen</label>
                   <Select
@@ -1155,7 +1155,7 @@ export default function ReimprimirNoflexPage() {
               </div>
 
               {/* Row 3 */}
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-1">
                   <label className="block text-[12px] font-medium text-[#4d5571]">Zona de entrega</label>
                   <Select

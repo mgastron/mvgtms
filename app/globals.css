@@ -131,3 +131,32 @@
   }
 }
 
+/**
+ * Ajustes solo para teléfono (≤767px). Escritorio (md+) no se redefine aquí.
+ */
+@media (max-width: 767px) {
+  html {
+    overflow-x: clip;
+  }
+
+  body {
+    overflow-x: clip;
+  }
+
+  main {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Grillas sin breakpoint responsive (p. ej. grid-cols-6 en filtros) */
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4,
+  .grid-cols-5,
+  .grid-cols-6,
+  .grid-cols-7 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+}
+

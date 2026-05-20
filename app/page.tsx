@@ -77,7 +77,7 @@ export default function LoginPage() {
 
   return (
     <div className={`relative min-h-screen overflow-hidden bg-gradient-to-r from-[#1e86ff] via-[#2a67ff] to-[#2f46f5] ${montserrat.className}`}>
-      <div className="pointer-events-none absolute inset-0">
+      <div className="pointer-events-none absolute inset-0 hidden md:block">
         <img
           src="/logos/nexo-iso-white.png"
           alt=""
@@ -110,16 +110,16 @@ export default function LoginPage() {
         />
       </div>
 
-      <div className="relative min-h-screen w-full">
-        <div className="absolute left-[5%] top-[7%]">
+      <div className="relative flex min-h-screen w-full flex-col md:block">
+        <div className="px-5 pt-6 md:absolute md:left-[5%] md:top-[7%] md:px-0 md:pt-0">
           <img
             src="/logos/nexo-logo-white.png"
             alt="nexo"
-            className="h-auto w-[132px]"
+            className="h-auto w-[110px] md:w-[132px]"
           />
         </div>
 
-        <div className="absolute left-[5%] top-1/2 w-full max-w-[660px] -translate-y-1/2 text-white">
+        <div className="hidden text-white md:absolute md:left-[5%] md:top-1/2 md:block md:w-full md:max-w-[660px] md:-translate-y-1/2">
           <h1 className="max-w-[680px] text-[58px] font-semibold leading-[1.08] tracking-[-0.03em]">
             Optimizá tus entregas
             <br />
@@ -132,8 +132,9 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="absolute right-[9%] top-1/2 w-full max-w-[338px] -translate-y-1/2 rounded-[12px] bg-white p-6 shadow-[0_16px_42px_rgba(14,29,120,0.34)]">
-          <h2 className="mb-3 text-center text-[38px] font-semibold text-[#2f66cc]">Registrate</h2>
+        <div className="mx-auto flex w-full max-w-[338px] flex-1 flex-col justify-center px-4 py-10 md:absolute md:right-[9%] md:top-1/2 md:mx-0 md:max-w-[338px] md:-translate-y-1/2 md:px-0 md:py-0">
+        <div className="w-full rounded-[12px] bg-white p-6 shadow-[0_16px_42px_rgba(14,29,120,0.34)]">
+          <h2 className="mb-3 text-center text-[30px] font-semibold text-[#2f66cc] md:text-[38px]">Registrate</h2>
 
           {error && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -176,6 +177,7 @@ export default function LoginPage() {
               Ingresar
             </Button>
           </form>
+        </div>
         </div>
       </div>
     </div>

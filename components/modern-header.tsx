@@ -79,6 +79,15 @@ export function ModernHeader() {
     setUserProfile(profile)
   }, [])
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [mobileMenuOpen])
+
   const coordinadorOcultarSubmenuLabels = ["Tarifa"]
 
   const getFilteredMenuItems = () => {
@@ -149,7 +158,7 @@ export function ModernHeader() {
     <>
       <header className="sticky top-0 z-50 w-full bg-[#f7f8fc]">
         <div className={`mx-auto w-full max-w-[1700px] px-3 pt-3 ${montserrat.className}`}>
-          <div className="flex h-[72px] items-center justify-between rounded-2xl bg-[#1459e9] px-6">
+          <div className="flex h-[60px] items-center justify-between rounded-2xl bg-[#1459e9] px-4 md:h-[72px] md:px-6">
             <button onClick={() => router.push("/pedidos")} className="hover:opacity-90 transition-opacity">
               <img src="/logos/nexo-logo-white.png" alt="nexo" className="h-auto w-[102px]" />
             </button>
@@ -190,9 +199,9 @@ export function ModernHeader() {
             </div>
           </div>
 
-          {userProfile !== "Chofer" && activeMainMenu?.hasSubmenu && (
+          {userProfile !== "Chofer" && activeMainMenu?.hasSubmenu && !mobileMenuOpen && (
             <div className="mt-3 rounded-full border border-[#e6eaf4] bg-white px-2 py-1.5 shadow-sm">
-              <div className="flex w-full items-center justify-between gap-1 overflow-x-auto">
+              <div className="flex w-full max-w-full items-center gap-1 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] md:overflow-visible md:justify-between">
                 {activeMainMenu.submenu?.map((subItem) => {
                   const isSubActive = activeItem === subItem.label
                   return (
@@ -200,12 +209,11 @@ export function ModernHeader() {
                       key={subItem.label}
                       onClick={() => handleSubmenuClick(subItem.path)}
                       className={cn(
-                        "whitespace-nowrap rounded-full px-4 py-2 text-[15px] transition-colors text-center",
+                        "shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-center text-[14px] transition-colors md:min-w-0 md:flex-1 md:text-[15px]",
                         isSubActive
                           ? "bg-[#dbeafe] font-semibold text-[#1459e9]"
                           : "font-medium text-[#5d6578] hover:bg-[#eff6ff] hover:text-[#1459e9]"
                       )}
-                      style={{ flex: "1 1 0" }}
                     >
                       {subItem.label}
                     </button>
@@ -218,7 +226,7 @@ export function ModernHeader() {
       </header>
 
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-white pt-20 px-4">
+        <div className="fixed inset-0 z-[45] bg-white px-4 pb-6 pt-[5.5rem] md:hidden">
           <div className="space-y-2 max-h-[calc(100vh-6rem)] overflow-y-auto">
             {menuItems.map((item) => (
               <div key={item.label} className="rounded-xl border border-gray-200 p-3">
