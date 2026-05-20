@@ -226,39 +226,56 @@ export function ModernHeader() {
       </header>
 
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[45] bg-white px-4 pb-6 pt-[5.5rem] md:hidden">
-          <div className="space-y-2 max-h-[calc(100vh-6rem)] overflow-y-auto">
-            {menuItems.map((item) => (
-              <div key={item.label} className="rounded-xl border border-gray-200 p-3">
-                <button
-                  onClick={() => handleMainNavClick(item)}
-                  className={cn("w-full text-left text-sm font-semibold", activeMainItem === item.label ? "text-[#1459e9]" : "text-gray-700")}
-                >
-                  {item.label}
-                </button>
-                {item.hasSubmenu && item.submenu && (
-                  <div className="mt-2 space-y-1">
-                    {item.submenu.map((sub) => (
-                      <button
-                        key={sub.label}
-                        onClick={() => handleSubmenuClick(sub.path)}
-                        className={cn(
-                          "w-full rounded-lg px-3 py-2 text-left text-sm",
-                          activeItem === sub.label ? "bg-[#dbeafe] font-semibold text-[#1459e9]" : "text-gray-600 hover:bg-[#eff6ff]"
-                        )}
-                      >
-                        {sub.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            <div className="pt-2 border-t border-gray-200">
-              <UserProfile />
-            </div>
+        <div
+          className="fixed inset-0 z-[45] flex flex-col bg-white md:hidden"
+          style={{ paddingTop: "max(5.5rem, calc(5.5rem + env(safe-area-inset-top, 0px)))" }}
+        >
+          <div className="shrink-0 border-b border-[#e6eaf4] px-4 pb-3 pt-2">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#8890a8]">Tu cuenta</p>
+            <UserProfile variant="drawer" />
           </div>
+
+          <nav
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3"
+            style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
+            aria-label="Menú principal"
+          >
+            <div className="space-y-2">
+              {menuItems.map((item) => (
+                <div key={item.label} className="rounded-xl border border-[#e6eaf4] p-3">
+                  <button
+                    type="button"
+                    onClick={() => handleMainNavClick(item)}
+                    className={cn(
+                      "w-full text-left text-sm font-semibold",
+                      activeMainItem === item.label ? "text-[#1459e9]" : "text-[#1f2433]"
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                  {item.hasSubmenu && item.submenu && (
+                    <div className="mt-2 space-y-1">
+                      {item.submenu.map((sub) => (
+                        <button
+                          key={sub.label}
+                          type="button"
+                          onClick={() => handleSubmenuClick(sub.path)}
+                          className={cn(
+                            "w-full rounded-lg px-3 py-2.5 text-left text-sm",
+                            activeItem === sub.label
+                              ? "bg-[#dbeafe] font-semibold text-[#1459e9]"
+                              : "text-[#5d6578] hover:bg-[#eff6ff]"
+                          )}
+                        >
+                          {sub.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </nav>
         </div>
       )}
     </>

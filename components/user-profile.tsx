@@ -6,6 +6,7 @@ import { User, LogOut, ChevronDown, Search, MapPinned, FileCheck } from "lucide-
 import { Button } from "@/components/ui/button"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
+import { cn } from "@/lib/utils"
 
 interface UserInfo {
   username: string
@@ -15,7 +16,7 @@ interface UserInfo {
 }
 
 interface UserProfileProps {
-  variant?: "default" | "headerBlue"
+  variant?: "default" | "headerBlue" | "drawer"
 }
 
 export function UserProfile({ variant = "default" }: UserProfileProps) {
@@ -117,18 +118,45 @@ export function UserProfile({ variant = "default" }: UserProfileProps) {
         className={
           variant === "headerBlue"
             ? "flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-white hover:bg-white/15 transition-all duration-200"
-            : "flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-200 border border-gray-200"
+            : variant === "drawer"
+              ? "flex w-full items-center gap-3 rounded-xl border border-[#e6eaf4] bg-[#f7f8fc] px-3 py-2.5 text-[#1f2433] hover:bg-[#eef4ff] transition-all duration-200"
+              : "flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-200 border border-gray-200"
         }
       >
-        <div className={variant === "headerBlue" ? "flex h-7 w-7 items-center justify-center rounded-full bg-white" : "flex h-7 w-7 items-center justify-center rounded-full bg-gray-300"}>
-          <User className={variant === "headerBlue" ? "h-4 w-4 text-[#1459e9]" : "h-4 w-4 text-gray-600"} />
+        <div
+          className={
+            variant === "headerBlue"
+              ? "flex h-7 w-7 items-center justify-center rounded-full bg-white"
+              : "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eef4ff]"
+          }
+        >
+          <User className={variant === "headerBlue" ? "h-4 w-4 text-[#1459e9]" : "h-4 w-4 text-[#1459e9]"} />
         </div>
-        <span className={variant === "headerBlue" ? "font-medium text-sm hidden sm:inline text-white" : "font-medium text-sm hidden sm:inline"}>{userInfo.username}</span>
-        <ChevronDown className={`${variant === "headerBlue" ? "text-white/90" : "text-gray-600"} h-3 w-3 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <span
+          className={
+            variant === "headerBlue"
+              ? "hidden font-medium text-sm text-white sm:inline"
+              : variant === "drawer"
+                ? "min-w-0 flex-1 truncate text-left text-sm font-semibold"
+                : "hidden font-medium text-sm sm:inline"
+          }
+        >
+          {userInfo.username}
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""} ${
+            variant === "headerBlue" ? "text-white/90" : "text-[#5d6578]"
+          }`}
+        />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 min-w-[17.5rem] max-w-[min(22rem,calc(100vw-1.5rem))] rounded-lg border border-gray-200 bg-white py-2 shadow-xl">
+        <div
+          className={cn(
+            "z-50 mt-2 min-w-[17.5rem] max-w-[min(22rem,calc(100vw-1.5rem))] rounded-lg border border-gray-200 bg-white py-2 shadow-xl",
+            variant === "drawer" ? "relative left-0 right-auto w-full max-w-none" : "absolute right-0"
+          )}
+        >
           <div className="px-4 py-3 border-b border-gray-200 space-y-1">
             <p className="text-xs text-gray-500">Usuario</p>
             <p className="text-sm font-semibold text-gray-900">{userInfo.username}</p>

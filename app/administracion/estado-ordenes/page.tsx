@@ -1555,9 +1555,12 @@ export default function EstadoOrdenesPage() {
                   <span>{filteredPedidos.length === 1 ? "pedido" : "pedidos"}</span>
                 </div>
               </div>
+              <p className="border-b border-[#e6eaf4] bg-[#f7f8fc] px-4 py-2 text-[11px] font-medium text-[#8890a8] lg:hidden">
+                Deslizá horizontalmente para ver todas las columnas →
+              </p>
               <div className="max-w-full min-w-0 overflow-x-auto [-webkit-overflow-scrolling:touch]">
-                <table className="w-full table-fixed border-collapse text-[12px]">
-                  <colgroup>
+                <table className="w-max min-w-[1020px] border-collapse text-[12px] max-lg:table-auto lg:w-full lg:min-w-0 lg:table-fixed">
+                  <colgroup className="max-lg:hidden">
                     <col style={{ width: "4px" }} />
                     <col style={{ width: "9%" }} />
                     <col style={{ width: "9%" }} />
