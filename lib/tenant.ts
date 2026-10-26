@@ -49,6 +49,35 @@ export function isNexoTenant(): boolean {
   return getTenantSlug() === NEXO.slug
 }
 
+export function isLdpTenant(): boolean {
+  return getTenantSlug() === LDP.slug
+}
+
+export function getDriverInstallPath(): string {
+  return "/app"
+}
+
+export function getDriverInstallUrl(): string {
+  if (typeof window === "undefined") return getDriverInstallPath()
+  return `${window.location.origin}${getDriverInstallPath()}`
+}
+
+const DEFAULT_APK_URLS: Record<string, string> = {
+  mensajerialdp:
+    "https://expo.dev/artifacts/eas/EAUai51ON3y6yHEn06TUK0Anfun5kVskWtLbO5wEx3A.apk",
+}
+
+export function getDriverApkUrl(slug?: string): string {
+  const current = slug ?? getTenantSlug()
+  const fromEnv =
+    current === LDP.slug
+      ? process.env.NEXT_PUBLIC_LDP_APK_URL
+      : process.env.NEXT_PUBLIC_NEXO_APK_URL
+  if (fromEnv?.trim()) return fromEnv.trim()
+  if (DEFAULT_APK_URLS[current]) return DEFAULT_APK_URLS[current]
+  return `/apps/${current}.apk`
+}
+
 export function getFechaOperativaLabel(branding?: TenantBranding): string {
   const b = branding ?? getLocalTenantBranding()
   if (b.slug === LDP.slug) return "Fecha LDP"

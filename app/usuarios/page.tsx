@@ -3,12 +3,13 @@
 import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ModernHeader } from "@/components/modern-header"
-import { Pencil, Trash2, UserPlus } from "lucide-react"
+import { Pencil, Trash2, UserPlus, Smartphone, Copy, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { NewUserModal } from "@/components/new-user-modal"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { getDriverInstallUrl } from "@/lib/tenant"
 import { warnDev, errorDev } from "@/lib/logger"
 import { Montserrat } from "next/font/google"
 
@@ -79,6 +80,8 @@ export default function UsuariosPage() {
   const [users, setUsers] = useState<User[]>([])
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [driverAppUrl, setDriverAppUrl] = useState("")
+  const [appLinkCopied, setAppLinkCopied] = useState(false)
   const [filters, setFilters] = useState({
     nombre: "",
     apellido: "",
@@ -119,6 +122,7 @@ export default function UsuariosPage() {
       }
     }
     loadUsers()
+    setDriverAppUrl(getDriverInstallUrl())
   }, [])
 
   // Filtrar usuarios
@@ -214,6 +218,47 @@ export default function UsuariosPage() {
               Alta de usuario
             </Button>
           </div>
+
+          {driverAppUrl ? (
+            <div className="mb-5 flex flex-col gap-3 rounded-xl border border-[#1459e9]/20 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1459e9]/10 text-[#1459e9]">
+                  <Smartphone className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[14px] font-semibold text-slate-900">App de repartidores</p>
+                  <p className="mt-0.5 text-[13px] text-slate-600">
+                    Compartí este link para que instalen la app y se logueen con el usuario que les creés acá.
+                  </p>
+                  <p className="mt-1 break-all text-[12px] text-slate-500">{driverAppUrl}</p>
+                </div>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <Button
+                  variant="outline"
+                  className="h-10 rounded-lg border-slate-200 text-[13px] font-semibold"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(driverAppUrl)
+                      setAppLinkCopied(true)
+                      window.setTimeout(() => setAppLinkCopied(false), 1800)
+                    } catch {
+                      setAppLinkCopied(false)
+                    }
+                  }}
+                >
+                  {appLinkCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {appLinkCopied ? "Copiado" : "Copiar link"}
+                </Button>
+                <Button
+                  className="h-10 rounded-lg bg-[#1459e9] text-[13px] font-semibold text-white hover:bg-[#1048c2]"
+                  onClick={() => window.open(driverAppUrl, "_blank")}
+                >
+                  Abrir
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="grid gap-5 lg:grid-cols-[minmax(0,260px)_1fr] lg:items-start">
             <aside className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-4">

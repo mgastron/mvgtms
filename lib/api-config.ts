@@ -22,9 +22,12 @@ export function getApiBaseUrl(): string {
       return "http://localhost:8082/api"
     }
 
-    const isProduction = origin.includes("mvgtms.com.ar")
+    const isIsnexo = origin.includes("isnexo.net")
+    const isLegacyProduction = origin.includes("mvgtms.com.ar")
     const baseFromEnv = BACKEND_TUNNEL_URL?.trim() || ""
-    const resolvedBase = baseFromEnv || (isProduction ? "https://api.mvgtms.com.ar" : "")
+    const resolvedBase =
+      baseFromEnv ||
+      (isIsnexo ? "https://api.isnexo.net" : isLegacyProduction ? "https://api.mvgtms.com.ar" : "")
 
     if (resolvedBase) {
       let baseUrl = resolvedBase

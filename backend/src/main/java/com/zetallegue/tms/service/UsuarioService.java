@@ -27,6 +27,12 @@ public class UsuarioService {
 
     public LoginResponseDTO login(LoginRequestDTO loginRequest) {
         Long orgId = TenantContext.getOrganizacionId();
+        if (loginRequest.getOrganizacionSlug() != null && !loginRequest.getOrganizacionSlug().isBlank()) {
+            orgId = organizacionRepository
+                    .findBySlugAndHabilitadoTrue(loginRequest.getOrganizacionSlug().trim().toLowerCase())
+                    .map(Organizacion::getId)
+                    .orElse(orgId);
+        }
         Usuario usuario = orgId != null
                 ? usuarioRepository.findByOrganizacionIdAndUsuarioAndContraseña(
                         orgId, loginRequest.getUsuario(), loginRequest.getContraseña()).orElse(null)

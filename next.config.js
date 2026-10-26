@@ -6,6 +6,17 @@ const nextConfig = {
     maxInactiveAge: 25 * 1000,
     pagesBufferLength: 2,
   },
+  async headers() {
+    return [
+      {
+        source: "/apps/:path*",
+        headers: [
+          { key: "Content-Type", value: "application/vnd.android.package-archive" },
+          { key: "Content-Disposition", value: "attachment" },
+        ],
+      },
+    ]
+  },
   async redirects() {
     return [
       // Pedidos

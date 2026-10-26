@@ -28,7 +28,8 @@ export function RouteGuardClient({ children }: { children: React.ReactNode }) {
     const isPublicPath =
       (pathname?.startsWith("/auth/") ?? false) ||
       (pathname?.startsWith("/tracking/") ?? false) ||
-      (pathname?.startsWith("/utilidades/buscador") ?? false)
+      (pathname?.startsWith("/utilidades/buscador") ?? false) ||
+      pathname === "/app"
 
     if (!isAuthenticated && pathname !== "/" && !isPublicPath) {
       router.replace("/")
