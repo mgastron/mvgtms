@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import type { LucideIcon } from "lucide-react"
 import { History, Images, LayoutList, MessageSquareText, UserCog, X, Pencil, Printer, UserRoundCheck } from "lucide-react"
 import QRCode from "qrcode"
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getApiBaseUrl } from "@/lib/api-config"
 import { cn } from "@/lib/utils"
 import { logDev, warnDev, errorDev } from "@/lib/logger"
+import { OsmMap } from "@/components/osm-map"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,8 +46,8 @@ interface EnvioDetailModalProps {
     totalACobrar?: string
     cambioRetiro?: string
     estado?: string
-    choferAsignadoId?: number
-    choferAsignadoNombre?: string
+    choferAdjudicadoId?: number
+    choferAdjudicadoNombre?: string
     costoEnvio?: string
     idml?: string
     origen?: string
@@ -67,7 +68,7 @@ const estadosEnvio = [
   "Nadie",
   "Cancelado",
   "Rechazado por el comprador",
-  "reprogramado por comprador",
+  "Reprogramado por comprador",
 ]
 
 interface HistorialItem {
@@ -78,6 +79,9 @@ interface HistorialItem {
   quien: string
   observaciones?: string
   origen?: string // "APP" o "WEB"
+  latitud?: number | null
+  longitud?: number | null
+  ubicacionDireccion?: string | null
 }
 
 interface ObservacionItem {
@@ -94,11 +98,11 @@ interface Chofer {
   usuario: string
 }
 
-interface AsignacionItem {
+interface AdjudicacionItem {
   choferNombre: string
   desde: string
   fecha: string
-  quienAsigno: string
+  quienAdjudico: string
 }
 
 // Chofer especial "PENDIENTES DEPÓSITO"
@@ -123,14 +127,14 @@ const tblRow = "border-b border-slate-100/80 transition-colors hover:bg-teal-50/
 const panelBar = "border-b border-slate-200/80 bg-slate-100/80 px-4 py-2.5"
 const panelBarTitle = "text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
 
-type EnvioDetailTab = "general" | "historial" | "observaciones" | "imagenes" | "asignacion"
+type EnvioDetailTab = "general" | "historial" | "observaciones" | "imagenes" | "adjudicacion"
 
 const DETAIL_NAV: { id: EnvioDetailTab; label: string; Icon: LucideIcon }[] = [
   { id: "general", label: "Resumen", Icon: LayoutList },
   { id: "historial", label: "Actividad", Icon: History },
   { id: "observaciones", label: "Observaciones", Icon: MessageSquareText },
   { id: "imagenes", label: "Imágenes", Icon: Images },
-  { id: "asignacion", label: "Asignación", Icon: UserCog },
+  { id: "adjudicacion", label: "Adjudicación", Icon: UserCog },
 ]
 
 export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuccess, onEstadoChange }: EnvioDetailModalProps) {
@@ -141,16 +145,25 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
   
   const [activeTab, setActiveTab] = useState<EnvioDetailTab>("general")
   const [recepcionDialogOpen, setRecepcionDialogOpen] = useState(false)
+  const [descargandoPod, setDescargandoPod] = useState(false)
   const [qrImageUrl, setQrImageUrl] = useState<string>("")
   const [publicLink, setPublicLink] = useState<string>("")
   const [geolocalizacionEncontrada, setGeolocalizacionEncontrada] = useState<boolean>(false)
+  const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isAddEstadoModalOpen, setIsAddEstadoModalOpen] = useState(false)
   const [isAddObservacionModalOpen, setIsAddObservacionModalOpen] = useState(false)
   const [historial, setHistorial] = useState<HistorialItem[]>([])
   const [observaciones, setObservaciones] = useState<ObservacionItem[]>([])
   const [imagenes, setImagenes] = useState<Array<{id: number, url: string, fecha: string, quien: string}>>([])
-  const [datosEntrega, setDatosEntrega] = useState<{rolRecibio?: string, nombreRecibio?: string, dniRecibio?: string} | null>(null)
+  const [datosEntrega, setDatosEntrega] = useState<{
+    rolRecibio?: string
+    nombreRecibio?: string
+    dniRecibio?: string
+    latEntrega?: number | null
+    lngEntrega?: number | null
+    direccionEntrega?: string | null
+  } | null>(null)
   const [nuevoEstado, setNuevoEstado] = useState({
     fecha: "",
     horario: "",
@@ -162,12 +175,9 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
   const [userProfile, setUserProfile] = useState<string | null>(null)
   const [userFullName, setUserFullName] = useState<string | null>(null)
   const [choferes, setChoferes] = useState<Chofer[]>([])
-  const [isAsignarModalOpen, setIsAsignarModalOpen] = useState(false)
+  const [isAdjudicarModalOpen, setIsAdjudicarModalOpen] = useState(false)
   const [choferSeleccionado, setChoferSeleccionado] = useState<Chofer | null>(null)
-  const [asignaciones, setAsignaciones] = useState<AsignacionItem[]>([])
-  const mapRef = useRef<HTMLDivElement>(null)
-  const mapInstanceRef = useRef<google.maps.Map | null>(null)
-  const markerRef = useRef<google.maps.Marker | null>(null)
+  const [adjudicaciones, setAdjudicaciones] = useState<AdjudicacionItem[]>([])
 
   // Generar QR y link público
   useEffect(() => {
@@ -238,14 +248,21 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             quien: item.quien || "Usuario",
             observaciones: item.observaciones,
             origen: item.origen,
+            latitud: item.latitud ?? null,
+            longitud: item.longitud ?? null,
+            ubicacionDireccion: item.ubicacionDireccion ?? null,
           }
         })
         const historialFiltrado: HistorialItem[] = []
         let ultimoEstado: string | null = null
         for (const item of historialFormateado) {
-          if (ultimoEstado === null || item.estado !== ultimoEstado) {
+          // Los cambios de dirección deben quedar todos (auditoría); no colapsar consecutivos
+          const esAuditoria = item.estado === "Cambio de dirección"
+          if (esAuditoria || ultimoEstado === null || item.estado !== ultimoEstado) {
             historialFiltrado.push(item)
-            ultimoEstado = item.estado
+            if (!esAuditoria) {
+              ultimoEstado = item.estado
+            }
           }
         }
         setHistorial(historialFiltrado)
@@ -351,6 +368,9 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             rolRecibio: envioData.rolRecibio || null,
             nombreRecibio: envioData.nombreRecibio || null,
             dniRecibio: envioData.dniRecibio || null,
+            latEntrega: envioData.latEntrega ?? null,
+            lngEntrega: envioData.lngEntrega ?? null,
+            direccionEntrega: envioData.direccionEntrega ?? null,
           })
         } else {
           setDatosEntrega(null)
@@ -365,6 +385,48 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
   const handleOpenRecepcionDialog = () => {
     setRecepcionDialogOpen(true)
     void loadDatosEntrega()
+  }
+
+  const descargarPod = async (historialId?: number) => {
+    if (!envio?.id) return
+    setDescargandoPod(true)
+    try {
+      const apiBaseUrl = getApiBaseUrl()
+      const params = historialId != null ? `?historialId=${historialId}` : ""
+      const response = await fetch(`${apiBaseUrl}/envios/${envio.id}/pod${params}`)
+      if (!response.ok) {
+        const text = await response.text().catch(() => "")
+        throw new Error(text || `Error ${response.status}`)
+      }
+      const blob = await response.blob()
+      const disposition = response.headers.get("Content-Disposition") || ""
+      const match = disposition.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i)
+      const filename = match
+        ? decodeURIComponent(match[1].replace(/"/g, ""))
+        : `pod-${envio.tracking || envio.id}.pdf`
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e: any) {
+      errorDev("Error descargando PoD:", e)
+      alert(e?.message || "No se pudo generar el PoD")
+    } finally {
+      setDescargandoPod(false)
+    }
+  }
+
+  const esEventoPod = (estado?: string) =>
+    estado === "Nadie" || estado === "Rechazado por el comprador"
+
+  const esObservacionFotoBasura = (obs?: string | null) => {
+    if (!obs?.trim()) return false
+    const t = obs.trim().toLowerCase()
+    return t.startsWith("foto adjunta:") || t.startsWith("sin foto adjunta") || t.includes("data:image/")
   }
 
   useEffect(() => {
@@ -433,167 +495,111 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
     }
   }, [isOpen])
 
-  // Cargar asignaciones desde el historial
+  // Cargar adjudicaciones desde el historial
   useEffect(() => {
-    if (!envio || !isOpen || activeTab !== "asignacion") {
-      setAsignaciones([])
+    if (!envio || !isOpen || activeTab !== "adjudicacion") {
+      setAdjudicaciones([])
       return
     }
 
-    // Filtrar historial para obtener solo asignaciones
-    const asignacionesData: AsignacionItem[] = historial
+    // Filtrar historial para obtener solo adjudicaciones
+    const adjudicacionesData: AdjudicacionItem[] = historial
       .filter((item) => {
-        // Buscar tanto "Asignado a:" como "Reasignado desde:"
-        return item.observaciones && 
-               (item.observaciones.includes("Asignado a:") || 
+        // Compatibilidad: textos nuevos y legacy del historial
+        return item.observaciones &&
+               (item.observaciones.includes("Adjudicado a:") ||
+                item.observaciones.includes("Readjudicado desde:") ||
+                item.observaciones.includes("Enrutado a:") ||
+                item.observaciones.includes("Reenrutado desde:") ||
+                item.observaciones.includes("Asignado a:") ||
                 item.observaciones.includes("Reasignado desde:"))
       })
       .map((item) => {
         let choferNombre = "Desconocido"
-        
-        // Intentar extraer de "Reasignado desde: X a: Y" (tomar Y)
-        const reasignacionMatch = item.observaciones?.match(/Reasignado desde:.*?a:\s*(.+?)(?:\s*\||$)/)
-        if (reasignacionMatch) {
-          choferNombre = reasignacionMatch[1].trim()
+
+        const readjudicacionMatch = item.observaciones?.match(/(?:Readjudicado|Reenrutado|Reasignado) desde:.*?a:\s*(.+?)(?:\s*\||$)/)
+        if (readjudicacionMatch) {
+          choferNombre = readjudicacionMatch[1].trim()
         } else {
-          // Intentar extraer de "Asignado a: X"
-          const asignacionMatch = item.observaciones?.match(/Asignado a:\s*(.+?)(?:\s*\(|\s*\||$)/)
-          if (asignacionMatch) {
-            choferNombre = asignacionMatch[1].trim()
+          const adjudicacionMatch = item.observaciones?.match(/(?:Adjudicado|Enrutado|Asignado) a:\s*(.+?)(?:\s*\(|\s*\||$)/)
+          if (adjudicacionMatch) {
+            choferNombre = adjudicacionMatch[1].trim()
           }
         }
         
         // Obtener origen (APP o WEB) - si no está en el historial, asumir WEB por compatibilidad
         const origen = item.origen || "WEB"
         
-        // Asegurar que quienAsigno use el valor correcto del historial
-        const quienAsigno = item.quien || "Usuario"
+        // Asegurar que quienAdjudico use el valor correcto del historial
+        const quienAdjudico = item.quien || "Usuario"
         
         return {
           choferNombre,
           desde: origen === "APP" ? "APP" : "WEB",
           fecha: `${item.fecha} ${item.horaEstimada}`,
-          quienAsigno: quienAsigno,
+          quienAdjudico: quienAdjudico,
         }
       })
       .reverse() // Más recientes primero
 
-    setAsignaciones(asignacionesData)
+    setAdjudicaciones(adjudicacionesData)
   }, [historial, envio, isOpen, activeTab])
 
-  // Inicializar mapa de Google Maps
   useEffect(() => {
-    if (!isOpen || !envio || !mapRef.current) return
+    if (!isOpen || !envio || activeTab !== "general") return
 
-    // Cargar script de Google Maps si no está cargado
-    if (!window.google) {
-      const existingScript = document.querySelector('script[src*="maps.googleapis.com"]')
-      if (existingScript) {
-        // Si el script ya existe, esperar a que cargue
-        const checkInterval = setInterval(() => {
-          if (window.google && window.google.maps) {
-            clearInterval(checkInterval)
-            initializeMap()
-          }
-        }, 100)
-        return () => clearInterval(checkInterval)
-      }
+    let cancelled = false
+    setMapCoords(null)
+    setGeolocalizacionEncontrada(false)
 
-      const script = document.createElement("script")
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY || "YOUR_API_KEY"}&libraries=places,geometry`
-      script.async = true
-      script.defer = true
-      script.id = "google-maps-script-detail"
-      script.onload = () => initializeMap()
-      script.onerror = () => {
-        errorDev("Error al cargar Google Maps API")
+    const persistir = async (lat: number, lng: number) => {
+      try {
+        await fetch(`${getApiBaseUrl()}/envios/${envio.id}/geolocalizacion`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat, lng }),
+        })
+      } catch {
+        // el mapa igual se muestra
       }
-      document.head.appendChild(script)
-    } else {
-      initializeMap()
     }
 
-    function initializeMap() {
-      if (!mapRef.current || !envio) return
-
-      const setMapWithLocation = (lat: number, lng: number, title: string) => {
-        setGeolocalizacionEncontrada(true)
-        const location = { lat, lng }
-        const map = new google.maps.Map(mapRef.current!, {
-          zoom: 15,
-          center: location,
-          mapTypeControl: true,
-          streetViewControl: true,
-          fullscreenControl: true,
-        })
-        mapInstanceRef.current = map
-        const marker = new google.maps.Marker({
-          position: location,
-          map: map,
-          title,
-        })
-        markerRef.current = marker
-      }
-
+    const resolver = async () => {
       if (envio.latDestino != null && envio.lngDestino != null) {
-        setMapWithLocation(envio.latDestino, envio.lngDestino, envio.direccion || "Destino")
+        if (cancelled) return
+        setMapCoords({ lat: envio.latDestino, lng: envio.lngDestino })
+        setGeolocalizacionEncontrada(true)
         return
       }
-
-      // Sin coordenadas guardadas: si además no tiene CP, tratamos como "sin geolocalización" (dirección dudosa)
-      // y no geocodificamos para no mostrar un pin en cualquier lado. Si tiene CP, geocodificamos para mostrar el pin.
-      const sinCP = !envio.codigoPostal || String(envio.codigoPostal).trim() === ""
-      if (sinCP) {
+      if (!envio.direccion || envio.direccion === "Dirección pendiente") {
         setGeolocalizacionEncontrada(false)
-        const map = new google.maps.Map(mapRef.current!, {
-          zoom: 10,
-          center: { lat: -34.6037, lng: -58.3816 },
-          mapTypeControl: true,
-          streetViewControl: true,
-          fullscreenControl: true,
-        })
-        mapInstanceRef.current = map
         return
       }
-
-      const geocoder = new google.maps.Geocoder()
-      const addressParts = [
-        envio.direccion,
-        envio.localidad,
-        envio.codigoPostal,
-        "Argentina",
-      ]
-        .map((p) => (p || "").toString().trim())
-        .filter(Boolean)
-      const address = addressParts.join(", ")
-
-      geocoder.geocode({ address }, (results, status) => {
-        if (status === "OK" && results && results[0]) {
-          const location = results[0].geometry.location
-          setMapWithLocation(location.lat(), location.lng(), address)
-        } else {
-          setGeolocalizacionEncontrada(false)
-          const map = new google.maps.Map(mapRef.current!, {
-            zoom: 10,
-            center: { lat: -34.6037, lng: -58.3816 },
-            mapTypeControl: true,
-            streetViewControl: true,
-            fullscreenControl: true,
-          })
-          mapInstanceRef.current = map
+      try {
+        const params = new URLSearchParams({ direccion: envio.direccion })
+        if (envio.localidad) params.set("localidad", envio.localidad)
+        if (envio.codigoPostal) params.set("codigoPostal", envio.codigoPostal)
+        const res = await fetch(`${getApiBaseUrl()}/geocode?${params.toString()}`)
+        if (!res.ok) {
+          if (!cancelled) setGeolocalizacionEncontrada(false)
+          return
         }
-      })
+        const data = await res.json()
+        if (cancelled || data.lat == null || data.lng == null) return
+        setMapCoords({ lat: data.lat, lng: data.lng })
+        setGeolocalizacionEncontrada(true)
+        persistir(data.lat, data.lng)
+      } catch (e) {
+        errorDev("Error al geocodificar dirección", e)
+        if (!cancelled) setGeolocalizacionEncontrada(false)
+      }
     }
 
+    resolver()
     return () => {
-      // Limpiar marcador al cerrar
-      if (markerRef.current) {
-        markerRef.current.setMap(null)
-        markerRef.current = null
-      }
-      setGeolocalizacionEncontrada(false)
+      cancelled = true
     }
-  }, [isOpen, envio])
+  }, [isOpen, envio, activeTab])
 
   const handleDelete = () => {
     setIsDeleteDialogOpen(true)
@@ -876,30 +882,30 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
     setObservaciones(observaciones.filter((item) => item.id !== id))
   }
 
-  const handleAsignar = () => {
+  const handleAdjudicar = () => {
     if (!envio) return
 
     // Validaciones iguales que en la app móvil
     if (envio.estado === "Entregado" || envio.estado === "Cancelado") {
-      alert('No se pueden asignar envíos que estén en estado "Entregado" o "Cancelado".')
+      alert('No se pueden adjudicar envíos que estén en estado "Entregado" o "Cancelado".')
       return
     }
 
-    // Si el usuario es chofer, auto-asignar
+    // Si el usuario es chofer, auto-adjudicar
     if (userProfile === "Chofer") {
-      handleAutoAsignar()
+      handleAutoAdjudicar()
     } else {
       // Si no es chofer, abrir modal para seleccionar chofer
-      setIsAsignarModalOpen(true)
+      setIsAdjudicarModalOpen(true)
     }
   }
 
-  const handleAutoAsignar = async () => {
+  const handleAutoAdjudicar = async () => {
     if (!envio) return
 
     // Validar que el envío no esté en "A retirar" para choferes
     if (envio.estado === "A retirar") {
-      alert("El envío debe ser colectado primero.")
+      alert("El envío debe estar retirado primero.")
       return
     }
 
@@ -939,18 +945,18 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
 
       const choferNombre = userFullName || "Chofer"
       const apiBaseUrl = getApiBaseUrl()
-      await fetch(`${apiBaseUrl}/envios/${envio.id}/asignar`, {
+      await fetch(`${apiBaseUrl}/envios/${envio.id}/adjudicar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           choferId,
           choferNombre,
-          usuarioAsignador: userFullName || "Chofer",
+          usuarioAdjudicador: userFullName || "Chofer",
           origen: "WEB", // Siempre WEB desde la aplicación web
         }),
       })
 
-      // Recargar historial para actualizar asignaciones
+      // Recargar historial para actualizar adjudicaciones
       const historialResponse = await fetch(`${apiBaseUrl}/envios/${envio.id}/historial`)
       if (historialResponse.ok) {
         const historialData = await historialResponse.json()
@@ -964,26 +970,29 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             quien: item.quien || "Usuario",
             observaciones: item.observaciones,
             origen: item.origen,
+            latitud: item.latitud ?? null,
+            longitud: item.longitud ?? null,
+            ubicacionDireccion: item.ubicacionDireccion ?? null,
           }
         })
         setHistorial(historialFormateado)
       }
     } catch (error) {
-      errorDev("Error asignando envío:", error)
-      alert("Error al asignar el envío")
+      errorDev("Error adjudicando envío:", error)
+      alert("Error al adjudicar el envío")
     }
   }
 
-  const handleConfirmarAsignacion = async () => {
+  const handleConfirmarAdjudicacion = async () => {
     if (!choferSeleccionado || !envio) {
-      alert("Debés seleccionar un repartidor para asignar el pedido.")
+      alert("Debés seleccionar un repartidor para adjudicar el pedido.")
       return
     }
 
     // Validar que el envío no esté en estados finales (excepto para PENDIENTES DEPÓSITO)
     const esPendientesDeposito = choferSeleccionado.id === -1
     if (!esPendientesDeposito && (envio.estado === "Entregado" || envio.estado === "Cancelado")) {
-      alert('No se pueden asignar envíos que estén en estado "Entregado" o "Cancelado".')
+      alert('No se pueden adjudicar envíos que estén en estado "Entregado" o "Cancelado".')
       return
     }
 
@@ -993,20 +1002,20 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         : `${choferSeleccionado.nombre} ${choferSeleccionado.apellido}`.trim()
 
       const apiBaseUrl = getApiBaseUrl()
-      logDev("Asignando envío a chofer")
-      const response = await fetch(`${apiBaseUrl}/envios/${envio.id}/asignar`, {
+      logDev("Adjudicando envío a chofer")
+      const response = await fetch(`${apiBaseUrl}/envios/${envio.id}/adjudicar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           choferId: choferSeleccionado.id,
           choferNombre,
-          usuarioAsignador: userFullName || "Usuario",
+          usuarioAdjudicador: userFullName || "Usuario",
           origen: "WEB", // Siempre WEB desde la aplicación web
         }),
       })
 
       if (!response.ok) {
-        let errorMessage = "Error al asignar"
+        let errorMessage = "Error al adjudicar"
         const errorText = await response.text()
         if (errorText) {
           try {
@@ -1016,14 +1025,14 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             errorMessage = errorText
           }
         }
-        errorDev("Error del backend al asignar:", response.status, errorMessage)
+        errorDev("Error del backend al adjudicar:", response.status, errorMessage)
         throw new Error(errorMessage)
       }
 
-      logDev("Envío asignado correctamente")
+      logDev("Envío adjudicado correctamente")
       onAssignSuccess?.()
 
-      // Recargar historial para actualizar asignaciones
+      // Recargar historial para actualizar adjudicaciones
       const historialResponse = await fetch(`${apiBaseUrl}/envios/${envio.id}/historial`)
       if (historialResponse.ok) {
         const historialData = await historialResponse.json()
@@ -1037,19 +1046,22 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             quien: item.quien || "Usuario",
             observaciones: item.observaciones,
             origen: item.origen,
+            latitud: item.latitud ?? null,
+            longitud: item.longitud ?? null,
+            ubicacionDireccion: item.ubicacionDireccion ?? null,
           }
         })
         setHistorial(historialFormateado)
       }
 
-      setIsAsignarModalOpen(false)
+      setIsAdjudicarModalOpen(false)
       setChoferSeleccionado(null)
     } catch (error: any) {
-      errorDev("Error asignando envío:", error?.message)
+      errorDev("Error adjudicando envío:", error?.message)
       if (error?.message === "Failed to fetch" || error?.name === "TypeError") {
         alert("Error: No se pudo conectar con el servidor. Verifica tu conexión y que el backend esté accesible.")
       } else {
-        alert(error.message || "Error al asignar el envío")
+        alert(error.message || "Error al adjudicar el envío")
       }
     }
   }
@@ -1087,10 +1099,10 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                 <>
                   <Button
                     type="button"
-                    onClick={handleAsignar}
+                    onClick={handleAdjudicar}
                     className={`h-9 rounded-xl px-4 text-[13px] font-semibold ${btnPrimary}`}
                   >
-                    Asignar
+                    Adjudicar
                   </Button>
                   <Button
                     type="button"
@@ -1185,7 +1197,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                     <div className="space-y-1.5">
                       <label className={lbl}>Fecha Ingreso</label>
                       <Input
-                        value={envio.fecha ? new Date(envio.fecha).toLocaleDateString("es-AR") : "11/01/2026"}
+                        value={envio.fecha ? new Date(envio.fecha).toLocaleDateString("es-AR") : "—"}
                         className={cn(fld, "shadow-sm")}
                         readOnly
                       />
@@ -1193,7 +1205,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                     <div className="space-y-1.5">
                       <label className={lbl}>Fecha Venta</label>
                       <Input
-                        value={envio.fechaVenta ? new Date(envio.fechaVenta).toLocaleString("es-AR") : "00/00/0000 00:00:00"}
+                        value={envio.fechaVenta ? new Date(envio.fechaVenta).toLocaleString("es-AR") : "—"}
                         className={cn(fld, "shadow-sm")}
                         readOnly
                       />
@@ -1292,23 +1304,67 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                           <th className={tblTh}>Fecha</th>
                           <th className={tblTh}>Hora estimada</th>
                           <th className={tblTh}>Quien</th>
+                          <th className={tblTh}>PoD</th>
                           <th className={tblTh}>Eliminar</th>
                         </tr>
                       </thead>
                       <tbody>
                         {historial.length === 0 ? (
                           <tr>
-                            <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">
+                            <td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">
                               No hay historial disponible
                             </td>
                           </tr>
                         ) : (
-                          historial.map((item) => (
+                          (() => {
+                            const primerEntregadoId = historial.find((h) => h.estado === "Entregado")?.id
+                            return historial.map((item) => {
+                            const mostrarPodEntregado =
+                              item.estado === "Entregado" && item.id === primerEntregadoId
+                            return (
                             <tr key={item.id} className={tblRow}>
-                              <td className="px-4 py-2 text-sm text-slate-900">{item.estado}</td>
+                              <td className="px-4 py-2 text-sm text-slate-900">
+                                <div>{item.estado}</div>
+                                {item.observaciones?.trim() &&
+                                  !esObservacionFotoBasura(item.observaciones) && (
+                                  <p className="mt-0.5 text-xs text-slate-600 whitespace-pre-wrap">
+                                    {item.observaciones}
+                                  </p>
+                                )}
+                                {(item.ubicacionDireccion ||
+                                  (item.latitud != null && item.longitud != null)) &&
+                                  item.estado !== "Cambio de dirección" && (
+                                  <p className="mt-0.5 text-xs text-slate-600">
+                                    Ubicación:{" "}
+                                    {item.ubicacionDireccion?.trim() ||
+                                      `${Number(item.latitud).toFixed(5)}, ${Number(item.longitud).toFixed(5)}`}
+                                  </p>
+                                )}
+                              </td>
                               <td className="px-4 py-2 text-sm text-slate-700">{item.fecha}</td>
                               <td className="px-4 py-2 text-sm text-slate-700">{item.horaEstimada}</td>
                               <td className="px-4 py-2 text-sm text-slate-700">{item.quien}</td>
+                              <td className="px-4 py-2">
+                                {esEventoPod(item.estado) || mostrarPodEntregado ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => void descargarPod(item.id)}
+                                    disabled={descargandoPod}
+                                    className={cn(
+                                      "rounded-lg p-1.5 transition-colors disabled:opacity-50",
+                                      mostrarPodEntregado
+                                        ? "text-teal-700 hover:bg-teal-50"
+                                        : "text-[#1570ef] hover:bg-blue-50"
+                                    )}
+                                    title="Descargar constancia PDF"
+                                    aria-label="Descargar PoD"
+                                  >
+                                    <Printer className="h-4 w-4" />
+                                  </button>
+                                ) : (
+                                  <span className="text-slate-300">—</span>
+                                )}
+                              </td>
                               <td className="px-4 py-2">
                                 <button
                                   onClick={() => handleEliminarHistorial(item.id)}
@@ -1318,7 +1374,9 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                                 </button>
                               </td>
                             </tr>
-                          ))
+                            )
+                          })
+                          })()
                         )}
                       </tbody>
                     </table>
@@ -1463,16 +1521,16 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                 </div>
               )}
 
-              {/* ASIGNACION Tab */}
-              {activeTab === "asignacion" && (
+              {/* Adjudicación Tab */}
+              {activeTab === "adjudicacion" && (
                 <div className="space-y-4">
-                  {/* Botón de asignar (solo para usuarios no-chofer y no-cliente) */}
+                  {/* Botón de adjudicar (solo para usuarios no-chofer y no-cliente) */}
                   {userProfile && userProfile !== "Chofer" && userProfile !== "Cliente" && (
                     <Button
-                      onClick={handleAsignar}
+                      onClick={handleAdjudicar}
                       className={cn(btnPrimary, "h-9 text-xs font-semibold")}
                     >
-                      ASIGNAR
+                      ADJUDICAR
                     </Button>
                   )}
 
@@ -1480,26 +1538,26 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                     <table className="w-full">
                       <thead className={tblHead}>
                         <tr>
-                          <th className={tblTh}>Asignado a</th>
+                          <th className={tblTh}>Adjudicado a</th>
                           <th className={tblTh}>Desde</th>
                           <th className={tblTh}>Fecha</th>
-                          <th className={tblTh}>Quien asigno</th>
+                          <th className={tblTh}>Quién adjudicó</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {asignaciones.length === 0 ? (
+                        {adjudicaciones.length === 0 ? (
                           <tr>
                             <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-500">
-                              No hay asignaciones registradas
+                              No hay adjudicaciones registrados
                             </td>
                           </tr>
                         ) : (
-                          asignaciones.map((asignacion, index) => (
+                          adjudicaciones.map((item, index) => (
                             <tr key={index} className={tblRow}>
-                              <td className="px-4 py-2 text-sm text-slate-900">{asignacion.choferNombre}</td>
-                              <td className="px-4 py-2 text-sm text-slate-700">{asignacion.desde}</td>
-                              <td className="px-4 py-2 text-sm text-slate-700">{asignacion.fecha}</td>
-                              <td className="px-4 py-2 text-sm text-slate-700">{asignacion.quienAsigno}</td>
+                              <td className="px-4 py-2 text-sm text-slate-900">{item.choferNombre}</td>
+                              <td className="px-4 py-2 text-sm text-slate-700">{item.desde}</td>
+                              <td className="px-4 py-2 text-sm text-slate-700">{item.fecha}</td>
+                              <td className="px-4 py-2 text-sm text-slate-700">{item.quienAdjudico}</td>
                             </tr>
                           ))
                         )}
@@ -1542,7 +1600,18 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
               <div className="space-y-2">
                 <label className={lbl}>Mapa</label>
                 <div className="overflow-hidden rounded-2xl border border-slate-200/90 shadow-inner ring-1 ring-slate-100" style={{ height: "260px" }}>
-                  <div ref={mapRef} className="h-full w-full" />
+                  {mapCoords ? (
+                    <OsmMap
+                      className="h-full w-full"
+                      center={mapCoords}
+                      zoom={16}
+                      markers={[{ lat: mapCoords.lat, lng: mapCoords.lng, title: envio.direccion || "Destino" }]}
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-slate-50 text-xs text-slate-400">
+                      {envio.direccion ? "Buscando ubicación…" : "Sin dirección"}
+                    </div>
+                  )}
                 </div>
                 {!geolocalizacionEncontrada && envio.direccion && (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-center gap-2">
@@ -1625,7 +1694,10 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       {recepcionDialogOpen && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 animate-in fade-in-0 backdrop-blur-md"
-          onClick={() => setRecepcionDialogOpen(false)}
+          onClick={(e) => {
+            e.stopPropagation()
+            setRecepcionDialogOpen(false)
+          }}
           role="presentation"
         >
           <div
@@ -1670,13 +1742,34 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                   <p className={lbl}>DNI</p>
                   <p className="mt-1 font-mono text-sm font-medium text-slate-900">{datosEntrega.dniRecibio?.trim() || "—"}</p>
                 </div>
+                <div>
+                  <p className={lbl}>Ubicación al entregar</p>
+                  {datosEntrega.direccionEntrega?.trim() ||
+                  (datosEntrega.latEntrega != null && datosEntrega.lngEntrega != null) ? (
+                    <p className="mt-1 text-sm font-medium text-slate-900">
+                      {datosEntrega.direccionEntrega?.trim() ||
+                        `${Number(datosEntrega.latEntrega).toFixed(5)}, ${Number(datosEntrega.lngEntrega).toFixed(5)}`}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-sm font-medium text-slate-900">—</p>
+                  )}
+                </div>
               </div>
             ) : (
               <p className="rounded-xl border border-amber-200/80 bg-amber-50/80 p-4 text-sm text-amber-900">
                 Aún no hay datos de recepción cargados o no se pudieron obtener. Probá de nuevo en unos segundos.
               </p>
             )}
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end gap-2">
+              <Button
+                type="button"
+                onClick={() => void descargarPod()}
+                disabled={descargandoPod}
+                className={cn(btnPrimary, "h-9 gap-1.5 px-4 text-sm font-semibold")}
+              >
+                <Printer className="h-4 w-4" aria-hidden />
+                {descargandoPod ? "Generando…" : "Descargar PoD"}
+              </Button>
               <Button type="button" onClick={() => setRecepcionDialogOpen(false)} className={cn(btnGhost, "h-9 px-4 text-sm font-semibold")}>
                 Cerrar
               </Button>
@@ -1706,10 +1799,22 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Add Estado Modal */}
+      {/* Add Estado Modal — stopPropagation para no cerrar el modal del pedido */}
       {isAddEstadoModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 animate-in fade-in-0 backdrop-blur-md">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xl ring-1 ring-slate-100/80 animate-in zoom-in-95">
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 animate-in fade-in-0 backdrop-blur-md"
+          onClick={(e) => {
+            e.stopPropagation()
+            handleCloseAddEstado()
+          }}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-2xl rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xl ring-1 ring-slate-100/80 animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
             <div className="space-y-4">
               <h3 className="mb-4 text-lg font-semibold text-slate-900">Agregar Nuevo Estado</h3>
               
@@ -1768,10 +1873,22 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         </div>
       )}
 
-      {/* Add Observacion Modal */}
+      {/* Add Observacion Modal — stopPropagation para no cerrar el modal del pedido al tipear */}
       {isAddObservacionModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 animate-in fade-in-0 backdrop-blur-md">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xl ring-1 ring-slate-100/80 animate-in zoom-in-95">
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 animate-in fade-in-0 backdrop-blur-md"
+          onClick={(e) => {
+            e.stopPropagation()
+            handleCloseAddObservacion()
+          }}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-2xl rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xl ring-1 ring-slate-100/80 animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
             <div className="space-y-4">
               <h3 className="mb-4 text-lg font-semibold text-slate-900">Agregar Observación</h3>
               
@@ -1808,7 +1925,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       )}
 
       {/* Modal de selección de chofer (stopPropagation para no cerrar el modal principal al hacer clic) */}
-      {isAsignarModalOpen && (
+      {isAdjudicarModalOpen && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 animate-in fade-in-0 backdrop-blur-md"
           onClick={(e) => e.stopPropagation()}
@@ -1819,7 +1936,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             className="w-[90vw] max-w-md rounded-2xl border border-slate-200/90 bg-white p-6 shadow-2xl ring-1 ring-slate-100/80 animate-in zoom-in-95"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="mb-2 text-lg font-semibold text-slate-900">Asignar a:</h2>
+            <h2 className="mb-2 text-lg font-semibold text-slate-900">Adjudicar a:</h2>
             <p className="mb-4 text-sm text-slate-600">Seleccioná un repartidor (obligatorio)</p>
             
             <div className="max-h-64 overflow-y-auto mb-4 space-y-2">
@@ -1869,7 +1986,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
             <div className="flex gap-3">
               <Button
                 onClick={() => {
-                  setIsAsignarModalOpen(false)
+                  setIsAdjudicarModalOpen(false)
                   setChoferSeleccionado(null)
                 }}
                 variant="outline"
@@ -1878,11 +1995,11 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                 Cancelar
               </Button>
               <Button
-                onClick={handleConfirmarAsignacion}
+                onClick={handleConfirmarAdjudicacion}
                 disabled={!choferSeleccionado}
                 className={cn(btnPrimary, "flex-1 disabled:cursor-not-allowed disabled:opacity-50")}
               >
-                Asignar
+                Adjudicar
               </Button>
             </div>
           </div>
