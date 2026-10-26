@@ -20,6 +20,7 @@ import { logDev, warnDev, errorDev } from "@/lib/logger"
 import { cn } from "@/lib/utils"
 import { ModernHeader } from "@/components/modern-header"
 import { getLocalTenantBranding } from "@/lib/tenant"
+import { BrandLockup } from "@/components/brand-lockup"
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -58,21 +59,14 @@ function TrackingPublicHeader() {
   return (
     <header className="sticky top-0 z-50 w-full bg-[#f7f8fc]">
       <div className={`mx-auto w-full max-w-[1700px] px-3 pt-3 ${montserrat.className}`}>
-        <div
-          className="flex h-[64px] items-center justify-between gap-4 rounded-2xl px-5 sm:px-6"
-          style={{ backgroundColor: tenant.colorPrimario || "#1459e9" }}
-        >
+        <div className="flex h-[64px] items-center justify-between gap-4 rounded-2xl bg-[#1459e9] px-5 sm:px-6">
           <button
             type="button"
             onClick={() => router.push("/")}
             className="shrink-0 transition-opacity hover:opacity-90"
             aria-label="Ir al inicio"
           >
-            <img
-              src={tenant.logoUrl}
-              alt={tenant.nombre}
-              className={tenant.slug === "nexo" ? "h-auto w-[96px] sm:w-[102px]" : "h-[46px] w-[46px] rounded-full bg-white p-[2px]"}
-            />
+            <BrandLockup tenant={tenant} variant="header" />
           </button>
           <p className="min-w-0 truncate text-right text-[13px] font-medium text-white/95 sm:text-[14px]">
             Seguimiento de envío

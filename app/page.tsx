@@ -14,6 +14,7 @@ import {
   loadTenantBranding,
   type TenantBranding,
 } from "@/lib/tenant"
+import { BrandLockup } from "@/components/brand-lockup"
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -50,9 +51,6 @@ export default function LoginPage() {
     loadTenantBranding(getApiBaseUrl()).then(setTenant)
   }, [])
 
-  const isNexo = tenant.slug === "nexo"
-  const accent = isNexo ? "#2f66cc" : tenant.colorPrimario
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
@@ -87,58 +85,25 @@ export default function LoginPage() {
   }
 
   return (
-    <div
-      className={`relative min-h-screen overflow-hidden ${montserrat.className}`}
-      style={{
-        background: isNexo
-          ? "linear-gradient(to right, #1e86ff, #2a67ff, #2f46f5)"
-          : `linear-gradient(135deg, ${tenant.colorPrimario} 0%, #061433 100%)`,
-      }}
-    >
+    <div className={`relative min-h-screen overflow-hidden bg-gradient-to-r from-[#1e86ff] via-[#2a67ff] to-[#2f46f5] ${montserrat.className}`}>
       <div className="pointer-events-none absolute inset-0 hidden md:block">
-        {(isNexo
-          ? [
-              { src: "/logos/nexo-iso-white.png", className: "absolute left-[10%] top-[24%] h-[42px] w-[42px] opacity-18" },
-              { src: "/logos/nexo-iso-white.png", className: "absolute right-[8%] top-[7%] h-[112px] w-[112px] opacity-14" },
-              { src: "/logos/nexo-iso-white.png", className: "absolute right-[17%] bottom-[17%] h-[118px] w-[118px] opacity-12" },
-              { src: "/logos/nexo-iso-white.png", className: "absolute left-[2%] bottom-[4%] h-[98px] w-[98px] opacity-12" },
-              { src: "/logos/nexo-iso-white.png", className: "absolute right-[3%] bottom-[7%] h-[50px] w-[50px] opacity-14" },
-            ]
-          : [
-              { src: tenant.logoUrl, className: "absolute left-[8%] top-[18%] h-[72px] w-[72px] rounded-full opacity-20" },
-              { src: tenant.logoUrl, className: "absolute right-[7%] top-[8%] h-[128px] w-[128px] rounded-full opacity-15" },
-              { src: tenant.logoUrl, className: "absolute right-[16%] bottom-[14%] h-[140px] w-[140px] rounded-full opacity-12" },
-              { src: tenant.logoUrl, className: "absolute left-[3%] bottom-[6%] h-[96px] w-[96px] rounded-full opacity-14" },
-            ]
-        ).map((item, index) => (
-          <img key={index} src={item.src} alt="" className={item.className} aria-hidden />
-        ))}
+        <img src="/logos/nexo-iso-white.png" alt="" className="absolute left-[10%] top-[24%] h-[42px] w-[42px] opacity-18" aria-hidden />
+        <img src="/logos/nexo-iso-white.png" alt="" className="absolute right-[8%] top-[7%] h-[112px] w-[112px] opacity-14" aria-hidden />
+        <img src="/logos/nexo-iso-white.png" alt="" className="absolute right-[17%] bottom-[17%] h-[118px] w-[118px] opacity-12" aria-hidden />
+        <img src="/logos/nexo-iso-white.png" alt="" className="absolute left-[2%] bottom-[4%] h-[98px] w-[98px] opacity-12" aria-hidden />
+        <img src="/logos/nexo-iso-white.png" alt="" className="absolute right-[3%] bottom-[7%] h-[50px] w-[50px] opacity-14" aria-hidden />
       </div>
 
       <div className="relative flex min-h-screen w-full flex-col md:block">
         <div className="px-5 pt-6 md:absolute md:left-[5%] md:top-[7%] md:px-0 md:pt-0">
-          <img
-            src={tenant.logoUrl}
-            alt={tenant.nombre}
-            className={isNexo ? "h-auto w-[110px] md:w-[132px]" : "h-[86px] w-[86px] rounded-full bg-white p-1 md:h-[104px] md:w-[104px]"}
-          />
+          <BrandLockup tenant={tenant} variant="login" />
         </div>
 
         <div className="hidden text-white md:absolute md:left-[5%] md:top-1/2 md:block md:w-full md:max-w-[660px] md:-translate-y-1/2">
           <h1 className="max-w-[680px] text-[58px] font-semibold leading-[1.08] tracking-[-0.03em]">
-            {isNexo ? (
-              <>
-                Optimizá tus entregas
-                <br />
-                de punta a punta
-              </>
-            ) : (
-              <>
-                {tenant.nombre}
-                <br />
-                logística a tu medida
-              </>
-            )}
+            Optimizá tus entregas
+            <br />
+            de punta a punta
           </h1>
           <p className="mt-7 max-w-[620px] text-[22px] font-medium leading-[1.35] text-[#dbe7ff]">
             Creá etiquetas, organizá entregas y
@@ -149,9 +114,7 @@ export default function LoginPage() {
 
         <div className="mx-auto flex w-full max-w-[338px] flex-1 flex-col justify-center px-4 py-10 md:absolute md:right-[9%] md:top-1/2 md:mx-0 md:max-w-[338px] md:-translate-y-1/2 md:px-0 md:py-0">
         <div className="w-full rounded-[12px] bg-white p-6 shadow-[0_16px_42px_rgba(14,29,120,0.34)]">
-          <h2 className="mb-3 text-center text-[30px] font-semibold md:text-[38px]" style={{ color: accent }}>
-            {isNexo ? "Registrate" : "Ingresar"}
-          </h2>
+          <h2 className="mb-3 text-center text-[30px] font-semibold text-[#2f66cc] md:text-[38px]">Registrate</h2>
 
           {error && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -189,8 +152,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="mt-3 h-[42px] w-full rounded-[6px] text-[18px] font-semibold hover:opacity-90"
-              style={{ backgroundColor: isNexo ? "#e9eefb" : tenant.colorPrimario, color: isNexo ? "#2f66cc" : "#ffffff" }}
+              className="mt-3 h-[42px] w-full rounded-[6px] bg-[#e9eefb] text-[18px] font-semibold text-[#2f66cc] hover:bg-[#dfe8fb]"
             >
               Ingresar
             </Button>

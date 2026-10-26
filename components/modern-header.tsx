@@ -24,6 +24,7 @@ import { UserProfile } from "@/components/user-profile"
 import { Montserrat } from "next/font/google"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { getLocalTenantBranding, loadTenantBranding, type TenantBranding } from "@/lib/tenant"
+import { BrandLockup } from "@/components/brand-lockup"
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -170,16 +171,9 @@ export function ModernHeader() {
     <>
       <header className="sticky top-0 z-50 w-full bg-[#f7f8fc]">
         <div className={`mx-auto w-full max-w-[1700px] px-3 pt-3 ${montserrat.className}`}>
-          <div
-            className="flex h-[60px] items-center justify-between rounded-2xl px-4 md:h-[72px] md:px-6"
-            style={{ backgroundColor: tenant.colorPrimario || "#1459e9" }}
-          >
+          <div className="flex h-[60px] items-center justify-between rounded-2xl bg-[#1459e9] px-4 md:h-[72px] md:px-6">
             <button onClick={() => router.push("/pedidos")} className="hover:opacity-90 transition-opacity">
-              <img
-                src={tenant.logoUrl}
-                alt={tenant.nombre}
-                className={tenant.slug === "nexo" ? "h-auto w-[102px]" : "h-[46px] w-[46px] rounded-full bg-white p-[2px] md:h-[54px] md:w-[54px]"}
-              />
+              <BrandLockup tenant={tenant} variant="header" />
             </button>
 
             {userProfile !== "Chofer" && (

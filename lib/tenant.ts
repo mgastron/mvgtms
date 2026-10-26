@@ -15,11 +15,11 @@ const NEXO: TenantBranding = {
 const LDP: TenantBranding = {
   slug: "mensajerialdp",
   nombre: "Mensajería LDP",
-  logoUrl: "/tenants/mensajerialdp/logo.jpg",
-  colorPrimario: "#0A2A6B",
+  logoUrl: "/tenants/mensajerialdp/logo.png",
+  colorPrimario: "#1459e9",
 }
 
-const CACHE_KEY = "nexoTenantBranding"
+const CACHE_KEY = "nexoTenantBranding.v2"
 
 export function getTenantSlug(): string {
   if (typeof window === "undefined") return NEXO.slug
@@ -96,8 +96,8 @@ export async function loadTenantBranding(apiBaseUrl: string): Promise<TenantBran
     const branding: TenantBranding = {
       slug: data.slug || local.slug,
       nombre: data.nombre || local.nombre,
-      logoUrl: data.logoUrl || local.logoUrl,
-      colorPrimario: data.colorPrimario || local.colorPrimario,
+      logoUrl: local.logoUrl || data.logoUrl,
+      colorPrimario: "#1459e9",
     }
     return persist(branding)
   } catch {

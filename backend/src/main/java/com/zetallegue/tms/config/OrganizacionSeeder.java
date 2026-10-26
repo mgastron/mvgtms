@@ -43,8 +43,8 @@ public class OrganizacionSeeder implements ApplicationRunner {
         Organizacion ldp = ensureOrg(
                 LDP_SLUG,
                 "Mensajería LDP",
-                "/tenants/mensajerialdp/logo.jpg",
-                "#0A2A6B"
+                "/tenants/mensajerialdp/logo.png",
+                "#1459e9"
         );
 
         dropLegacyUniques();
@@ -60,11 +60,11 @@ public class OrganizacionSeeder implements ApplicationRunner {
                 existing.setNombre(nombre);
                 dirty = true;
             }
-            if (existing.getLogoUrl() == null || existing.getLogoUrl().isBlank()) {
+            if (logoUrl != null && !logoUrl.equals(existing.getLogoUrl())) {
                 existing.setLogoUrl(logoUrl);
                 dirty = true;
             }
-            if (existing.getColorPrimario() == null || existing.getColorPrimario().isBlank()) {
+            if (color != null && !color.equals(existing.getColorPrimario())) {
                 existing.setColorPrimario(color);
                 dirty = true;
             }
