@@ -6,5 +6,5 @@ export const metadata: Metadata = {
 }
 
 export default function DriverAppLayout({ children }: { children: React.ReactNode }) {
-  return children
+  return <>{children}</>
 }
