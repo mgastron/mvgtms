@@ -1,21 +1,31 @@
 package com.zetallegue.tms.model;
 
+import com.zetallegue.tms.tenant.TenantAware;
+import com.zetallegue.tms.tenant.TenantEntityListener;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Filter;
 
 @Entity
-@Table(name = "usuarios")
+@Table(name = "usuarios", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_usuarios_org_usuario", columnNames = {"organizacion_id", "usuario"})
+})
+@EntityListeners(TenantEntityListener.class)
+@Filter(name = "tenantFilter", condition = "organizacion_id = :organizacionId")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Usuario {
+public class Usuario implements TenantAware {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "organizacion_id")
+    private Long organizacionId;
 
     @Column(name = "nombre", length = 100)
     private String nombre;
@@ -23,7 +33,7 @@ public class Usuario {
     @Column(name = "apellido", length = 100)
     private String apellido;
 
-    @Column(name = "usuario", unique = true, nullable = false, length = 100)
+    @Column(name = "usuario", nullable = false, length = 100)
     @NotBlank(message = "El usuario es obligatorio")
     private String usuario;
 

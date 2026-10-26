@@ -3,6 +3,9 @@
 // En producción no se loguea nada para no exponer URLs ni variables de entorno.
 
 import { logDev, errorDev } from "./logger"
+import { installTenantFetch } from "./tenant"
+
+installTenantFetch()
 
 // ⚠️ IMPORTANTE: Si estás usando el túnel Cloudflare para el frontend,
 // también necesitas exponer el backend. Configura la URL del backend aquí:
@@ -15,8 +18,8 @@ export function getApiBaseUrl(): string {
     const BACKEND_TUNNEL_URL = process.env.NEXT_PUBLIC_BACKEND_TUNNEL_URL || ""
 
     if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
-      logDev("Usando localhost:8080/api")
-      return "http://localhost:8080/api"
+      logDev("Usando localhost:8082/api")
+      return "http://localhost:8082/api"
     }
 
     const isProduction = origin.includes("mvgtms.com.ar")
@@ -37,8 +40,8 @@ export function getApiBaseUrl(): string {
     }
 
     errorDev("Backend no configurado. Configurá NEXT_PUBLIC_BACKEND_TUNNEL_URL en .env.local o Amplify.")
-    return "http://localhost:8080/api"
+    return "http://localhost:8082/api"
   }
 
-  return "http://localhost:8080/api"
+  return "http://localhost:8082/api"
 }

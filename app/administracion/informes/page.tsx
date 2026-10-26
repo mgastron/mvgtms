@@ -196,21 +196,21 @@ export default function InformesPage() {
       const blob = await res.blob()
       const disp = res.headers.get("Content-Disposition")
       const extPorFormato = formato === FORMATO.PDF ? "pdf" : "xlsx"
-      let filename = `informe_colectados.${extPorFormato}`
+      let filename = `informe_retirados.${extPorFormato}`
       if (disp) {
         const match = /filename\*?=(?:UTF-8'')?([^;\s]+)/i.exec(disp) || /filename=["']?([^"'\s;]+)/i.exec(disp)
         if (match?.[1]) {
           try {
             filename = decodeURIComponent(match[1].replace(/^["']|["']$/g, "").trim())
           } catch {
-            filename = `informe_colectados.${extPorFormato}`
+            filename = `informe_retirados.${extPorFormato}`
           }
         }
       } else {
         const buf = await blob.arrayBuffer()
         const arr = new Uint8Array(buf)
         const isZip = arr.length >= 4 && arr[0] === 0x50 && arr[1] === 0x4B && arr[2] === 0x03 && arr[3] === 0x04
-        if (isZip) filename = "informe_colectados.zip"
+        if (isZip) filename = "informe_retirados.zip"
       }
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -241,7 +241,7 @@ export default function InformesPage() {
 
           <div className="ml-2 w-full max-w-[640px] space-y-5 rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm sm:p-6">
             <div className="space-y-2">
-              <h2 className="text-[18px] font-semibold text-[#1570ef]">Pedidos colectados</h2>
+              <h2 className="text-[18px] font-semibold text-[#1570ef]">Pedidos retirados</h2>
               <div className="flex flex-wrap items-end gap-3 pt-1">
                 <div className="min-w-[140px] flex-1">
                   <label className={fieldLabelClass}>Desde</label>

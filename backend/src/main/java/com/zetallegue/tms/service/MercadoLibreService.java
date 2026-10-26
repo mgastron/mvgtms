@@ -319,7 +319,7 @@ public class MercadoLibreService {
         
         // Procesar respuesta de /orders/search
         // Las órdenes Flex/Fulfillment tienen "fulfilled": true
-        // Construimos el shipment directamente desde la orden sin necesidad de llamadas adicionales
+        // /orders/search oculta calle/CP: se enriquece cada shipping.id con GET /shipments/{id}
         List<JsonNode> envios = new ArrayList<>();
         
         if (jsonResponse.has("results") && jsonResponse.get("results").isArray()) {
@@ -355,6 +355,9 @@ public class MercadoLibreService {
                     
                     // Tipo logístico (Flex/Fulfillment)
                     shipmentNode.put("logistic_type", "flex");
+                    if (order.has("id")) {
+                        shipmentNode.put("order_id", order.get("id").asLong());
+                    }
                     
                     // Dirección del destinatario (construir desde order si está disponible)
                     // Nota: La dirección puede estar en order.shipping o necesitar otra llamada
@@ -388,12 +391,16 @@ public class MercadoLibreService {
                     if (order.has("comment")) {
                         shipmentNode.put("comment", order.get("comment").asText());
                     }
-                    
-                    // Agregar el shipment construido
-                    envios.add(shipmentNode);
-                    log.debug("Shipment construido desde orden {}: {}", 
-                        order.has("id") ? order.get("id").asLong() : "N/A", 
-                        shipmentNode.toString());
+
+                    JsonNode detallado = fetchShipmentDetailFast(
+                            shipping.get("id").asText(),
+                            order.has("id") ? order.get("id").asText() : null,
+                            accessToken,
+                            cliente);
+                    envios.add(detallado != null ? detallado : shipmentNode);
+                    log.debug("Shipment construido desde orden {}: {}",
+                        order.has("id") ? order.get("id").asLong() : "N/A",
+                        (detallado != null ? detallado : shipmentNode).toString());
                 }
             }
         } else if (jsonResponse.isArray()) {
@@ -422,6 +429,9 @@ public class MercadoLibreService {
                     }
                     
                     shipmentNode.put("logistic_type", "flex");
+                    if (order.has("id")) {
+                        shipmentNode.put("order_id", order.get("id").asLong());
+                    }
                     
                     ObjectNode receiverAddress = objectMapper.createObjectNode();
                     if (order.has("buyer")) {
@@ -446,8 +456,13 @@ public class MercadoLibreService {
                     if (order.has("comment")) {
                         shipmentNode.put("comment", order.get("comment").asText());
                     }
-                    
-                    envios.add(shipmentNode);
+
+                    JsonNode detallado = fetchShipmentDetailFast(
+                            shipping.get("id").asText(),
+                            order.has("id") ? order.get("id").asText() : null,
+                            accessToken,
+                            cliente);
+                    envios.add(detallado != null ? detallado : shipmentNode);
                 }
             }
         }
@@ -471,6 +486,241 @@ public class MercadoLibreService {
         
         return envios;
     }
+
+    public boolean direccionIncompleta(String direccion) {
+        return direccion == null
+                || direccion.isBlank()
+                || "Dirección pendiente".equalsIgnoreCase(direccion.trim());
+    }
+
+    /**
+     * GET /shipments/{id} con x-format-new: ahí Flex suele mandar destination.shipping_address.
+     * El listado /orders/search trae receiver_address vacío (nick + calle vacía).
+     */
+    public JsonNode obtenerDetalleShipmentFlex(String shipmentId, Cliente cliente) {
+        return obtenerDetalleShipmentFlex(shipmentId, null, cliente);
+    }
+
+    public JsonNode obtenerDetalleShipmentFlex(String shipmentId, String orderId, Cliente cliente) {
+        try {
+            String accessToken = refrescarTokenSiNecesario(cliente);
+            return fetchShipmentDetailFast(shipmentId, orderId, accessToken, cliente);
+        } catch (Exception e) {
+            log.warn("No se pudo obtener detalle Flex del shipment {}: {}", shipmentId, e.getMessage());
+            return null;
+        }
+    }
+
+    private JsonNode fetchShipmentDetailFast(String shipmentId, String orderId, String accessToken, Cliente cliente) {
+        String[] tokenHolder = {accessToken};
+        JsonNode best = null;
+
+        JsonNode withFormatNew = httpGetJson(
+                String.format("%s/shipments/%s", ML_API_BASE, shipmentId), tokenHolder, cliente, true);
+        if (withFormatNew != null) {
+            best = withFormatNew;
+            if (shipmentTieneDireccion(best)) {
+                log.info("Shipment {} con dirección (x-format-new=true)", shipmentId);
+                return best;
+            }
+        }
+
+        JsonNode withoutFormatNew = httpGetJson(
+                String.format("%s/shipments/%s", ML_API_BASE, shipmentId), tokenHolder, cliente, false);
+        if (withoutFormatNew != null) {
+            best = mergeShipmentNodes(best, withoutFormatNew);
+            if (shipmentTieneDireccion(best)) {
+                log.info("Shipment {} con dirección (x-format-new=false)", shipmentId);
+                return best;
+            }
+        }
+
+        JsonNode receiverAddress = httpGetJson(
+                String.format("%s/shipments/%s/receiver_address", ML_API_BASE, shipmentId),
+                tokenHolder, cliente, true);
+        best = mergeAddressIntoShipment(best, shipmentId, receiverAddress, "receiver_address");
+        if (shipmentTieneDireccion(best)) {
+            log.info("Shipment {} con dirección desde /receiver_address", shipmentId);
+            return best;
+        }
+
+        JsonNode destination = httpGetJson(
+                String.format("%s/shipments/%s/destination", ML_API_BASE, shipmentId),
+                tokenHolder, cliente, true);
+        best = mergeAddressIntoShipment(best, shipmentId, destination, "destination");
+        if (shipmentTieneDireccion(best)) {
+            log.info("Shipment {} con dirección desde /destination", shipmentId);
+            return best;
+        }
+
+        if (orderId == null && best != null && best.has("order_id")) {
+            orderId = best.get("order_id").asText();
+        }
+        if (orderId != null && !orderId.isBlank()) {
+            JsonNode order = httpGetJson(
+                    String.format("%s/orders/%s", ML_API_BASE, orderId), tokenHolder, cliente, false);
+            if (order != null && order.has("shipping")) {
+                JsonNode shipping = order.get("shipping");
+                if (shipping.has("receiver_address")) {
+                    best = mergeAddressIntoShipment(best, shipmentId, shipping.get("receiver_address"), "receiver_address");
+                    if (shipmentTieneDireccion(best)) {
+                        log.info("Shipment {} con dirección desde /orders/{}", shipmentId, orderId);
+                        return best;
+                    }
+                }
+            }
+        }
+
+        if (best != null) {
+            log.warn("Shipment {} sin calle/CP luego de enriquecer", shipmentId);
+        }
+        return best;
+    }
+
+    private JsonNode httpGetJson(String url, String[] tokenHolder, Cliente cliente, boolean formatNew) {
+        HttpURLConnection conn = null;
+        try {
+            conn = openMlGet(url, tokenHolder[0], formatNew);
+            int code = conn.getResponseCode();
+            if (code == 401) {
+                tokenHolder[0] = refrescarTokenSiNecesario(cliente);
+                conn.disconnect();
+                conn = openMlGet(url, tokenHolder[0], formatNew);
+                code = conn.getResponseCode();
+            }
+            if (code == 200) {
+                JsonNode data = objectMapper.readTree(conn.getInputStream());
+                conn.disconnect();
+                return data;
+            }
+            log.debug("GET {} -> {}", url, code);
+            conn.disconnect();
+        } catch (Exception e) {
+            log.warn("GET {} falló: {}", url, e.getMessage());
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+        return null;
+    }
+
+    private HttpURLConnection openMlGet(String url, String accessToken, boolean formatNew) throws Exception {
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        conn.setRequestMethod("GET");
+        conn.setRequestProperty("Authorization", "Bearer " + accessToken);
+        conn.setRequestProperty("Accept", "application/json");
+        if (formatNew) {
+            conn.setRequestProperty("x-format-new", "true");
+        }
+        conn.setConnectTimeout(8000);
+        conn.setReadTimeout(8000);
+        return conn;
+    }
+
+    private JsonNode mergeShipmentNodes(JsonNode base, JsonNode extra) {
+        if (extra == null) {
+            return base;
+        }
+        if (base == null) {
+            return extra;
+        }
+        if (base instanceof ObjectNode && extra.isObject()) {
+            ((ObjectNode) base).setAll((ObjectNode) extra);
+            return base;
+        }
+        return extra;
+    }
+
+    private JsonNode mergeAddressIntoShipment(JsonNode base, String shipmentId, JsonNode addressPayload, String field) {
+        if (addressPayload == null || addressPayload.isNull()) {
+            return base;
+        }
+        JsonNode addressNode = addressPayload;
+        if (addressPayload.has(field)) {
+            addressNode = addressPayload.get(field);
+        } else if ("destination".equals(field) && addressPayload.has("shipping_address")) {
+            ObjectNode destination = objectMapper.createObjectNode();
+            destination.set("shipping_address", addressPayload.get("shipping_address"));
+            if (addressPayload.has("receiver_name")) {
+                destination.set("receiver_name", addressPayload.get("receiver_name"));
+            }
+            addressNode = destination;
+        } else if (addressPayload.has("receiver_address")) {
+            addressNode = addressPayload.get("receiver_address");
+            field = "receiver_address";
+        }
+
+        ObjectNode shipment = (base instanceof ObjectNode)
+                ? (ObjectNode) base
+                : objectMapper.createObjectNode();
+        if (!(base instanceof ObjectNode)) {
+            shipment.put("id", shipmentId);
+            if (base != null && base.isObject()) {
+                shipment.setAll((ObjectNode) base);
+            }
+        }
+        shipment.set(field, addressNode);
+        return shipment;
+    }
+
+    private boolean shipmentTieneDireccion(JsonNode data) {
+        if (data == null) {
+            return false;
+        }
+        if (data.has("destination") && data.get("destination").has("shipping_address")) {
+            if (nodoTieneCalleOCp(data.get("destination").get("shipping_address"))) {
+                return true;
+            }
+        }
+        return data.has("receiver_address") && nodoTieneCalleOCp(data.get("receiver_address"));
+    }
+
+    private boolean nodoTieneCalleOCp(JsonNode addressNode) {
+        if (addressNode == null || addressNode.isNull()) {
+            return false;
+        }
+        return textoPresente(addressNode, "address_line")
+                || textoPresente(addressNode, "street_name")
+                || textoPresente(addressNode, "zip_code")
+                || (addressNode.has("city") && addressNode.get("city").has("name")
+                    && !addressNode.get("city").get("name").asText("").isBlank());
+    }
+
+    private boolean textoPresente(JsonNode node, String field) {
+        return node.has(field) && !node.get(field).asText("").isBlank();
+    }
+
+    private String extraerZipFlex(JsonNode addressNode) {
+        if (addressNode == null) return "";
+        JsonNode zip = addressNode.get("zip_code");
+        if (zip == null || zip.isNull()) {
+            zip = addressNode.get("zip");
+        }
+        if (zip == null || zip.isNull()) return "";
+        String raw = zip.isObject()
+                ? (zip.has("zip_code") ? zip.get("zip_code").asText("") : "")
+                : zip.asText("");
+        return com.zetallegue.tms.util.ZonaEntregaUtil.limpiarCp(raw);
+    }
+
+    private String extraerLocalidadFlex(JsonNode addressNode) {
+        if (addressNode == null) return "";
+        String neighborhood = nombreNodo(addressNode.get("neighborhood"));
+        String city = nombreNodo(addressNode.get("city"));
+        String municipality = nombreNodo(addressNode.get("municipality"));
+        if (!neighborhood.isBlank()) return neighborhood;
+        if (!city.isBlank()) return city;
+        return municipality;
+    }
+
+    private String nombreNodo(JsonNode node) {
+        if (node == null || node.isNull()) return "";
+        if (node.isTextual()) return node.asText("").trim();
+        if (node.has("name") && !node.get("name").asText("").isBlank()) {
+            return node.get("name").asText().trim();
+        }
+        return "";
+    }
     
     /**
      * Convierte un envío de MercadoLibre a EnvioDTO
@@ -479,9 +729,11 @@ public class MercadoLibreService {
         com.zetallegue.tms.dto.EnvioDTO envioDTO = new com.zetallegue.tms.dto.EnvioDTO();
         
         try {
-            // Tracking (ID del envío en ML)
+            // Tracking (ID del envío en ML) — también es el mlShipmentId para el polling
             if (mlEnvio.has("id")) {
-                envioDTO.setTracking(mlEnvio.get("id").asText());
+                String shipmentId = mlEnvio.get("id").asText();
+                envioDTO.setTracking(shipmentId);
+                envioDTO.setMlShipmentId(shipmentId);
             }
             
             // Cliente (formato: codigo - nombre)
@@ -500,7 +752,7 @@ public class MercadoLibreService {
             }
             
             // Fechas
-            // Fecha de ingreso: fecha actual (cuando se colecta/escanea)
+            // Fecha de ingreso: fecha actual (cuando se retiro/escanea)
             envioDTO.setFecha(LocalDateTime.now());
             
             // Fecha de venta: date_created del shipment (cuando se creó en MercadoLibre)
@@ -539,13 +791,14 @@ public class MercadoLibreService {
             String addressSource = "none";
             
             // Prioridad 1: destination.shipping_address (formato nuevo desde /shipments/{id})
-            if (mlEnvio.has("destination") && mlEnvio.get("destination").has("shipping_address")) {
+            if (mlEnvio.has("destination") && mlEnvio.get("destination").has("shipping_address")
+                    && nodoTieneCalleOCp(mlEnvio.get("destination").get("shipping_address"))) {
                 addressNode = mlEnvio.get("destination").get("shipping_address");
                 addressSource = "destination.shipping_address";
                 log.info("✓ Dirección encontrada en destination.shipping_address");
             }
             // Prioridad 2: receiver_address (formato antiguo o desde orders)
-            else if (mlEnvio.has("receiver_address")) {
+            else if (mlEnvio.has("receiver_address") && nodoTieneCalleOCp(mlEnvio.get("receiver_address"))) {
                 addressNode = mlEnvio.get("receiver_address");
                 addressSource = "receiver_address";
                 log.info("✓ Dirección encontrada en receiver_address");
@@ -571,24 +824,16 @@ public class MercadoLibreService {
                     }
                 }
                 envioDTO.setDireccion(direccion.length() > 0 ? direccion.toString() : "Dirección pendiente");
-                
-                // Localidad
-                if (addressNode.has("city")) {
-                    JsonNode city = addressNode.get("city");
-                    if (city.has("name") && !city.get("name").asText().isEmpty()) {
-                        envioDTO.setLocalidad(city.get("name").asText());
-                    } else {
-                        envioDTO.setLocalidad("");
-                    }
-                } else {
-                    envioDTO.setLocalidad("");
-                }
-                
-                // Código postal
-                if (addressNode.has("zip_code") && !addressNode.get("zip_code").asText().isEmpty()) {
-                    envioDTO.setCodigoPostal(addressNode.get("zip_code").asText());
-                } else {
+
+                // Flex es AMBA: si ML manda CP/ciudad del interior, no los persistimos.
+                String zipFlex = extraerZipFlex(addressNode);
+                String locFlex = extraerLocalidadFlex(addressNode);
+                if (com.zetallegue.tms.util.ZonaEntregaUtil.zonaAmba(zipFlex) == null) {
                     envioDTO.setCodigoPostal("");
+                    envioDTO.setLocalidad("");
+                } else {
+                    envioDTO.setCodigoPostal(zipFlex);
+                    envioDTO.setLocalidad(locFlex);
                 }
                 
                 // Nombre del destinatario
@@ -640,7 +885,8 @@ public class MercadoLibreService {
 
             // Zona de entrega (misma lógica que "Subir individual" / `lib/zonas-utils.ts`)
             // Esto es independiente de la lista de precios: la columna debe completarse solo por CP.
-            envioDTO.setZonaEntrega(determinarZonaEntrega(envioDTO.getCodigoPostal()));
+            envioDTO.setZonaEntrega(com.zetallegue.tms.util.ZonaEntregaUtil.determinarSoloAmba(
+                    envioDTO.getCodigoPostal()));
             
             // Referencia domicilio (comment de destination.shipping_address) - va a cambioRetiro
             if (mlEnvio.has("destination") && mlEnvio.get("destination").has("shipping_address")) {
@@ -766,8 +1012,8 @@ public class MercadoLibreService {
             // Impreso
             envioDTO.setImpreso("NO");
             
-            // Colectado: true cuando se obtiene desde ML al escanear (ya se está colectando)
-            envioDTO.setColectado(true);
+            // Retirado: true cuando se obtiene desde ML al escanear (ya se está retirando)
+            envioDTO.setRetirado(true);
             
         } catch (Exception e) {
             log.error("Error al mapear envío Flex: {}", e.getMessage(), e);

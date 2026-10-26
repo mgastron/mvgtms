@@ -154,7 +154,7 @@ public class ClienteService {
             clienteDTO.setGrupoId(grupo.getId());
         }
         if (clienteDTO.getGrupoId() == null) {
-            throw new RuntimeException("El cliente debe estar asignado a un grupo. Elegí un grupo existente o creá uno nuevo.");
+            throw new RuntimeException("El cliente debe estar adjudicado a un grupo. Elegí un grupo existente o creá uno nuevo.");
         }
         String nombre = normalizarNombreFantasia(clienteDTO.getNombreFantasia());
         if (nombre.isEmpty()) {
@@ -181,7 +181,7 @@ public class ClienteService {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado con id: " + id));
 
-        // Si se indica nuevo grupo (crear y asignar), crearlo primero
+        // Si se indica nuevo grupo (crear y adjudicar), crearlo primero
         if (clienteDTO.getNuevoGrupoNombre() != null && !clienteDTO.getNuevoGrupoNombre().trim().isEmpty()) {
             com.zetallegue.tms.model.Grupo grupo = new com.zetallegue.tms.model.Grupo();
             grupo.setNombre(clienteDTO.getNuevoGrupoNombre().trim());
@@ -191,7 +191,7 @@ public class ClienteService {
 
         Long grupoEfectivo = clienteDTO.getGrupoId() != null ? clienteDTO.getGrupoId() : cliente.getGrupoId();
         if (grupoEfectivo == null) {
-            throw new RuntimeException("El cliente debe estar asignado a un grupo.");
+            throw new RuntimeException("El cliente debe estar adjudicado a un grupo.");
         }
         String nombre = normalizarNombreFantasia(clienteDTO.getNombreFantasia());
         if (nombre.isEmpty()) {
@@ -752,6 +752,11 @@ public class ClienteService {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            Long orgId = com.zetallegue.tms.tenant.TenantContext.getOrganizacionId();
+            if (orgId != null) {
+                predicates.add(cb.equal(root.get("organizacionId"), orgId));
+            }
+
             if (filter.getCodigo() != null && !filter.getCodigo().trim().isEmpty()) {
                 predicates.add(cb.like(
                         cb.lower(root.get("codigo")),
@@ -842,6 +847,7 @@ public class ClienteService {
 
     private Cliente toEntity(ClienteDTO dto) {
         Cliente cliente = new Cliente();
+        cliente.setOrganizacionId(com.zetallegue.tms.tenant.TenantContext.getOrganizacionId());
         cliente.setCodigo(dto.getCodigo());
         cliente.setNombreFantasia(dto.getNombreFantasia());
         cliente.setRazonSocial(dto.getRazonSocial());

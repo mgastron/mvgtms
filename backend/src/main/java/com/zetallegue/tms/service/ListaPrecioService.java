@@ -29,7 +29,10 @@ public class ListaPrecioService {
     @Transactional(readOnly = true)
     public PageResponseDTO<ListaPrecioDTO> obtenerTodasLasListasPrecios(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<ListaPrecio> pageResult = listaPrecioRepository.findAll(pageable);
+        Long orgId = com.zetallegue.tms.tenant.TenantContext.getOrganizacionId();
+        Page<ListaPrecio> pageResult = orgId != null
+            ? listaPrecioRepository.findByOrganizacionId(orgId, pageable)
+            : listaPrecioRepository.findAll(pageable);
         
         List<ListaPrecioDTO> content = pageResult.getContent().stream()
             .map(this::toDTOSimple)
@@ -47,6 +50,7 @@ public class ListaPrecioService {
     @Transactional
     public ListaPrecioDTO crearListaPrecio(ListaPrecioDTO dto) {
         ListaPrecio entity = new ListaPrecio();
+        entity.setOrganizacionId(com.zetallegue.tms.tenant.TenantContext.getOrganizacionId());
         entity.setCodigo(dto.getCodigo());
         entity.setNombre(dto.getNombre());
         entity.setZonaPropia(dto.getZonaPropia() != null ? dto.getZonaPropia() : true);

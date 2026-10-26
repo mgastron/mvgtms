@@ -2,6 +2,7 @@ package com.zetallegue.tms.service;
 
 import com.zetallegue.tms.dto.ChoferConUbicacionDTO;
 import com.zetallegue.tms.dto.ChoferCierreDTO;
+import com.zetallegue.tms.dto.ChoferHistorialDTO;
 import com.zetallegue.tms.dto.EnvioDTO;
 import com.zetallegue.tms.dto.EnvioFilterDTO;
 import com.zetallegue.tms.dto.HistorialEnvioDTO;
@@ -61,6 +62,7 @@ public class EnvioService {
     private final com.zetallegue.tms.repository.ClienteRepository clienteRepository;
     private final com.zetallegue.tms.repository.ListaPrecioRepository listaPrecioRepository;
     private final EmailService emailService;
+    private final GeocodeService geocodeService;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     
@@ -362,9 +364,9 @@ public class EnvioService {
         if (envioDTO.getFechaVenta() != null) envio.setFechaVenta(envioDTO.getFechaVenta());
         if (envioDTO.getFechaLlegue() != null) envio.setFechaLlegue(envioDTO.getFechaLlegue());
         if (envioDTO.getFechaEntregado() != null) envio.setFechaEntregado(envioDTO.getFechaEntregado());
-        if (envioDTO.getFechaAsignacion() != null) envio.setFechaAsignacion(envioDTO.getFechaAsignacion());
+        if (envioDTO.getFechaAdjudicacion() != null) envio.setFechaAdjudicacion(envioDTO.getFechaAdjudicacion());
         if (envioDTO.getFechaDespacho() != null) envio.setFechaDespacho(envioDTO.getFechaDespacho());
-        if (envioDTO.getFechaColecta() != null) envio.setFechaColecta(envioDTO.getFechaColecta());
+        if (envioDTO.getFechaRetiro() != null) envio.setFechaRetiro(envioDTO.getFechaRetiro());
         if (envioDTO.getFechaAPlanta() != null) envio.setFechaAPlanta(envioDTO.getFechaAPlanta());
         if (envioDTO.getFechaCancelado() != null) envio.setFechaCancelado(envioDTO.getFechaCancelado());
         if (envioDTO.getFechaUltimoMovimiento() != null) envio.setFechaUltimoMovimiento(envioDTO.getFechaUltimoMovimiento());
@@ -385,7 +387,15 @@ public class EnvioService {
         if (envioDTO.getQrData() != null) envio.setQrData(envioDTO.getQrData());
         if (envioDTO.getEstado() != null) envio.setEstado(envioDTO.getEstado());
         if (envioDTO.getEliminado() != null) envio.setEliminado(envioDTO.getEliminado());
-        if (envioDTO.getColectado() != null) envio.setColectado(envioDTO.getColectado());
+        if (envioDTO.getRetirado() != null) envio.setRetirado(envioDTO.getRetirado());
+        if (envioDTO.getCostoEnvio() != null) envio.setCostoEnvio(envioDTO.getCostoEnvio());
+        if (envioDTO.getIdml() != null) envio.setIdml(envioDTO.getIdml());
+        if (envioDTO.getPeso() != null) envio.setPeso(envioDTO.getPeso());
+        if (envioDTO.getMetodoEnvio() != null) envio.setMetodoEnvio(envioDTO.getMetodoEnvio());
+        if (envioDTO.getDeadline() != null) envio.setDeadline(envioDTO.getDeadline());
+        if (envioDTO.getMlShipmentId() != null) envio.setMlShipmentId(envioDTO.getMlShipmentId());
+        if (envioDTO.getLatDestino() != null) envio.setLatDestino(envioDTO.getLatDestino());
+        if (envioDTO.getLngDestino() != null) envio.setLngDestino(envioDTO.getLngDestino());
 
         envio = envioRepository.save(envio);
         return toDTO(envio);
@@ -402,7 +412,9 @@ public class EnvioService {
     @Transactional
     public EnvioDTO actualizarEstado(Long id, String estado, String usuarioNombre, 
                                      String observaciones, String fotoUrl,
-                                     String rolRecibio, String nombreRecibio, String dniRecibio) {
+                                     String rolRecibio, String nombreRecibio, String dniRecibio,
+                                     Double latitud, Double longitud, Double destinoLat, Double destinoLng,
+                                     String ubicacionDireccion) {
         Envio envio = envioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Envío no encontrado con id: " + id));
         
@@ -419,7 +431,56 @@ public class EnvioService {
         // No permitir pasar a "En camino al destinatario" sin haber pasado por "Retirado"
         if ("En camino al destinatario".equals(estado) && "A retirar".equals(estadoAnterior)) {
             throw new RuntimeException("No se puede pasar a 'En camino al destinatario' desde 'A retirar'. " +
-                    "El envío debe marcarse primero como 'Retirado' (colectado).");
+                    "El envío debe marcarse primero como 'Retirado'.");
+        }
+
+        boolean requiereProximidad = "Nadie".equals(estado) || "Rechazado por el comprador".equals(estado);
+        Double ubicacionHistorialLat = latitud;
+        Double ubicacionHistorialLng = longitud;
+        if (requiereProximidad) {
+            Double destLat = envio.getLatDestino();
+            Double destLng = envio.getLngDestino();
+            if ((destLat == null || destLng == null) && destinoLat != null && destinoLng != null) {
+                destLat = destinoLat;
+                destLng = destinoLng;
+                envio.setLatDestino(destinoLat);
+                envio.setLngDestino(destinoLng);
+            }
+            if (destLat == null || destLng == null) {
+                throw new RuntimeException(
+                        "No se puede verificar la distancia al destino. Geolocalizá el envío antes de continuar.");
+            }
+
+            java.util.List<double[]> puntos = new java.util.ArrayList<>();
+            if (latitud != null && longitud != null) {
+                puntos.add(new double[]{latitud, longitud});
+            }
+            if (envio.getChoferAdjudicadoId() != null) {
+                Usuario chofer = usuarioRepository.findById(envio.getChoferAdjudicadoId()).orElse(null);
+                if (chofer != null && chofer.getLatitud() != null && chofer.getLongitud() != null) {
+                    puntos.add(new double[]{chofer.getLatitud(), chofer.getLongitud()});
+                    // Preferir tracker para el historial (ubicación operativa del chofer)
+                    ubicacionHistorialLat = chofer.getLatitud();
+                    ubicacionHistorialLng = chofer.getLongitud();
+                }
+            }
+            if (puntos.isEmpty()) {
+                throw new RuntimeException("Se requiere la ubicación actual para marcar este estado.");
+            }
+
+            for (double[] p : puntos) {
+                double metros = distanciaMetros(p[0], p[1], destLat, destLng);
+                log.info("Proximidad envioId={} punto=({}, {}) metros={}", id, p[0], p[1], metros);
+                if (metros > 500) {
+                    throw new RuntimeException(String.format(
+                            "Estás a %.0f m del destino. Solo podés marcar esta opción a menos de 500 metros.",
+                            metros));
+                }
+            }
+            if (ubicacionHistorialLat == null) {
+                ubicacionHistorialLat = puntos.get(0)[0];
+                ubicacionHistorialLng = puntos.get(0)[1];
+            }
         }
 
         envio.setEstado(estado);
@@ -431,6 +492,13 @@ public class EnvioService {
             if (rolRecibio != null) envio.setRolRecibio(rolRecibio);
             if (nombreRecibio != null) envio.setNombreRecibio(nombreRecibio);
             if (dniRecibio != null) envio.setDniRecibio(dniRecibio);
+            if (latitud != null && longitud != null) {
+                envio.setLatEntrega(latitud);
+                envio.setLngEntrega(longitud);
+            }
+            if (ubicacionDireccion != null && !ubicacionDireccion.trim().isEmpty()) {
+                envio.setDireccionEntrega(ubicacionDireccion.trim());
+            }
         }
         
         // Actualizar fecha específica y flags según el estado
@@ -442,8 +510,8 @@ public class EnvioService {
                 envio.setFechaCancelado(ahora);
                 break;
             case "Retirado":
-                envio.setFechaColecta(ahora);
-                envio.setColectado(true);
+                envio.setFechaRetiro(ahora);
+                envio.setRetirado(true);
                 break;
         }
         
@@ -458,6 +526,20 @@ public class EnvioService {
             historial.setQuien(usuarioNombre != null ? usuarioNombre : "Usuario");
             historial.setObservaciones(observaciones);
             historial.setOrigen("APP"); // Desde la app móvil
+            // Guardar GPS del chofer al marcar (Nadie/Rechazado/Entregado)
+            if (ubicacionHistorialLat != null && ubicacionHistorialLng != null) {
+                historial.setLatitud(ubicacionHistorialLat);
+                historial.setLongitud(ubicacionHistorialLng);
+                if (ubicacionDireccion != null && !ubicacionDireccion.trim().isEmpty()) {
+                    historial.setUbicacionDireccion(ubicacionDireccion.trim());
+                }
+            } else if ("Entregado".equals(estado) && latitud != null && longitud != null) {
+                historial.setLatitud(latitud);
+                historial.setLongitud(longitud);
+                if (ubicacionDireccion != null && !ubicacionDireccion.trim().isEmpty()) {
+                    historial.setUbicacionDireccion(ubicacionDireccion.trim());
+                }
+            }
             historialEnvioRepository.save(historial);
         }
         
@@ -490,10 +572,22 @@ public class EnvioService {
         
         return toDTO(envio);
     }
+
+    /** Distancia en metros entre dos puntos (Haversine). */
+    private static double distanciaMetros(double lat1, double lng1, double lat2, double lng2) {
+        final double R = 6371000.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
     
     /**
      * Envía el email "Tu pedido está en camino" si el envío no es Flex y tiene email.
-     * Se llama cuando el envío pasa a estado Retirado (colectado).
+     * Se llama cuando el envío pasa a estado Retirado (retirado).
      */
     private void enviarEmailNotificacionSiRetirado(Envio envio) {
         if ("Flex".equals(envio.getOrigen())) return;
@@ -513,7 +607,7 @@ public class EnvioService {
     // Método sobrecargado para compatibilidad con llamadas desde web
     @Transactional
     public EnvioDTO actualizarEstado(Long id, String estado, String usuarioNombre) {
-        return actualizarEstado(id, estado, usuarioNombre, null, null, null, null, null);
+        return actualizarEstado(id, estado, usuarioNombre, null, null, null, null, null, null, null, null, null, null);
     }
 
     public EnvioDTO buscarEnvioPorQR(String qrData) {
@@ -526,12 +620,12 @@ public class EnvioService {
         String qrNormalizado = normalizarQR(input);
         
         // 1) Buscar por qrData exacto (lo que llevan las etiquetas impresas)
-        Envio envio = envioRepository.findByQrDataParaColectar(qrNormalizado);
+        Envio envio = envioRepository.findByQrDataParaRetirar(qrNormalizado);
         if (envio != null) {
             return toDTO(envio);
         }
         if (!qrNormalizado.equals(input)) {
-            envio = envioRepository.findByQrDataParaColectar(input);
+            envio = envioRepository.findByQrDataParaRetirar(input);
             if (envio != null) {
                 return toDTO(envio);
             }
@@ -591,9 +685,9 @@ public class EnvioService {
                 return toDTO(envioPorShipmentId.get());
             }
             
-            // Si no existe en BD, intentar obtener desde MercadoLibre (para colectar)
+            // Si no existe en BD, intentar obtener desde MercadoLibre (para retirar)
             // Buscar cliente vinculado con Flex que tenga este shipment
-            List<com.zetallegue.tms.model.Cliente> clientesVinculados = clienteRepository.findAll().stream()
+            List<com.zetallegue.tms.model.Cliente> clientesVinculados = com.zetallegue.tms.tenant.TenantQuery.ofCurrentOrg(clienteRepository.findAll()).stream()
                     .filter(c -> c.getFlexIdVendedor() != null && !c.getFlexIdVendedor().isEmpty())
                     .collect(Collectors.toList());
             
@@ -611,7 +705,7 @@ public class EnvioService {
                         return toDTO(enviosExistentes.get(0));
                     }
                     
-                    // Si no existe, retornar el DTO para que se cree al colectar
+                    // Si no existe, retornar el DTO para que se cree al retirar
                     return envioDTO;
                 } catch (Exception e) {
                     // Continuar con el siguiente cliente si falla
@@ -648,20 +742,20 @@ public class EnvioService {
     }
 
     @Transactional
-    public EnvioDTO colectarEnvio(Long id, String usuarioNombre) {
+    public EnvioDTO retirarEnvio(Long id, String usuarioNombre) {
         Envio envio = envioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Envío no encontrado con id: " + id));
         
         if (!"A retirar".equals(envio.getEstado())) {
-            throw new RuntimeException("Solo pueden colectarse envíos que estén en estado 'A retirar'");
+            throw new RuntimeException("Solo pueden retirarse envíos que estén en estado 'A retirar'");
         }
         
         LocalDateTime ahora = LocalDateTime.now();
         envio.setEstado("Retirado");
-        envio.setFechaColecta(ahora);
+        envio.setFechaRetiro(ahora);
         envio.setFechaUltimoMovimiento(ahora);
-        // Marcar como colectado para que aparezca en las vistas
-        envio.setColectado(true);
+        // Marcar como retirado para que aparezca en las vistas
+        envio.setRetirado(true);
         
         envio = envioRepository.save(envio);
         
@@ -672,22 +766,79 @@ public class EnvioService {
         historial.setFecha(ahora);
         historial.setQuien(usuarioNombre != null ? usuarioNombre : "Usuario");
         historial.setObservaciones(null); // Sin observación
-        historial.setOrigen("APP"); // Colectar siempre es desde la app móvil
+        historial.setOrigen("APP"); // Retirar siempre es desde la app móvil
         historialEnvioRepository.save(historial);
         
-        // Enviar email "Tu pedido está en camino" al pasar a Retirado (colecta por escaneo)
+        // Enviar email "Tu pedido está en camino" al pasar a Retirado (retiro por escaneo)
         enviarEmailNotificacionSiRetirado(envio);
         
         return toDTO(envio);
     }
+
+    /**
+     * Retiro + adjudicación en un paso (app chofer con modo autoadjudicar):
+     * A retirar → En camino al destinatario (sin estado intermedio Retirado),
+     * marcando retirado=true y adjudicando al chofer.
+     */
+    @Transactional
+    public EnvioDTO retirarYAdjudicarEnCamino(
+            Long id,
+            Long choferId,
+            String choferNombre,
+            String usuarioNombre) {
+        if (choferId == null || choferNombre == null || choferNombre.trim().isEmpty()) {
+            throw new RuntimeException("Chofer obligatorio para autoadjudicar");
+        }
+
+        Envio envio = envioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Envío no encontrado con id: " + id));
+
+        if ("Entregado".equals(envio.getEstado()) || "Cancelado".equals(envio.getEstado())) {
+            throw new RuntimeException("No se pueden autoadjudicar envíos entregados o cancelados");
+        }
+        if (!"A retirar".equals(envio.getEstado())) {
+            throw new RuntimeException(
+                    "Solo se pueden autoadjudicar envíos en estado 'A retirar' (actual: "
+                            + envio.getEstado() + ")");
+        }
+
+        LocalDateTime ahora = LocalDateTime.now();
+        String estadoAnterior = envio.getEstado();
+
+        envio.setRetirado(true);
+        envio.setFechaRetiro(ahora);
+        envio.setChoferAdjudicadoId(choferId);
+        envio.setChoferAdjudicadoNombre(choferNombre.trim());
+        envio.setFechaAdjudicacion(ahora);
+        envio.setEstado("En camino al destinatario");
+        envio.setFechaUltimoMovimiento(ahora);
+
+        envio = envioRepository.save(envio);
+
+        HistorialEnvio historial = new HistorialEnvio();
+        historial.setEnvioId(envio.getId());
+        historial.setEstado("En camino al destinatario");
+        historial.setFecha(ahora);
+        historial.setQuien(usuarioNombre != null ? usuarioNombre : "Usuario");
+        historial.setOrigen("APP");
+        historial.setObservaciones(
+                "Autoadjudicar: " + estadoAnterior + " -> En camino al destinatario | Adjudicado a: "
+                        + choferNombre.trim());
+        historialEnvioRepository.save(historial);
+
+        // Misma notificación que al retirar (pedido en camino)
+        enviarEmailNotificacionSiRetirado(envio);
+
+        return toDTO(envio);
+    }
     
     /**
-     * Colecta un envío Flex desde MercadoLibre al escanear el QR
+     * Retiro un envío Flex desde MercadoLibre al escanear el QR
      * Si el envío no existe en la BD, lo crea desde ML
      */
     @Transactional
-    public EnvioDTO colectarEnvioFlex(String qrData, String usuarioNombre) {
-        log.info("Intentando colectar envío Flex con QR: {}", qrData);
+    public EnvioDTO retirarEnvioFlex(String qrData, String usuarioNombre) {
+        log.info("Intentando retirar envío Flex con QR: {}", qrData);
         
         // Extraer shipment ID y sender_id del QR
         String shipmentId;
@@ -731,7 +882,7 @@ public class EnvioService {
         if (clienteEncontrado != null) {
             clientesVinculados = java.util.Collections.singletonList(clienteEncontrado);
         } else {
-            clientesVinculados = clienteRepository.findAll().stream()
+            clientesVinculados = com.zetallegue.tms.tenant.TenantQuery.ofCurrentOrg(clienteRepository.findAll()).stream()
                     .filter(c -> c.getFlexIdVendedor() != null && !c.getFlexIdVendedor().isEmpty())
                     .collect(Collectors.toList());
             log.info("Clientes vinculados encontrados: {}", clientesVinculados.size());
@@ -788,7 +939,7 @@ public class EnvioService {
         if (!enviosExistentes.isEmpty()) {
             envio = enviosExistentes.get(0);
             if (!"A retirar".equals(envio.getEstado())) {
-                throw new RuntimeException("Solo pueden colectarse envíos que estén en estado 'A retirar'");
+                throw new RuntimeException("Solo pueden retirarse envíos que estén en estado 'A retirar'");
             }
         } else {
             // Crear nuevo envío desde los datos de ML
@@ -800,8 +951,8 @@ public class EnvioService {
             // Guardar el shipment ID de MercadoLibre para polling
             envioDTO.setMlShipmentId(shipmentId);
             envio = toEntity(envioDTO);
-            // Marcar como colectado desde el inicio (ya que se está colectando)
-            envio.setColectado(true);
+            // Marcar como retirado desde el inicio (ya que se está retirando)
+            envio.setRetirado(true);
             envio.setEstado("Retirado");
         }
         
@@ -812,9 +963,9 @@ public class EnvioService {
         
         LocalDateTime ahora = LocalDateTime.now();
         envio.setEstado("Retirado");
-        envio.setFechaColecta(ahora);
+        envio.setFechaRetiro(ahora);
         envio.setFechaUltimoMovimiento(ahora);
-        envio.setColectado(true);
+        envio.setRetirado(true);
         asegurarIdMvgParaFlex(envio);
         
         envio = envioRepository.save(envio);
@@ -877,8 +1028,8 @@ public class EnvioService {
             // Guardar el shipment ID de MercadoLibre para polling
             envioDTO.setMlShipmentId(shipmentId);
             envio = toEntity(envioDTO);
-            // Marcar como colectado y en estado "Retirado" (ya que se está subiendo manualmente)
-            envio.setColectado(true);
+            // Marcar como retirado y en estado "Retirado" (ya que se está subiendo manualmente)
+            envio.setRetirado(true);
             envio.setEstado("Retirado");
         }
         
@@ -887,9 +1038,9 @@ public class EnvioService {
             envio.setMlShipmentId(shipmentId);
         }
         
-        // Guardar fecha de colecta
+        // Guardar fecha de retiro
         LocalDateTime ahora = LocalDateTime.now();
-        envio.setFechaColecta(ahora);
+        envio.setFechaRetiro(ahora);
         envio.setFechaUltimoMovimiento(ahora);
         asegurarIdMvgParaFlex(envio);
         
@@ -915,14 +1066,18 @@ public class EnvioService {
      * Actualiza un envío existente con datos de un DTO
      */
     private Envio actualizarEnvioDesdeDTO(Envio envio, com.zetallegue.tms.dto.EnvioDTO envioDTO) {
-        // Actualizar solo campos que vienen de ML, preservar estado y asignaciones
+        // Actualizar solo campos que vienen de ML, preservar estado y adjudicaciones
         if (envioDTO.getDireccion() != null) envio.setDireccion(envioDTO.getDireccion());
         if (envioDTO.getNombreDestinatario() != null) envio.setNombreDestinatario(envioDTO.getNombreDestinatario());
         if (envioDTO.getTelefono() != null) envio.setTelefono(envioDTO.getTelefono());
         if (envioDTO.getEmail() != null) envio.setEmail(envioDTO.getEmail());
         if (envioDTO.getLocalidad() != null) envio.setLocalidad(envioDTO.getLocalidad());
         if (envioDTO.getCodigoPostal() != null) envio.setCodigoPostal(envioDTO.getCodigoPostal());
+        if (envioDTO.getZonaEntrega() != null) envio.setZonaEntrega(envioDTO.getZonaEntrega());
         if (envioDTO.getObservaciones() != null) envio.setObservaciones(envioDTO.getObservaciones());
+        if (envioDTO.getCostoEnvio() != null) envio.setCostoEnvio(envioDTO.getCostoEnvio());
+        if (envioDTO.getMlShipmentId() != null) envio.setMlShipmentId(envioDTO.getMlShipmentId());
+        if (envioDTO.getIdml() != null) envio.setIdml(envioDTO.getIdml());
         // Para Flex, asegurar que ID_NX no sea igual al tracking
         asegurarIdMvgParaFlex(envio);
         return envio;
@@ -946,111 +1101,111 @@ public class EnvioService {
     }
 
     @Transactional
-    public EnvioDTO asignarEnvio(Long envioId, Long choferId, String choferNombre, String usuarioAsignador, String origen) {
-        log.info("asignarEnvio inicio envioId={} choferId={} choferNombre={}", envioId, choferId, choferNombre);
+    public EnvioDTO adjudicarEnvio(Long envioId, Long choferId, String choferNombre, String usuarioAdjudicador, String origen) {
+        log.info("adjudicarEnvio inicio envioId={} choferId={} choferNombre={}", envioId, choferId, choferNombre);
         Envio envio = envioRepository.findById(envioId)
                 .orElseThrow(() -> new RuntimeException("Envío no encontrado con id: " + envioId));
-        log.info("asignarEnvio envio encontrado id={} estado={} choferAnterior={} origen={}",
-                envio.getId(), envio.getEstado(), envio.getChoferAsignadoNombre(), envio.getOrigen());
+        log.info("adjudicarEnvio envio encontrado id={} estado={} choferAnterior={} origen={}",
+                envio.getId(), envio.getEstado(), envio.getChoferAdjudicadoNombre(), envio.getOrigen());
         
-        // Verificar si es asignación a "PENDIENTES DEPÓSITO"
+        // Verificar si es adjudicacion a "PENDIENTES DEPÓSITO"
         boolean esPendientesDeposito = "PENDIENTES DEPÓSITO".equals(choferNombre);
         
-        // Guardar el chofer anterior para detectar reasignación desde PENDIENTES DEPÓSITO
-        String choferAnterior = envio.getChoferAsignadoNombre();
+        // Guardar el chofer anterior para detectar readjudicacion desde PENDIENTES DEPÓSITO
+        String choferAnterior = envio.getChoferAdjudicadoNombre();
         boolean vieneDePendientesDeposito = "PENDIENTES DEPÓSITO".equals(choferAnterior);
         
-        // Validar que el envío no esté en estados finales (nunca asignar Entregado/Cancelado)
+        // Validar que el envío no esté en estados finales (nunca adjudicar Entregado/Cancelado)
         if ("Entregado".equals(envio.getEstado()) || "Cancelado".equals(envio.getEstado())) {
-            throw new RuntimeException("No se pueden asignar envíos que estén en estado 'Entregado' o 'Cancelado'");
+            throw new RuntimeException("No se pueden adjudicar envíos que estén en estado 'Entregado' o 'Cancelado'");
         }
 
-        // Permitir asignar a chofer desde "A retirar" (el chofer puede ser quien lo retira) o desde "Retirado"
+        // Permitir adjudicar a chofer desde "A retirar" (el chofer puede ser quien lo retira) o desde "Retirado"
         
         LocalDateTime ahora = LocalDateTime.now();
         
         // Guardar el estado anterior para el historial
         String estadoAnterior = envio.getEstado();
         
-        // Asignar el chofer
-        envio.setChoferAsignadoId(choferId);
-        envio.setChoferAsignadoNombre(choferNombre);
-        envio.setFechaAsignacion(ahora);
+        // Adjudicar el chofer
+        envio.setChoferAdjudicadoId(choferId);
+        envio.setChoferAdjudicadoNombre(choferNombre);
+        envio.setFechaAdjudicacion(ahora);
         envio.setFechaUltimoMovimiento(ahora);
         
-        // Para envíos Flex, NO cambiar el estado (solo asignar chofer)
+        // Para envíos Flex, NO cambiar el estado (solo adjudicar chofer)
         // El estado se sincroniza automáticamente desde MercadoLibre vía polling
         boolean esFlex = "Flex".equals(envio.getOrigen());
         
         // Si es "PENDIENTES DEPÓSITO", NO cambiar el estado (mantener el estado actual)
         // Si NO es "PENDIENTES DEPÓSITO" y NO es Flex: solo pasar a "En camino al destinatario" desde "Retirado".
-        // No se permite pasar de "A retirar" a "En camino" sin haber marcado antes como Retirado (colectado).
+        // No se permite pasar de "A retirar" a "En camino" sin haber marcado antes como Retirado (retirado).
         if (!esPendientesDeposito && !esFlex) {
             if ("Retirado".equals(envio.getEstado())) {
                 envio.setEstado("En camino al destinatario");
             }
-            // Si está en "A retirar" solo se asigna el chofer; el estado sigue "A retirar" hasta que se marque Retirado
+            // Si está en "A retirar" solo se adjudica el chofer; el estado sigue "A retirar" hasta que se marque Retirado
         }
         // Si es "PENDIENTES DEPÓSITO" o Flex, mantener el estado actual
         
-        log.info("asignarEnvio guardando envio id={} estado={} choferAsignadoId={} choferAsignadoNombre={}",
-                envio.getId(), envio.getEstado(), envio.getChoferAsignadoId(), envio.getChoferAsignadoNombre());
+        log.info("adjudicarEnvio guardando envio id={} estado={} choferAdjudicadoId={} choferAdjudicadoNombre={}",
+                envio.getId(), envio.getEstado(), envio.getChoferAdjudicadoId(), envio.getChoferAdjudicadoNombre());
         envio = envioRepository.save(envio);
-        log.info("asignarEnvio save OK envio id={}", envio.getId());
+        log.info("adjudicarEnvio save OK envio id={}", envio.getId());
         
         // Determinar si hubo cambio de estado
         boolean cambioEstado = !estadoAnterior.equals(envio.getEstado());
         
-        // Determinar si hubo reasignación (cambio de chofer)
-        boolean esReasignacion = choferAnterior != null && 
+        // Determinar si hubo readjudicacion (cambio de chofer)
+        boolean esReadjudicacion = choferAnterior != null && 
                                  !choferAnterior.trim().isEmpty() && 
                                  !choferAnterior.equals(choferNombre);
         
-        // Determinar si es la primera asignación (no había chofer antes)
-        boolean esPrimeraAsignacion = choferAnterior == null || choferAnterior.trim().isEmpty();
+        // Determinar si es la primera adjudicacion (no había chofer antes)
+        boolean esPrimeraAdjudicacion = choferAnterior == null || choferAnterior.trim().isEmpty();
         
         // Solo agregar al historial si:
         // 1. Cambió el estado (siempre agregar)
-        // 2. Es la primera asignación Y cambió el estado (de "Retirado" a "En camino al destinatario")
-        // NO agregar si solo hay reasignación sin cambio de estado (para evitar duplicados en la página pública)
-        // Las asignaciones se pueden ver en la tabla de asignaciones del frontend
+        // 2. Es la primera adjudicacion Y cambió el estado (de "Retirado" a "En camino al destinatario")
+        // NO agregar si solo hay readjudicacion sin cambio de estado (para evitar duplicados en la página pública)
+        // Las adjudicaciones se pueden ver en la tabla de adjudicaciones del frontend
         if (cambioEstado) {
             HistorialEnvio historial = new HistorialEnvio();
             historial.setEnvioId(envio.getId());
             historial.setEstado(envio.getEstado());
             historial.setFecha(ahora);
-            historial.setQuien(usuarioAsignador != null ? usuarioAsignador : "Usuario");
+            historial.setQuien(usuarioAdjudicador != null ? usuarioAdjudicador : "Usuario");
             historial.setOrigen(origen != null ? origen : "WEB");
             
             // Construir observación según el caso
             String observacion = "Estado: " + estadoAnterior + " -> " + envio.getEstado();
-            if (esReasignacion) {
-                observacion += " | Reasignado desde: " + choferAnterior + " a: " + choferNombre;
-            } else if (esPrimeraAsignacion || choferNombre != null) {
-                observacion += " | Asignado a: " + choferNombre;
+            if (esReadjudicacion) {
+                observacion += " | Readjudicado desde: " + choferAnterior + " a: " + choferNombre;
+            } else if (esPrimeraAdjudicacion || choferNombre != null) {
+                observacion += " | Adjudicado a: " + choferNombre;
             }
             
             historial.setObservaciones(observacion);
             historialEnvioRepository.save(historial);
-        } else if (esReasignacion) {
-            // Si solo hubo reasignación sin cambio de estado, agregar al historial
+        } else if (esReadjudicacion) {
+            // Si solo hubo readjudicacion sin cambio de estado, agregar al historial
             HistorialEnvio historial = new HistorialEnvio();
             historial.setEnvioId(envio.getId());
             historial.setEstado(envio.getEstado());
             historial.setFecha(ahora);
-            historial.setQuien(usuarioAsignador != null ? usuarioAsignador : "Usuario");
+            historial.setQuien(usuarioAdjudicador != null ? usuarioAdjudicador : "Usuario");
             historial.setOrigen(origen != null ? origen : "WEB");
-            historial.setObservaciones("Reasignado desde: " + choferAnterior + " a: " + choferNombre);
+            historial.setObservaciones("Readjudicado desde: " + choferAnterior + " a: " + choferNombre);
             historialEnvioRepository.save(historial);
-        } else if (esPrimeraAsignacion) {
-            // Primera asignación sin cambio de estado (ej. "A retirar" -> chofer): registrar en historial
+        } else if (esPrimeraAdjudicacion) {
+            // Primera adjudicacion sin cambio de estado (ej. "A retirar" -> chofer): registrar en historial
             HistorialEnvio historial = new HistorialEnvio();
             historial.setEnvioId(envio.getId());
             historial.setEstado(envio.getEstado());
             historial.setFecha(ahora);
-            historial.setQuien(usuarioAsignador != null ? usuarioAsignador : "Usuario");
+            historial.setQuien(usuarioAdjudicador != null ? usuarioAdjudicador : "Usuario");
             historial.setOrigen(origen != null ? origen : "WEB");
-            historial.setObservaciones("Asignado a: " + choferNombre);
+            historial.setObservaciones("Adjudicado a: " + choferNombre);
             historialEnvioRepository.save(historial);
         }
         
@@ -1107,13 +1262,22 @@ public class EnvioService {
     /**
      * Expresión sobre {@code direccion} sin bloques típicos de código postal en el texto libre,
      * para que el filtro de destino dirección no dispare por el CP que figura en la cadena (solo por calle/número).
-     * Se encadenan varios {@code regexp_replace} porque en PostgreSQL, sin flag {@code g}, cada llamada quita una coincidencia.
+     * CPA argentino: bloque completo (letra + 4 dígitos + 3 letras, p. ej. {@code C1022AAP}) y forma corta
+     * (coma/espacio + letra + 4 dígitos + fin/pausa, p. ej. {@code B1879}) sin usar {@code \\b} (en PostgreSQL no es límite de palabra Perl).
+     * Varias pasadas porque {@code regexp_replace} en PG sin flag {@code g} reemplaza una ocurrencia por llamada.
      */
     private Expression<String> direccionSinPatronesCp(CriteriaBuilder cb, Path<String> direccion) {
         Expression<String> e = cb.coalesce(direccion, cb.literal(""));
-        final String patron = "(?i),?\\s*CP\\s*:?\\s*[\\dA-Za-z\\s-]+|C\\d{4}[A-Za-z]{3}|,?\\s*cod(igo)?\\s*postal\\s*:?\\s*[\\dA-Za-z\\s-]+";
-        for (int i = 0; i < 6; i++) {
-            e = cb.function("regexp_replace", String.class, e, cb.literal(patron), cb.literal(""));
+        String[] patrones = {
+                "(?i),?\\s*CP\\s*:?\\s*[\\dA-Za-z\\s-]+",
+                "(?i),?\\s*cod(igo)?\\s*postal\\s*:?\\s*[\\dA-Za-z\\s-]+",
+                "(?i)[A-Za-z]\\d{4}[A-Za-z]{3}",
+                "(?i),?\\s*[A-Za-z]\\d{4}(?=\\s|,|$)"
+        };
+        for (String p : patrones) {
+            for (int i = 0; i < 5; i++) {
+                e = cb.function("regexp_replace", String.class, e, cb.literal(p), cb.literal(""));
+            }
         }
         for (int i = 0; i < 3; i++) {
             e = cb.function("regexp_replace", String.class, e, cb.literal("\\s{2,}"), cb.literal(" "));
@@ -1125,24 +1289,48 @@ public class EnvioService {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // Por defecto, excluir eliminados (excepto si se filtra específicamente por eliminados)
-            if (filter.getEstado() == null || !filter.getEstado().equals("Eliminados")) {
-                predicates.add(cb.equal(root.get("eliminado"), false));
-            } else {
+            Long orgId = com.zetallegue.tms.tenant.TenantContext.getOrganizacionId();
+            if (orgId != null) {
+                predicates.add(cb.equal(root.get("organizacionId"), orgId));
+            }
+
+            // Resolver lista de estados (multi + compat un valor)
+            List<String> estadosFiltro = new ArrayList<>();
+            if (filter.getEstados() != null) {
+                for (String e : filter.getEstados()) {
+                    if (e != null && !e.trim().isEmpty() && !"todos".equalsIgnoreCase(e.trim())) {
+                        estadosFiltro.add(e.trim());
+                    }
+                }
+            }
+            if (estadosFiltro.isEmpty() && filter.getEstado() != null && !filter.getEstado().trim().isEmpty()
+                    && !"todos".equalsIgnoreCase(filter.getEstado().trim())) {
+                estadosFiltro.add(filter.getEstado().trim());
+            }
+
+            boolean soloEliminados = estadosFiltro.size() == 1 && "Eliminados".equals(estadosFiltro.get(0));
+            boolean incluyeEliminados = estadosFiltro.stream().anyMatch("Eliminados"::equals);
+
+            // Por defecto, excluir eliminados (excepto si se filtra por eliminados)
+            if (soloEliminados) {
                 predicates.add(cb.equal(root.get("eliminado"), true));
+            } else if (incluyeEliminados) {
+                // Mezcla eliminados + otros estados: se resuelve más abajo con OR
+            } else {
+                predicates.add(cb.equal(root.get("eliminado"), false));
             }
             
-            // Solo mostrar envíos colectados (escaneados) en las vistas
-            // EXCEPCIÓN: Los envíos de Tienda Nube, Shopify y VTEX se muestran aunque no estén colectados (se crean directamente)
-            // Los envíos Flex se sincronizan con colectado=false y solo aparecen cuando se escanean
-            // Manejar NULL como true (para envíos antiguos que no tienen este campo - se consideran colectados)
+            // Solo mostrar envíos retirados (escaneados) en las vistas
+            // EXCEPCIÓN: Los envíos de Tienda Nube, Shopify y VTEX se muestran aunque no estén retirados (se crean directamente)
+            // Los envíos Flex se sincronizan con retirado=false y solo aparecen cuando se escanean
+            // Manejar NULL como true (para envíos antiguos que no tienen este campo - se consideran retirados)
             predicates.add(cb.or(
-                cb.equal(root.get("colectado"), true),
-                cb.isNull(root.get("colectado")),
-                cb.equal(root.get("origen"), "Tienda Nube"), // Incluir envíos de Tienda Nube aunque no estén colectados
-                cb.equal(root.get("origen"), "Shopify"), // Incluir envíos de Shopify aunque no estén colectados
-                cb.equal(root.get("origen"), "VTEX"), // Incluir envíos de VTEX aunque no estén colectados
-                cb.equal(root.get("origen"), "Vtex") // Incluir envíos de Vtex (variante) aunque no estén colectados
+                cb.equal(root.get("retirado"), true),
+                cb.isNull(root.get("retirado")),
+                cb.equal(root.get("origen"), "Tienda Nube"), // Incluir envíos de Tienda Nube aunque no estén retirados
+                cb.equal(root.get("origen"), "Shopify"), // Incluir envíos de Shopify aunque no estén retirados
+                cb.equal(root.get("origen"), "VTEX"), // Incluir envíos de VTEX aunque no estén retirados
+                cb.equal(root.get("origen"), "Vtex") // Incluir envíos de Vtex (variante) aunque no estén retirados
             ));
 
             // Filtro por código de cliente (para usuarios "Cliente")
@@ -1153,9 +1341,9 @@ public class EnvioService {
                 ));
             }
 
-            // Filtro por chofer asignado (para usuarios "Chofer": solo sus envíos)
+            // Filtro por chofer adjudicado (para usuarios "Chofer": solo sus envíos)
             if (filter.getChoferId() != null) {
-                predicates.add(cb.equal(root.get("choferAsignadoId"), filter.getChoferId()));
+                predicates.add(cb.equal(root.get("choferAdjudicadoId"), filter.getChoferId()));
             }
 
             // Filtro por tipo de fecha
@@ -1186,13 +1374,13 @@ public class EnvioService {
                             if (fechaDesde != null) predicates.add(cb.greaterThanOrEqualTo(root.get("fechaEntregado"), fechaDesde));
                             if (fechaHasta != null) predicates.add(cb.lessThanOrEqualTo(root.get("fechaEntregado"), fechaHasta));
                             break;
-                        case "fechaAsignacion":
-                            if (fechaDesde != null) predicates.add(cb.greaterThanOrEqualTo(root.get("fechaAsignacion"), fechaDesde));
-                            if (fechaHasta != null) predicates.add(cb.lessThanOrEqualTo(root.get("fechaAsignacion"), fechaHasta));
+                        case "fechaAdjudicacion":
+                            if (fechaDesde != null) predicates.add(cb.greaterThanOrEqualTo(root.get("fechaAdjudicacion"), fechaDesde));
+                            if (fechaHasta != null) predicates.add(cb.lessThanOrEqualTo(root.get("fechaAdjudicacion"), fechaHasta));
                             break;
-                        case "fechaColecta":
-                            if (fechaDesde != null) predicates.add(cb.greaterThanOrEqualTo(root.get("fechaColecta"), fechaDesde));
-                            if (fechaHasta != null) predicates.add(cb.lessThanOrEqualTo(root.get("fechaColecta"), fechaHasta));
+                        case "fechaRetiro":
+                            if (fechaDesde != null) predicates.add(cb.greaterThanOrEqualTo(root.get("fechaRetiro"), fechaDesde));
+                            if (fechaHasta != null) predicates.add(cb.lessThanOrEqualTo(root.get("fechaRetiro"), fechaHasta));
                             break;
                         case "fechaCancelado":
                             if (fechaDesde != null) predicates.add(cb.greaterThanOrEqualTo(root.get("fechaCancelado"), fechaDesde));
@@ -1210,29 +1398,70 @@ public class EnvioService {
                 }
             }
 
-            // Filtro por estado
-            if (filter.getEstado() != null && !filter.getEstado().trim().isEmpty() && !filter.getEstado().equals("todos") && !filter.getEstado().equals("Eliminados")) {
-                if (filter.getEstado().equals("Pendientes")) {
-                    predicates.add(cb.not(cb.equal(root.get("estado"), "Entregado")));
-                    predicates.add(cb.not(cb.equal(root.get("estado"), "Cancelado")));
-                    predicates.add(cb.not(cb.equal(root.get("estado"), "Devuelto al cliente")));
-                    predicates.add(cb.not(cb.equal(root.get("estado"), "Entregado 2DA visita")));
-                } else {
-                    predicates.add(cb.equal(root.get("estado"), filter.getEstado()));
+            // Filtro por estado (uno o varios)
+            if (!estadosFiltro.isEmpty() && !soloEliminados) {
+                List<Predicate> estadoOrs = new ArrayList<>();
+                List<String> estadosExactos = new ArrayList<>();
+                boolean pendientes = false;
+                for (String e : estadosFiltro) {
+                    if ("Eliminados".equals(e)) {
+                        estadoOrs.add(cb.equal(root.get("eliminado"), true));
+                    } else if ("Pendientes".equals(e)) {
+                        pendientes = true;
+                    } else {
+                        estadosExactos.add(e);
+                    }
+                }
+                if (pendientes) {
+                    estadoOrs.add(cb.and(
+                            cb.equal(root.get("eliminado"), false),
+                            cb.not(cb.equal(root.get("estado"), "Entregado")),
+                            cb.not(cb.equal(root.get("estado"), "Cancelado")),
+                            cb.not(cb.equal(root.get("estado"), "Devuelto al cliente")),
+                            cb.not(cb.equal(root.get("estado"), "Entregado 2DA visita"))
+                    ));
+                }
+                if (!estadosExactos.isEmpty()) {
+                    if (incluyeEliminados) {
+                        estadoOrs.add(cb.and(
+                                cb.equal(root.get("eliminado"), false),
+                                root.get("estado").in(estadosExactos)
+                        ));
+                    } else {
+                        estadoOrs.add(root.get("estado").in(estadosExactos));
+                    }
+                }
+                if (!estadoOrs.isEmpty()) {
+                    predicates.add(cb.or(estadoOrs.toArray(new Predicate[0])));
                 }
             }
 
-            // Filtro por origen
-            if (filter.getOrigen() != null && !filter.getOrigen().trim().isEmpty() && !filter.getOrigen().equals("todos")) {
-                // Si se selecciona "Mercado Libre", incluir también envíos con origen "Flex"
-                if (filter.getOrigen().equals("Mercado Libre")) {
-                    predicates.add(cb.or(
-                        cb.equal(root.get("origen"), "Mercado Libre"),
-                        cb.equal(root.get("origen"), "Flex")
-                    ));
-                } else {
-                    predicates.add(cb.equal(root.get("origen"), filter.getOrigen()));
+            // Filtro por origen (uno o varios)
+            List<String> origenesFiltro = new ArrayList<>();
+            if (filter.getOrigenes() != null) {
+                for (String o : filter.getOrigenes()) {
+                    if (o != null && !o.trim().isEmpty() && !"todos".equalsIgnoreCase(o.trim())) {
+                        origenesFiltro.add(o.trim());
+                    }
                 }
+            }
+            if (origenesFiltro.isEmpty() && filter.getOrigen() != null && !filter.getOrigen().trim().isEmpty()
+                    && !"todos".equalsIgnoreCase(filter.getOrigen().trim())) {
+                origenesFiltro.add(filter.getOrigen().trim());
+            }
+            if (!origenesFiltro.isEmpty()) {
+                List<Predicate> origenOrs = new ArrayList<>();
+                for (String o : origenesFiltro) {
+                    if ("Mercado Libre".equals(o)) {
+                        origenOrs.add(cb.or(
+                                cb.equal(root.get("origen"), "Mercado Libre"),
+                                cb.equal(root.get("origen"), "Flex")
+                        ));
+                    } else {
+                        origenOrs.add(cb.equal(root.get("origen"), o));
+                    }
+                }
+                predicates.add(cb.or(origenOrs.toArray(new Predicate[0])));
             }
 
             // Filtro por tracking o ID_NX (columna id_mvg)
@@ -1253,16 +1482,40 @@ public class EnvioService {
                 ));
             }
 
-            // Filtro por nombre fantasía (cliente)
-            if (filter.getNombreFantasia() != null && !filter.getNombreFantasia().trim().isEmpty()) {
-                predicates.add(cb.like(
-                        cb.lower(root.get("cliente")),
-                        "%" + filter.getNombreFantasia().toLowerCase() + "%"
-                ));
+            // Filtro por nombre fantasía / vendedor (uno o varios)
+            List<String> nombresFiltro = new ArrayList<>();
+            if (filter.getNombresFantasia() != null) {
+                for (String n : filter.getNombresFantasia()) {
+                    if (n != null && !n.trim().isEmpty()) {
+                        nombresFiltro.add(n.trim());
+                    }
+                }
+            }
+            if (nombresFiltro.isEmpty() && filter.getNombreFantasia() != null
+                    && !filter.getNombreFantasia().trim().isEmpty()) {
+                nombresFiltro.add(filter.getNombreFantasia().trim());
+            }
+            if (!nombresFiltro.isEmpty()) {
+                List<Predicate> nombreOrs = new ArrayList<>();
+                for (String n : nombresFiltro) {
+                    nombreOrs.add(cb.like(cb.lower(root.get("cliente")), "%" + n.toLowerCase() + "%"));
+                }
+                predicates.add(cb.or(nombreOrs.toArray(new Predicate[0])));
             }
 
-            // Filtro por grupo: correlacionar envio.cliente con clientes del grupo (código - nombre, o solo nombre)
-            if (filter.getGrupoId() != null) {
+            // Filtro por grupo (uno o varios): correlacionar envio.cliente con clientes del grupo
+            List<Long> grupoIdsFiltro = new ArrayList<>();
+            if (filter.getGrupoIds() != null) {
+                for (Long gid : filter.getGrupoIds()) {
+                    if (gid != null) {
+                        grupoIdsFiltro.add(gid);
+                    }
+                }
+            }
+            if (grupoIdsFiltro.isEmpty() && filter.getGrupoId() != null) {
+                grupoIdsFiltro.add(filter.getGrupoId());
+            }
+            if (!grupoIdsFiltro.isEmpty()) {
                 Subquery<Integer> grupoSq = query.subquery(Integer.class);
                 Root<Cliente> cr = grupoSq.from(Cliente.class);
                 grupoSq.select(cb.literal(1));
@@ -1277,7 +1530,7 @@ public class EnvioService {
                         cb.equal(cb.lower(envioCliente), cb.lower(cr.get("razonSocial")))
                 );
                 grupoSq.where(
-                        cb.equal(cr.get("grupoId"), filter.getGrupoId()),
+                        cr.get("grupoId").in(grupoIdsFiltro),
                         cb.or(porPrefijoCodigo, porNombreFantasia, porRazonSocial)
                 );
                 predicates.add(cb.exists(grupoSq));
@@ -1317,6 +1570,98 @@ public class EnvioService {
                         cb.lower(root.get("zonaEntrega")),
                         "%" + filter.getZonasEntrega().toLowerCase() + "%"
                 ));
+            }
+
+            // Adjudicado: con/sin chofer
+            if (filter.getAdjudicado() != null && !filter.getAdjudicado().trim().isEmpty()
+                    && !"todos".equalsIgnoreCase(filter.getAdjudicado().trim())) {
+                if ("si".equalsIgnoreCase(filter.getAdjudicado().trim())) {
+                    predicates.add(cb.isNotNull(root.get("choferAdjudicadoId")));
+                } else if ("no".equalsIgnoreCase(filter.getAdjudicado().trim())) {
+                    predicates.add(cb.isNull(root.get("choferAdjudicadoId")));
+                }
+            }
+
+            // Cobranzas: total a cobrar > 0
+            if (filter.getCobranzas() != null && !filter.getCobranzas().trim().isEmpty()
+                    && !"todos".equalsIgnoreCase(filter.getCobranzas().trim())) {
+                Path<String> total = root.get("totalACobrar");
+                Expression<String> totalTrim = cb.trim(total);
+                Predicate vacio = cb.or(cb.isNull(total), cb.equal(totalTrim, ""), cb.equal(totalTrim, "0"),
+                        cb.equal(totalTrim, "0.0"), cb.equal(totalTrim, "0.00"), cb.equal(totalTrim, "0,00"));
+                if ("si".equalsIgnoreCase(filter.getCobranzas().trim())) {
+                    predicates.add(cb.and(cb.not(vacio), cb.notEqual(totalTrim, "0")));
+                } else if ("no".equalsIgnoreCase(filter.getCobranzas().trim())) {
+                    predicates.add(vacio);
+                }
+            }
+
+            // Domicilio comercial vs residencial (heurística sobre texto de dirección)
+            if (filter.getDomicilio() != null && !filter.getDomicilio().trim().isEmpty()
+                    && !"todos".equalsIgnoreCase(filter.getDomicilio().trim())) {
+                Expression<String> dir = cb.lower(cb.coalesce(root.get("direccion"), cb.literal("")));
+                Predicate comercial = cb.or(
+                        cb.like(dir, "%local%"),
+                        cb.like(dir, "%comercial%"),
+                        cb.like(dir, "%negocio%"),
+                        cb.like(dir, "%tienda%"),
+                        cb.like(dir, "%sucursal%"),
+                        cb.like(dir, "%oficina%")
+                );
+                if ("comercial".equalsIgnoreCase(filter.getDomicilio().trim())) {
+                    predicates.add(comercial);
+                } else if ("residencial".equalsIgnoreCase(filter.getDomicilio().trim())) {
+                    predicates.add(cb.not(comercial));
+                }
+            }
+
+            // Logística inversa: Cambio/Retiro (carga manual o columna Excel "Cambio/retiro").
+            // No usar "cualquier valor no vacío": ML guarda comentarios de domicilio en el mismo campo.
+            if (filter.getLogisticaInversa() != null && !filter.getLogisticaInversa().trim().isEmpty()
+                    && !"todos".equalsIgnoreCase(filter.getLogisticaInversa().trim())) {
+                Path<String> cambioRetiro = root.get("cambioRetiro");
+                Expression<String> crLower = cb.lower(cb.trim(cb.coalesce(cambioRetiro, cb.literal(""))));
+                Predicate esCambioORetiro = cb.or(
+                        cb.equal(crLower, "cambio"),
+                        cb.equal(crLower, "retiro")
+                );
+                if ("si".equalsIgnoreCase(filter.getLogisticaInversa().trim())) {
+                    predicates.add(esCambioORetiro);
+                } else if ("no".equalsIgnoreCase(filter.getLogisticaInversa().trim())) {
+                    predicates.add(cb.not(esCambioORetiro));
+                }
+            }
+
+            // Pedido turbo: deadline el mismo día que la venta (o fecha de carga)
+            if (filter.getEnvioTurbo() != null && !filter.getEnvioTurbo().trim().isEmpty()
+                    && !"todos".equalsIgnoreCase(filter.getEnvioTurbo().trim())) {
+                Path<LocalDateTime> deadline = root.get("deadline");
+                Path<LocalDateTime> fechaVenta = root.get("fechaVenta");
+                Path<LocalDateTime> fecha = root.get("fecha");
+                // Comparar por día: truncar a fecha (H2/JPA: function date)
+                Expression<java.sql.Date> deadlineDay = cb.function("DATE", java.sql.Date.class, deadline);
+                Expression<java.sql.Date> ventaDay = cb.function("DATE", java.sql.Date.class,
+                        cb.coalesce(fechaVenta, fecha));
+                Predicate turbo = cb.and(cb.isNotNull(deadline), cb.equal(deadlineDay, ventaDay));
+                if ("si".equalsIgnoreCase(filter.getEnvioTurbo().trim())) {
+                    predicates.add(turbo);
+                } else if ("no".equalsIgnoreCase(filter.getEnvioTurbo().trim())) {
+                    predicates.add(cb.or(cb.isNull(deadline), cb.not(cb.equal(deadlineDay, ventaDay))));
+                }
+            }
+
+            // Fotos: existe al menos una imagen asociada
+            if (filter.getFotos() != null && !filter.getFotos().trim().isEmpty()
+                    && !"todos".equalsIgnoreCase(filter.getFotos().trim())) {
+                Subquery<Integer> imgSq = query.subquery(Integer.class);
+                Root<ImagenEnvio> imgRoot = imgSq.from(ImagenEnvio.class);
+                imgSq.select(cb.literal(1));
+                imgSq.where(cb.equal(imgRoot.get("envioId"), root.get("id")));
+                if ("si".equalsIgnoreCase(filter.getFotos().trim())) {
+                    predicates.add(cb.exists(imgSq));
+                } else if ("no".equalsIgnoreCase(filter.getFotos().trim())) {
+                    predicates.add(cb.not(cb.exists(imgSq)));
+                }
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
@@ -1369,7 +1714,7 @@ public class EnvioService {
 
     @Transactional(readOnly = true)
     public List<EnvioDTO> obtenerEnviosParaRuta(Long choferId) {
-        List<Envio> envios = envioRepository.findByChoferAsignadoIdAndEstadoAndEliminadoFalseAndColectadoTrue(
+        List<Envio> envios = envioRepository.findByChoferAdjudicadoIdAndEstadoAndEliminadoFalseAndRetiradoTrue(
                 choferId, 
                 "En camino al destinatario"
         );
@@ -1378,26 +1723,105 @@ public class EnvioService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Historial de resultados del chofer (Entregado / Rechazado / Nadie) agrupado por día.
+     */
     @Transactional(readOnly = true)
-    public List<ChoferConUbicacionDTO> obtenerChoferesConEnviosAsignados() {
-        // Obtener IDs de choferes con envíos en estado "En camino al destinatario"
-        List<Long> choferIds = envioRepository.findChoferIdsConEnviosEnEstado("En camino al destinatario");
-        
-        if (choferIds.isEmpty()) {
-            return new ArrayList<>();
+    public ChoferHistorialDTO obtenerHistorialChofer(Long choferId, LocalDate desde, LocalDate hasta, String busqueda) {
+        if (choferId == null) {
+            throw new RuntimeException("choferId es requerido");
         }
-        
-        // Obtener información de los choferes
-        List<Usuario> choferes = usuarioRepository.findAllById(choferIds);
-        
-        // Construir DTOs con información de envíos
+        if (desde == null || hasta == null) {
+            throw new RuntimeException("desde y hasta son requeridos");
+        }
+        if (hasta.isBefore(desde)) {
+            throw new RuntimeException("La fecha hasta no puede ser anterior a desde");
+        }
+
+        LocalDateTime desdeDt = desde.atStartOfDay();
+        LocalDateTime hastaDt = hasta.atTime(23, 59, 59);
+        List<String> estados = List.of("Entregado", "Rechazado por el comprador", "Nadie");
+
+        List<Envio> envios = envioRepository.findHistorialChofer(choferId, estados, desdeDt, hastaDt);
+
+        String q = busqueda != null ? busqueda.trim().toLowerCase() : "";
+        if (!q.isEmpty()) {
+            envios = envios.stream()
+                    .filter(e -> {
+                        String tracking = e.getTracking() != null ? e.getTracking().toLowerCase() : "";
+                        String dir = e.getDireccion() != null ? e.getDireccion().toLowerCase() : "";
+                        return tracking.contains(q) || dir.contains(q);
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        ChoferHistorialDTO result = new ChoferHistorialDTO();
+        Map<String, ChoferHistorialDTO.DiaHistorialDTO> diasMap = new java.util.LinkedHashMap<>();
+        DateTimeFormatter dayFmt = DateTimeFormatter.ISO_LOCAL_DATE;
+        DateTimeFormatter dtFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        for (Envio e : envios) {
+            LocalDateTime fr = e.getFechaEntregado() != null ? e.getFechaEntregado() : e.getFechaUltimoMovimiento();
+            if (fr == null) continue;
+            String diaKey = fr.toLocalDate().format(dayFmt);
+
+            ChoferHistorialDTO.DiaHistorialDTO dia = diasMap.computeIfAbsent(diaKey, k -> {
+                ChoferHistorialDTO.DiaHistorialDTO d = new ChoferHistorialDTO.DiaHistorialDTO();
+                d.setFecha(k);
+                d.setPedidos(new ArrayList<>());
+                return d;
+            });
+
+            String estado = e.getEstado();
+            String resultado;
+            if ("Entregado".equals(estado)) {
+                resultado = "Entregado";
+                result.setEntregados(result.getEntregados() + 1);
+                dia.setEntregados(dia.getEntregados() + 1);
+            } else if ("Rechazado por el comprador".equals(estado)) {
+                resultado = "Rechazado";
+                result.setRechazados(result.getRechazados() + 1);
+                dia.setRechazados(dia.getRechazados() + 1);
+            } else {
+                resultado = "Nadie en domicilio";
+                result.setNadie(result.getNadie() + 1);
+                dia.setNadie(dia.getNadie() + 1);
+            }
+
+            ChoferHistorialDTO.PedidoHistorialDTO pedido = new ChoferHistorialDTO.PedidoHistorialDTO();
+            pedido.setId(e.getId());
+            pedido.setTracking(e.getTracking());
+            pedido.setDireccion(e.getDireccion());
+            pedido.setEstado(estado);
+            pedido.setResultado(resultado);
+            pedido.setFechaResultado(fr.format(dtFmt));
+            dia.getPedidos().add(pedido);
+        }
+
+        // Días más recientes primero
+        List<ChoferHistorialDTO.DiaHistorialDTO> dias = new ArrayList<>(diasMap.values());
+        dias.sort((a, b) -> b.getFecha().compareTo(a.getFecha()));
+        result.setDias(dias);
+        return result;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChoferConUbicacionDTO> obtenerChoferesConEnviosAdjudicados() {
+        // Choferes activos con ubicación reportada (app), con o sin pedidos en ruta
+        Long orgId = com.zetallegue.tms.tenant.TenantContext.getOrganizacionId();
+        List<Usuario> choferes = orgId != null
+                ? usuarioRepository.findByOrganizacionIdAndPerfilAndHabilitadoTrueAndBloqueadoFalse(orgId, "Chofer")
+                : usuarioRepository.findByPerfilAndHabilitadoTrueAndBloqueadoFalse("Chofer");
+
         return choferes.stream()
+                .filter(c -> c.getLatitud() != null && c.getLongitud() != null)
                 .map(chofer -> {
-                    List<Envio> envios = envioRepository.findByChoferAsignadoIdAndEstadoAndEliminadoFalseAndColectadoTrue(
-                            chofer.getId(), 
-                            "En camino al destinatario"
-                    );
-                    
+                    List<Envio> envios = com.zetallegue.tms.tenant.TenantQuery.ofCurrentOrg(
+                            envioRepository.findByChoferAdjudicadoIdAndEstadoAndEliminadoFalseAndRetiradoTrue(
+                                    chofer.getId(),
+                                    "En camino al destinatario"
+                            ));
+
                     ChoferConUbicacionDTO dto = new ChoferConUbicacionDTO();
                     dto.setId(chofer.getId());
                     dto.setNombre(chofer.getNombre());
@@ -1413,6 +1837,7 @@ public class EnvioService {
                             .collect(Collectors.toList()));
                     return dto;
                 })
+                .sorted((a, b) -> a.getNombreCompleto().compareToIgnoreCase(b.getNombreCompleto()))
                 .collect(Collectors.toList());
     }
 
@@ -1425,6 +1850,9 @@ public class EnvioService {
         dto.setQuien(historial.getQuien());
         dto.setObservaciones(historial.getObservaciones());
         dto.setOrigen(historial.getOrigen());
+        dto.setLatitud(historial.getLatitud());
+        dto.setLongitud(historial.getLongitud());
+        dto.setUbicacionDireccion(historial.getUbicacionDireccion());
         return dto;
     }
 
@@ -1435,9 +1863,9 @@ public class EnvioService {
         dto.setFechaVenta(envio.getFechaVenta());
         dto.setFechaLlegue(envio.getFechaLlegue());
         dto.setFechaEntregado(envio.getFechaEntregado());
-        dto.setFechaAsignacion(envio.getFechaAsignacion());
+        dto.setFechaAdjudicacion(envio.getFechaAdjudicacion());
         dto.setFechaDespacho(envio.getFechaDespacho());
-        dto.setFechaColecta(envio.getFechaColecta());
+        dto.setFechaRetiro(envio.getFechaRetiro());
         dto.setFechaAPlanta(envio.getFechaAPlanta());
         dto.setFechaCancelado(envio.getFechaCancelado());
         dto.setFechaUltimoMovimiento(envio.getFechaUltimoMovimiento());
@@ -1459,12 +1887,12 @@ public class EnvioService {
         dto.setQrData(envio.getQrData());
         dto.setEstado(envio.getEstado());
         dto.setEliminado(envio.getEliminado());
-        dto.setChoferAsignadoId(envio.getChoferAsignadoId());
-        dto.setChoferAsignadoNombre(envio.getChoferAsignadoNombre());
+        dto.setChoferAdjudicadoId(envio.getChoferAdjudicadoId());
+        dto.setChoferAdjudicadoNombre(envio.getChoferAdjudicadoNombre());
         dto.setRolRecibio(envio.getRolRecibio());
         dto.setNombreRecibio(envio.getNombreRecibio());
         dto.setDniRecibio(envio.getDniRecibio());
-        dto.setColectado(envio.getColectado() != null ? envio.getColectado() : false);
+        dto.setRetirado(envio.getRetirado() != null ? envio.getRetirado() : false);
         dto.setCostoEnvio(envio.getCostoEnvio());
         dto.setIdml(envio.getIdml());
         dto.setPeso(envio.getPeso());
@@ -1474,6 +1902,9 @@ public class EnvioService {
         dto.setTrackingToken(envio.getTrackingToken());
         dto.setLatDestino(envio.getLatDestino());
         dto.setLngDestino(envio.getLngDestino());
+        dto.setLatEntrega(envio.getLatEntrega());
+        dto.setLngEntrega(envio.getLngEntrega());
+        dto.setDireccionEntrega(envio.getDireccionEntrega());
         return dto;
     }
 
@@ -1491,13 +1922,14 @@ public class EnvioService {
 
     private Envio toEntity(EnvioDTO dto) {
         Envio envio = new Envio();
+        envio.setOrganizacionId(com.zetallegue.tms.tenant.TenantContext.getOrganizacionId());
         envio.setFecha(dto.getFecha() != null ? dto.getFecha() : LocalDateTime.now());
         envio.setFechaVenta(dto.getFechaVenta());
         envio.setFechaLlegue(dto.getFechaLlegue());
         envio.setFechaEntregado(dto.getFechaEntregado());
-        envio.setFechaAsignacion(dto.getFechaAsignacion());
+        envio.setFechaAdjudicacion(dto.getFechaAdjudicacion());
         envio.setFechaDespacho(dto.getFechaDespacho());
-        envio.setFechaColecta(dto.getFechaColecta());
+        envio.setFechaRetiro(dto.getFechaRetiro());
         envio.setFechaAPlanta(dto.getFechaAPlanta());
         envio.setFechaCancelado(dto.getFechaCancelado());
         envio.setFechaUltimoMovimiento(dto.getFechaUltimoMovimiento());
@@ -1519,12 +1951,12 @@ public class EnvioService {
         envio.setQrData(dto.getQrData());
         envio.setEstado(dto.getEstado() != null ? dto.getEstado() : "A retirar");
         envio.setEliminado(dto.getEliminado() != null ? dto.getEliminado() : false);
-        // Los envíos creados manualmente (no Flex) tienen colectado=true por defecto
-        // Los envíos Flex se crean con colectado=false y se marcan como true al escanear
-        envio.setColectado(dto.getColectado() != null ? dto.getColectado() : 
+        // Los envíos creados manualmente (no Flex) tienen retirado=true por defecto
+        // Los envíos Flex se crean con retirado=false y se marcan como true al escanear
+        envio.setRetirado(dto.getRetirado() != null ? dto.getRetirado() : 
                           (dto.getOrigen() != null && "Flex".equals(dto.getOrigen()) ? false : true));
-        envio.setChoferAsignadoId(dto.getChoferAsignadoId());
-        envio.setChoferAsignadoNombre(dto.getChoferAsignadoNombre());
+        envio.setChoferAdjudicadoId(dto.getChoferAdjudicadoId());
+        envio.setChoferAdjudicadoNombre(dto.getChoferAdjudicadoNombre());
         envio.setRolRecibio(dto.getRolRecibio());
         envio.setNombreRecibio(dto.getNombreRecibio());
         envio.setDniRecibio(dto.getDniRecibio());
@@ -1543,16 +1975,32 @@ public class EnvioService {
     /** Actualiza la geolocalización del destino de un envío (desde la app del chofer). Si se pasa direccion, actualiza también CP, zona y costo. */
     @Transactional
     public EnvioDTO actualizarGeolocalizacion(Long envioId, Double lat, Double lng, String direccion) {
+        return actualizarGeolocalizacion(envioId, lat, lng, direccion, null);
+    }
+
+    @Transactional
+    public EnvioDTO actualizarGeolocalizacion(Long envioId, Double lat, Double lng, String direccion, String usuarioNombre) {
         Envio envio = envioRepository.findById(envioId)
                 .orElseThrow(() -> new RuntimeException("Envío no encontrado con id: " + envioId));
+
+        String direccionAnterior = envio.getDireccion();
+        boolean cambioDireccion = false;
+        String direccionNueva = null;
+
         envio.setLatDestino(lat);
         envio.setLngDestino(lng);
         if (direccion != null && !direccion.trim().isEmpty()) {
-            envio.setDireccion(direccion.trim());
-            String cpExtraido = extraerCodigoPostalDeDireccion(direccion);
+            direccionNueva = direccion.trim();
+            String antNorm = normalizarDireccionComparacion(direccionAnterior);
+            String nueNorm = normalizarDireccionComparacion(direccionNueva);
+            cambioDireccion = !nueNorm.equals(antNorm);
+
+            envio.setDireccion(direccionNueva);
+            String cpExtraido = extraerCodigoPostalDeDireccion(direccionNueva);
             if (cpExtraido != null && !cpExtraido.isEmpty()) {
                 envio.setCodigoPostal(cpExtraido);
-                envio.setZonaEntrega(determinarZonaEntregaEnvio(cpExtraido));
+                envio.setZonaEntrega(com.zetallegue.tms.util.ZonaEntregaUtil.determinar(
+                        cpExtraido, envio.getLocalidad()));
                 try {
                     com.zetallegue.tms.model.Cliente cliente = resolverClienteDesdeEnvio(envio);
                     if (cliente != null && cliente.getListaPreciosId() != null) {
@@ -1569,8 +2017,36 @@ public class EnvioService {
             }
         }
         envio = envioRepository.save(envio);
+
+        if (cambioDireccion) {
+            HistorialEnvio historial = new HistorialEnvio();
+            historial.setEnvioId(envio.getId());
+            historial.setEstado("Cambio de dirección");
+            historial.setFecha(LocalDateTime.now());
+            historial.setQuien(usuarioNombre != null && !usuarioNombre.trim().isEmpty() ? usuarioNombre.trim() : "Chofer");
+            historial.setOrigen("APP");
+            historial.setLatitud(lat);
+            historial.setLongitud(lng);
+            String antes = (direccionAnterior != null && !direccionAnterior.trim().isEmpty())
+                    ? direccionAnterior.trim()
+                    : "(sin dirección)";
+            String obs = "Antes: " + antes + " → Ahora: " + direccionNueva;
+            if (obs.length() > 1000) {
+                obs = obs.substring(0, 997) + "...";
+            }
+            historial.setObservaciones(obs);
+            historial.setUbicacionDireccion(direccionNueva);
+            historialEnvioRepository.save(historial);
+            log.info("Cambio de dirección registrado en historial para envío {} por {}", envioId, historial.getQuien());
+        }
+
         log.info("Geolocalización actualizada para envío {}: lat={}, lng={}", envioId, lat, lng);
         return toDTO(envio);
+    }
+
+    private String normalizarDireccionComparacion(String direccion) {
+        if (direccion == null) return "";
+        return direccion.trim().toLowerCase().replaceAll("\\s+", " ");
     }
 
     /** Extrae código postal de una dirección formateada (ej. "Av. Callao 252, C1022AAP Cdad. Autónoma de Buenos Aires"). */
@@ -1585,6 +2061,117 @@ public class EnvioService {
         java.util.regex.Pattern p2 = java.util.regex.Pattern.compile("\\b(1[0-9]{3}|[2-9][0-9]{3})\\b");
         java.util.regex.Matcher m2 = p2.matcher(direccion);
         return m2.find() ? m2.group(1) : null;
+    }
+
+    @Transactional
+    public int geocodificarPendientes(int limite) {
+        int ok = corregirFlexFueraDeAmba(limite);
+        List<Envio> pendientes = envioRepository.findEnviosSinGeocode(PageRequest.of(0, limite));
+        for (Envio envio : pendientes) {
+            if (completarGeocodificacion(envio)) {
+                ok++;
+            }
+        }
+        return ok;
+    }
+
+    /** Flex es solo AMBA: si ML mandó CP/ciudad del interior, geocodifica la calle en CABA/GBA. */
+    public void normalizarDireccionFlexAmba(EnvioDTO dto) {
+        if (dto == null || dto.getDireccion() == null || dto.getDireccion().isBlank()
+                || "Dirección pendiente".equalsIgnoreCase(dto.getDireccion().trim())) {
+            return;
+        }
+        if (com.zetallegue.tms.util.ZonaEntregaUtil.zonaAmba(dto.getCodigoPostal()) != null) {
+            dto.setZonaEntrega(com.zetallegue.tms.util.ZonaEntregaUtil.determinarSoloAmba(dto.getCodigoPostal()));
+            return;
+        }
+        java.util.Optional<GeocodeService.Resultado> geo = geocodeService.geocodeEnAmba(dto.getDireccion());
+        if (geo.isEmpty()) {
+            dto.setZonaEntrega("Sin Zona");
+            if (com.zetallegue.tms.util.ZonaEntregaUtil.zonaAmba(dto.getCodigoPostal()) == null) {
+                dto.setCodigoPostal("");
+                dto.setLocalidad("");
+            }
+            return;
+        }
+        GeocodeService.Resultado r = geo.get();
+        if (r.codigoPostal != null && !r.codigoPostal.isBlank()) {
+            dto.setCodigoPostal(r.codigoPostal);
+        }
+        if (r.localidad != null && !r.localidad.isBlank()) {
+            dto.setLocalidad(r.localidad);
+        }
+        dto.setLatDestino(r.lat);
+        dto.setLngDestino(r.lng);
+        dto.setZonaEntrega(com.zetallegue.tms.util.ZonaEntregaUtil.determinarSoloAmba(dto.getCodigoPostal()));
+    }
+
+    @Transactional
+    public int corregirFlexFueraDeAmba(int limite) {
+        List<Envio> envios = envioRepository.findFlexFueraDeAmba(PageRequest.of(0, Math.min(Math.max(limite, 1), 80)));
+        int ok = 0;
+        for (Envio envio : envios) {
+            if (aplicarGeocodeFlexAmba(envio)) {
+                ok++;
+            }
+        }
+        return ok;
+    }
+
+    @Transactional
+    public boolean completarGeocodificacion(Envio envio) {
+        if (envio == null) {
+            return false;
+        }
+        if ("Flex".equals(envio.getOrigen())
+                && com.zetallegue.tms.util.ZonaEntregaUtil.zonaAmba(envio.getCodigoPostal()) == null) {
+            return aplicarGeocodeFlexAmba(envio);
+        }
+        if (envio.getLatDestino() != null && envio.getLngDestino() != null) {
+            return false;
+        }
+        java.util.Optional<GeocodeService.Resultado> geo = geocodeService.geocodeDetallado(
+                envio.getDireccion(), envio.getLocalidad(), envio.getCodigoPostal(), false);
+        if (geo.isEmpty()) {
+            return false;
+        }
+        GeocodeService.Resultado r = geo.get();
+        envio.setLatDestino(r.lat);
+        envio.setLngDestino(r.lng);
+        envio.setZonaEntrega(com.zetallegue.tms.util.ZonaEntregaUtil.determinarSoloAmba(envio.getCodigoPostal()));
+        envioRepository.save(envio);
+        return true;
+    }
+
+    private boolean aplicarGeocodeFlexAmba(Envio envio) {
+        java.util.Optional<GeocodeService.Resultado> geo = geocodeService.geocodeEnAmba(envio.getDireccion());
+        if (geo.isEmpty()) {
+            envio.setZonaEntrega("Sin Zona");
+            if (com.zetallegue.tms.util.ZonaEntregaUtil.zonaAmba(envio.getCodigoPostal()) == null) {
+                envio.setCodigoPostal(null);
+                envio.setLocalidad(null);
+            }
+            if (!com.zetallegue.tms.util.ZonaEntregaUtil.coordenadasEnAmba(envio.getLatDestino(), envio.getLngDestino())) {
+                envio.setLatDestino(null);
+                envio.setLngDestino(null);
+            }
+            envioRepository.save(envio);
+            return false;
+        }
+        GeocodeService.Resultado r = geo.get();
+        if (r.codigoPostal != null && !r.codigoPostal.isBlank()) {
+            envio.setCodigoPostal(r.codigoPostal);
+        }
+        if (r.localidad != null && !r.localidad.isBlank()) {
+            envio.setLocalidad(r.localidad);
+        }
+        envio.setLatDestino(r.lat);
+        envio.setLngDestino(r.lng);
+        envio.setZonaEntrega(com.zetallegue.tms.util.ZonaEntregaUtil.determinarSoloAmba(envio.getCodigoPostal()));
+        envioRepository.save(envio);
+        log.info("Flex AMBA corregido envío {}: {} / {} / {}", envio.getId(),
+                envio.getDireccion(), envio.getCodigoPostal(), envio.getZonaEntrega());
+        return true;
     }
 
     /** Determina la zona de entrega por CP (CABA / Zona 1 / 2 / 3 / Sin Zona). */
@@ -1624,7 +2211,7 @@ public class EnvioService {
             return clienteRepository.findByCodigo(codigo).orElse(null);
         }
         String nombre = clienteStr.trim();
-        return clienteRepository.findAll().stream()
+        return com.zetallegue.tms.tenant.TenantQuery.ofCurrentOrg(clienteRepository.findAll()).stream()
                 .filter(c -> (c.getNombreFantasia() != null && c.getNombreFantasia().equalsIgnoreCase(nombre)) ||
                              (c.getRazonSocial() != null && c.getRazonSocial().equalsIgnoreCase(nombre)))
                 .findFirst()
@@ -1645,7 +2232,8 @@ public class EnvioService {
         }
         
         // Obtener información de los choferes
-        List<Usuario> choferes = usuarioRepository.findAllById(choferIds);
+        List<Usuario> choferes = com.zetallegue.tms.tenant.TenantQuery.ofCurrentOrg(
+                usuarioRepository.findAllById(choferIds));
         
         // Crear un mapa de choferId -> cantidadEnvios
         java.util.Map<Long, Long> cantidadPorChofer = resultados.stream()
@@ -1699,7 +2287,7 @@ public class EnvioService {
                     : clienteStr.trim();
                 
                 // Buscar por nombreFantasia o razonSocial
-                List<com.zetallegue.tms.model.Cliente> clientes = clienteRepository.findAll();
+                List<com.zetallegue.tms.model.Cliente> clientes = com.zetallegue.tms.tenant.TenantQuery.ofCurrentOrg(clienteRepository.findAll());
                 clienteOpt = clientes.stream()
                     .filter(c -> (c.getNombreFantasia() != null && c.getNombreFantasia().equalsIgnoreCase(nombreCliente)) ||
                                 (c.getRazonSocial() != null && c.getRazonSocial().equalsIgnoreCase(nombreCliente)))

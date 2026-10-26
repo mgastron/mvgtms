@@ -35,6 +35,7 @@ public class VtexService {
     public List<JsonNode> obtenerPedidosVtex(Long clienteId) throws Exception {
         Cliente cliente = clienteRepository.findById(clienteId)
             .orElseThrow(() -> new RuntimeException("Cliente no encontrado con id: " + clienteId));
+        com.zetallegue.tms.tenant.TenantQuery.assertCurrentOrg(cliente);
         
         if (cliente.getVtexKey() == null || cliente.getVtexKey().isEmpty()) {
             throw new RuntimeException("El cliente no tiene Key de VTEX configurada");
@@ -145,7 +146,8 @@ public class VtexService {
      */
     @Transactional(readOnly = true)
     public List<JsonNode> obtenerTodosLosPedidosVtex() throws Exception {
-        List<Cliente> clientesVinculados = clienteRepository.findByVtexKeyIsNotNull();
+        List<Cliente> clientesVinculados = com.zetallegue.tms.tenant.TenantQuery.ofCurrentOrg(
+                clienteRepository.findByVtexKeyIsNotNull());
         
         log.info("=== OBTENIENDO PEDIDOS VTEX ===");
         log.info("Clientes vinculados encontrados: {}", clientesVinculados.size());

@@ -17,5 +17,8 @@ public class HistorialEnvioDTO {
     private String quien;
     private String observaciones;
     private String origen; // "APP" o "WEB"
+    private Double latitud;
+    private Double longitud;
+    private String ubicacionDireccion;
 }
 

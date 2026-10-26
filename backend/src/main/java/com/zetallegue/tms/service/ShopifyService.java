@@ -24,8 +24,8 @@ public class ShopifyService {
     private final ClienteRepository clienteRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
-    // Versión de API de Shopify (usando 2024-01 que es estable)
-    private static final String SHOPIFY_API_VERSION = "2024-01";
+    // Versión de API de Shopify (alinear con la versión de webhooks de la app)
+    private static final String SHOPIFY_API_VERSION = "2026-10";
     
     /**
      * Extrae el shop name de la URL de Shopify
@@ -76,6 +76,7 @@ public class ShopifyService {
     public List<JsonNode> obtenerPedidosShopify(Long clienteId) throws Exception {
         Cliente cliente = clienteRepository.findById(clienteId)
             .orElseThrow(() -> new RuntimeException("Cliente no encontrado con id: " + clienteId));
+        com.zetallegue.tms.tenant.TenantQuery.assertCurrentOrg(cliente);
         
         if (cliente.getShopifyClaveUnica() == null || cliente.getShopifyClaveUnica().isEmpty()) {
             throw new RuntimeException("El cliente no tiene Access Token de Shopify configurado");
@@ -88,10 +89,9 @@ public class ShopifyService {
         
         log.info("Obteniendo pedidos de Shopify para cliente {} (shop: {})", clienteId, shopName);
         
-        // Endpoint para obtener pedidos según documentación Shopify: GET /admin/api/{version}/orders.json
-        // Filtramos por status "open" y "fulfilled" que son los que están listos para envío
+        // GET /admin/api/{version}/orders.json — un solo status (Shopify no acepta dos).
         String urlStr = String.format(
-            "https://%s.myshopify.com/admin/api/%s/orders.json?status=open&status=fulfilled&limit=250",
+            "https://%s.myshopify.com/admin/api/%s/orders.json?status=any&limit=250",
             shopName,
             SHOPIFY_API_VERSION
         );
@@ -169,7 +169,7 @@ public class ShopifyService {
         List<JsonNode> todosLosPedidos = new ArrayList<>();
         
         // Obtener todos los clientes con Shopify configurado
-        List<Cliente> clientes = clienteRepository.findAll().stream()
+        List<Cliente> clientes = com.zetallegue.tms.tenant.TenantQuery.ofCurrentOrg(clienteRepository.findAll()).stream()
             .filter(c -> c.getShopifyUrl() != null && !c.getShopifyUrl().trim().isEmpty())
             .filter(c -> c.getShopifyClaveUnica() != null && !c.getShopifyClaveUnica().trim().isEmpty())
             .filter(c -> c.getHabilitado() != null && c.getHabilitado())

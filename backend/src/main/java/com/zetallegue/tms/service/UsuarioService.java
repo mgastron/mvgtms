@@ -3,8 +3,11 @@ package com.zetallegue.tms.service;
 import com.zetallegue.tms.dto.LoginRequestDTO;
 import com.zetallegue.tms.dto.LoginResponseDTO;
 import com.zetallegue.tms.dto.UsuarioDTO;
+import com.zetallegue.tms.model.Organizacion;
 import com.zetallegue.tms.model.Usuario;
+import com.zetallegue.tms.repository.OrganizacionRepository;
 import com.zetallegue.tms.repository.UsuarioRepository;
+import com.zetallegue.tms.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,11 +23,15 @@ import java.util.stream.Collectors;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final OrganizacionRepository organizacionRepository;
 
     public LoginResponseDTO login(LoginRequestDTO loginRequest) {
-        Usuario usuario = usuarioRepository
-                .findByUsuarioAndContraseña(loginRequest.getUsuario(), loginRequest.getContraseña())
-                .orElse(null);
+        Long orgId = TenantContext.getOrganizacionId();
+        Usuario usuario = orgId != null
+                ? usuarioRepository.findByOrganizacionIdAndUsuarioAndContraseña(
+                        orgId, loginRequest.getUsuario(), loginRequest.getContraseña()).orElse(null)
+                : usuarioRepository.findByUsuarioAndContraseña(
+                        loginRequest.getUsuario(), loginRequest.getContraseña()).orElse(null);
 
         if (usuario == null) {
             return new LoginResponseDTO(false, "Usuario o contraseña incorrectos", null, null);
@@ -49,19 +56,23 @@ public class UsuarioService {
 
     public Page<UsuarioDTO> obtenerUsuarios(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Usuario> usuarios = usuarioRepository.findAll(pageable);
+        Long orgId = TenantContext.getOrganizacionId();
+        Page<Usuario> usuarios = orgId != null
+                ? usuarioRepository.findByOrganizacionId(orgId, pageable)
+                : usuarioRepository.findAll(pageable);
         return usuarios.map(this::toDTO);
     }
 
     public UsuarioDTO obtenerUsuarioPorId(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        com.zetallegue.tms.tenant.TenantQuery.assertCurrentOrg(usuario.getOrganizacionId());
         return toDTO(usuario);
     }
 
     @Transactional
     public UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO) {
-        if (usuarioRepository.existsByUsuario(usuarioDTO.getUsuario())) {
+        if (usuarioExisteEnOrg(usuarioDTO.getUsuario())) {
             throw new RuntimeException("El usuario ya existe");
         }
         Usuario usuario = toEntity(usuarioDTO);
@@ -75,8 +86,8 @@ public class UsuarioService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         
         // Verificar si el usuario cambió y si ya existe
-        if (!usuario.getUsuario().equals(usuarioDTO.getUsuario()) && 
-            usuarioRepository.existsByUsuario(usuarioDTO.getUsuario())) {
+        if (!usuario.getUsuario().equals(usuarioDTO.getUsuario()) &&
+            usuarioExisteEnOrg(usuarioDTO.getUsuario())) {
             throw new RuntimeException("El usuario ya existe");
         }
 
@@ -100,7 +111,10 @@ public class UsuarioService {
     }
 
     public List<UsuarioDTO> obtenerChoferes() {
-        List<Usuario> choferes = usuarioRepository.findByPerfilAndHabilitadoTrueAndBloqueadoFalse("Chofer");
+        Long orgId = TenantContext.getOrganizacionId();
+        List<Usuario> choferes = orgId != null
+                ? usuarioRepository.findByOrganizacionIdAndPerfilAndHabilitadoTrueAndBloqueadoFalse(orgId, "Chofer")
+                : usuarioRepository.findByPerfilAndHabilitadoTrueAndBloqueadoFalse("Chofer");
         return choferes.stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -142,11 +156,29 @@ public class UsuarioService {
         dto.setLongitud(usuario.getLongitud());
         dto.setUltimaActualizacionUbicacion(usuario.getUltimaActualizacionUbicacion());
         dto.setBateria(usuario.getBateria());
+        dto.setOrganizacionId(usuario.getOrganizacionId());
+        Organizacion org = TenantContext.get();
+        if (org == null && usuario.getOrganizacionId() != null) {
+            org = organizacionRepository.findById(usuario.getOrganizacionId()).orElse(null);
+        }
+        if (org != null) {
+            dto.setOrganizacionSlug(org.getSlug());
+            dto.setOrganizacionNombre(org.getNombre());
+        }
         return dto;
+    }
+
+    private boolean usuarioExisteEnOrg(String usuario) {
+        Long orgId = TenantContext.getOrganizacionId();
+        if (orgId != null) {
+            return usuarioRepository.existsByOrganizacionIdAndUsuario(orgId, usuario);
+        }
+        return usuarioRepository.existsByUsuario(usuario);
     }
 
     private Usuario toEntity(UsuarioDTO dto) {
         Usuario usuario = new Usuario();
+        usuario.setOrganizacionId(dto.getOrganizacionId() != null ? dto.getOrganizacionId() : TenantContext.getOrganizacionId());
         usuario.setId(dto.getId());
         usuario.setNombre(dto.getNombre());
         usuario.setApellido(dto.getApellido());

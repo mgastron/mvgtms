@@ -15,9 +15,9 @@ public class EnvioDTO {
     private LocalDateTime fechaVenta;
     private LocalDateTime fechaLlegue;
     private LocalDateTime fechaEntregado;
-    private LocalDateTime fechaAsignacion;
+    private LocalDateTime fechaAdjudicacion;
     private LocalDateTime fechaDespacho;
-    private LocalDateTime fechaColecta;
+    private LocalDateTime fechaRetiro;
     private LocalDateTime fechaAPlanta;
     private LocalDateTime fechaCancelado;
     private LocalDateTime fechaUltimoMovimiento;
@@ -40,12 +40,12 @@ public class EnvioDTO {
     private String qrData;
     private String estado;
     private Boolean eliminado;
-    private Long choferAsignadoId;
-    private String choferAsignadoNombre;
+    private Long choferAdjudicadoId;
+    private String choferAdjudicadoNombre;
     private String rolRecibio;
     private String nombreRecibio;
     private String dniRecibio;
-    private Boolean colectado;
+    private Boolean retirado;
     private String costoEnvio;
     private String idml;
     private String peso;
@@ -57,5 +57,9 @@ public class EnvioDTO {
     private Double latDestino;
     /** Longitud del destino (geolocalización desde app chofer). */
     private Double lngDestino;
+    /** Ubicación del chofer al marcar Entregado. */
+    private Double latEntrega;
+    private Double lngEntrega;
+    private String direccionEntrega;
 }
 

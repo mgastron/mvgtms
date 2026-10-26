@@ -324,8 +324,8 @@ public class EnvioServiceShopify {
         // Impreso: "NO"
         envioDTO.setImpreso("NO");
         
-        // Colectado: false
-        envioDTO.setColectado(false);
+        // Retirado: false
+        envioDTO.setRetirado(false);
         
         // Método de envío desde shipping_lines
         if (pedidoJson.has("shipping_lines") && pedidoJson.get("shipping_lines").isArray()) {
@@ -341,7 +341,8 @@ public class EnvioServiceShopify {
         }
         
         // Calcular zona de entrega
-        envioDTO.setZonaEntrega(determinarZonaEntrega(envioDTO.getCodigoPostal()));
+        envioDTO.setZonaEntrega(com.zetallegue.tms.util.ZonaEntregaUtil.determinar(
+                envioDTO.getCodigoPostal(), envioDTO.getLocalidad()));
         
         // Calcular costo de envío desde lista de precios
         String codigoPostal = envioDTO.getCodigoPostal();
@@ -380,6 +381,9 @@ public class EnvioServiceShopify {
         
         // Convertir DTO a Entity y guardar
         Envio envio = toEntity(envioDTO);
+        if (envio.getOrganizacionId() == null && cliente.getOrganizacionId() != null) {
+            envio.setOrganizacionId(cliente.getOrganizacionId());
+        }
         
         log.info("Guardando envío en base de datos - Tracking: {}, Origen: {}, FechaVenta: {}, FechaLlegue: {}, Estado: {}", 
             envio.getTracking(), envio.getOrigen(), envio.getFechaVenta(), envio.getFechaLlegue(), envio.getEstado());
@@ -619,6 +623,7 @@ public class EnvioServiceShopify {
 
     private Envio toEntity(EnvioDTO dto) {
         Envio envio = new Envio();
+        envio.setOrganizacionId(com.zetallegue.tms.tenant.TenantContext.getOrganizacionId());
         envio.setId(dto.getId());
         envio.setFecha(dto.getFecha());
         envio.setFechaVenta(dto.getFechaVenta());
@@ -637,7 +642,7 @@ public class EnvioServiceShopify {
         envio.setIdml(dto.getIdml());
         envio.setEstado(dto.getEstado());
         envio.setImpreso(dto.getImpreso());
-        envio.setColectado(dto.getColectado());
+        envio.setRetirado(dto.getRetirado());
         envio.setMetodoEnvio(dto.getMetodoEnvio());
         envio.setZonaEntrega(dto.getZonaEntrega());
         envio.setCostoEnvio(dto.getCostoEnvio());
@@ -667,7 +672,7 @@ public class EnvioServiceShopify {
         dto.setIdml(envio.getIdml());
         dto.setEstado(envio.getEstado());
         dto.setImpreso(envio.getImpreso());
-        dto.setColectado(envio.getColectado());
+        dto.setRetirado(envio.getRetirado());
         dto.setMetodoEnvio(envio.getMetodoEnvio());
         dto.setZonaEntrega(envio.getZonaEntrega());
         dto.setCostoEnvio(envio.getCostoEnvio());

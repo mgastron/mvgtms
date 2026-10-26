@@ -37,7 +37,7 @@ public class ClienteDTO {
     private Long listaPreciosId;
     private Long grupoId;
     private String grupoNombre; // solo para lectura en listados
-    /** Solo para creación: si viene informado, se crea el grupo y se asigna al cliente */
+    /** Solo para creación: si viene informado, se crea el grupo y se adjudica al cliente */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String nuevoGrupoNombre;
 }

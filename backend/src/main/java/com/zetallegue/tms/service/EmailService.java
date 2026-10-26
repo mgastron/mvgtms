@@ -42,7 +42,8 @@ public class EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(destinatarioEmail);
-            message.setSubject("Tu pedido está en camino - Zeta Llegué");
+            String marca = marcaActual();
+            message.setSubject("Tu pedido está en camino - " + marca);
 
             // Construir el cuerpo del mensaje
             String nombre = nombreDestinatario != null && !nombreDestinatario.trim().isEmpty() 
@@ -57,13 +58,13 @@ public class EmailService {
 
             String cuerpo = String.format(
                 "¡Hola %s!\n\n" +
-                "Somos de Zeta Llegué. Nos complace informarte que hemos recibido tu pedido y estamos gestionando el envío. El número de tracking de tu envío es: %s.\n\n" +
+                "Somos de %s. Nos complace informarte que hemos recibido tu pedido y estamos gestionando el envío. El número de tracking de tu envío es: %s.\n\n" +
                 "Podés hacer el seguimiento en el siguiente enlace: %s\n\n" +
                 "A partir de ahora, estamos a cargo y te garantizamos que el envío llegará hoy mismo. Ante cualquier duda, estamos a tu disposición.\n\n" +
                 "¡Gracias por confiar en nosotros!\n\n" +
                 "Saludos cordiales,\n" +
-                "Matías de Zeta Llegué",
-                nombre, tracking, trackingLink
+                "El equipo de %s",
+                nombre, marca, tracking, trackingLink, marca
             );
 
             message.setText(cuerpo);
@@ -75,6 +76,14 @@ public class EmailService {
                 destinatarioEmail, tracking, e.getMessage(), e);
             // No propagar la excepción para que no falle la creación del envío
         }
+    }
+
+    private String marcaActual() {
+        com.zetallegue.tms.model.Organizacion org = com.zetallegue.tms.tenant.TenantContext.get();
+        if (org != null && org.getNombre() != null && !org.getNombre().isBlank()) {
+            return org.getNombre();
+        }
+        return "Nexo";
     }
 }
 

@@ -35,5 +35,16 @@ public class HistorialEnvio {
 
     @Column(name = "origen", length = 10)
     private String origen; // "APP" o "WEB"
+
+    /** Ubicación del chofer al marcar el estado (p. ej. Nadie / Rechazado). */
+    @Column(name = "latitud")
+    private Double latitud;
+
+    @Column(name = "longitud")
+    private Double longitud;
+
+    /** Dirección aproximada (reverse geocode) de latitud/longitud. */
+    @Column(name = "ubicacion_direccion", length = 500)
+    private String ubicacionDireccion;
 }
 

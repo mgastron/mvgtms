@@ -224,8 +224,8 @@ public class EnvioServiceTiendaNube {
         // Impreso: "NO"
         envioDTO.setImpreso("NO");
         
-        // Colectado: false (se marcará como true cuando se escanee)
-        envioDTO.setColectado(false);
+        // Retirado: false (se marcará como true cuando se escanee)
+        envioDTO.setRetirado(false);
         
         // Método de envío
         if (pedidoJson.has("shipping_option")) {
@@ -234,7 +234,8 @@ public class EnvioServiceTiendaNube {
         
         // Calcular zona de entrega usando la misma lógica simple de Flex (solo CP, sin servicios)
         // Esto es seguro y no puede causar problemas de transacción
-        envioDTO.setZonaEntrega(determinarZonaEntrega(envioDTO.getCodigoPostal()));
+        envioDTO.setZonaEntrega(com.zetallegue.tms.util.ZonaEntregaUtil.determinar(
+                envioDTO.getCodigoPostal(), envioDTO.getLocalidad()));
         
         // Calcular costo de envío desde lista de precios (acceso directo al repositorio para evitar problemas de transacción)
         // Esto es opcional y no debe fallar la transacción si hay un error
@@ -275,6 +276,9 @@ public class EnvioServiceTiendaNube {
         
         // Convertir DTO a Entity y guardar
         Envio envio = toEntity(envioDTO);
+        if (envio.getOrganizacionId() == null && cliente.getOrganizacionId() != null) {
+            envio.setOrganizacionId(cliente.getOrganizacionId());
+        }
         
         log.info("Guardando envío en base de datos - Tracking: {}, Origen: {}, FechaLlegue: {}, Estado: {}", 
             envio.getTracking(), envio.getOrigen(), envio.getFechaLlegue(), envio.getEstado());
@@ -494,6 +498,7 @@ public class EnvioServiceTiendaNube {
     // Métodos auxiliares para convertir entre DTO y Entity (completo, similar a EnvioService)
     private Envio toEntity(EnvioDTO dto) {
         Envio envio = new Envio();
+        envio.setOrganizacionId(com.zetallegue.tms.tenant.TenantContext.getOrganizacionId());
         LocalDateTime ahora = LocalDateTime.now();
         
         // Fechas
@@ -501,9 +506,9 @@ public class EnvioServiceTiendaNube {
         envio.setFechaVenta(dto.getFechaVenta());
         envio.setFechaLlegue(dto.getFechaLlegue() != null ? dto.getFechaLlegue() : ahora);
         envio.setFechaEntregado(dto.getFechaEntregado());
-        envio.setFechaAsignacion(dto.getFechaAsignacion());
+        envio.setFechaAdjudicacion(dto.getFechaAdjudicacion());
         envio.setFechaDespacho(dto.getFechaDespacho());
-        envio.setFechaColecta(dto.getFechaColecta());
+        envio.setFechaRetiro(dto.getFechaRetiro());
         envio.setFechaAPlanta(dto.getFechaAPlanta());
         envio.setFechaCancelado(dto.getFechaCancelado());
         envio.setFechaUltimoMovimiento(dto.getFechaUltimoMovimiento() != null ? dto.getFechaUltimoMovimiento() : ahora);
@@ -529,11 +534,11 @@ public class EnvioServiceTiendaNube {
         // Estado y flags
         envio.setEstado(dto.getEstado() != null ? dto.getEstado() : "A retirar");
         envio.setEliminado(dto.getEliminado() != null ? dto.getEliminado() : false);
-        envio.setColectado(dto.getColectado() != null ? dto.getColectado() : false);
+        envio.setRetirado(dto.getRetirado() != null ? dto.getRetirado() : false);
         
-        // Asignación
-        envio.setChoferAsignadoId(dto.getChoferAsignadoId());
-        envio.setChoferAsignadoNombre(dto.getChoferAsignadoNombre());
+        // Adjudicación
+        envio.setChoferAdjudicadoId(dto.getChoferAdjudicadoId());
+        envio.setChoferAdjudicadoNombre(dto.getChoferAdjudicadoNombre());
         
         // Datos de entrega
         envio.setRolRecibio(dto.getRolRecibio());
@@ -559,9 +564,9 @@ public class EnvioServiceTiendaNube {
         dto.setFechaVenta(envio.getFechaVenta());
         dto.setFechaLlegue(envio.getFechaLlegue());
         dto.setFechaEntregado(envio.getFechaEntregado());
-        dto.setFechaAsignacion(envio.getFechaAsignacion());
+        dto.setFechaAdjudicacion(envio.getFechaAdjudicacion());
         dto.setFechaDespacho(envio.getFechaDespacho());
-        dto.setFechaColecta(envio.getFechaColecta());
+        dto.setFechaRetiro(envio.getFechaRetiro());
         dto.setFechaAPlanta(envio.getFechaAPlanta());
         dto.setFechaCancelado(envio.getFechaCancelado());
         dto.setFechaUltimoMovimiento(envio.getFechaUltimoMovimiento());
@@ -583,9 +588,9 @@ public class EnvioServiceTiendaNube {
         dto.setQrData(envio.getQrData());
         dto.setEstado(envio.getEstado());
         dto.setEliminado(envio.getEliminado());
-        dto.setColectado(envio.getColectado());
-        dto.setChoferAsignadoId(envio.getChoferAsignadoId());
-        dto.setChoferAsignadoNombre(envio.getChoferAsignadoNombre());
+        dto.setRetirado(envio.getRetirado());
+        dto.setChoferAdjudicadoId(envio.getChoferAdjudicadoId());
+        dto.setChoferAdjudicadoNombre(envio.getChoferAdjudicadoNombre());
         dto.setRolRecibio(envio.getRolRecibio());
         dto.setNombreRecibio(envio.getNombreRecibio());
         dto.setDniRecibio(envio.getDniRecibio());

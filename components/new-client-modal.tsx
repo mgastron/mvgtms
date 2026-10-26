@@ -448,7 +448,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
 
           {activeTab === "grupo" && (
             <div className="space-y-5">
-              <p className="text-sm text-gray-600">Cada cliente debe pertenecer a un grupo. Asigná uno existente o creá uno nuevo.</p>
+              <p className="text-sm text-gray-600">Cada cliente debe pertenecer a un grupo. Vinculá uno existente o creá uno nuevo.</p>
               <div className="space-y-4">
                 <div className="flex flex-col gap-3">
                   <label className="block text-xs font-semibold text-gray-700">Opción</label>
@@ -461,7 +461,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
                         onChange={() => handleInputChange("grupoModo", "existente")}
                         className="rounded border-gray-300 text-[#6B46FF] focus:ring-[#6B46FF]"
                       />
-                      <span className="text-sm">Asignar a grupo existente</span>
+                      <span className="text-sm">Vincular a grupo existente</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -535,7 +535,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
                       className="object-contain w-full h-full"
                     />
                   </div>
-                  <span className="text-sm font-semibold">FLEX</span>
+                  <span className="text-sm font-semibold text-center leading-tight">Mercado Libre<br /><span className="text-xs font-normal text-gray-500">(Flex)</span></span>
                   <div className="mt-2">
                     {formData.flexIdVendedor && formData.flexUsername ? (
                       <span className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-800">
@@ -720,13 +720,13 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
               {/* tiendanube Integration */}
               <div className="grid grid-cols-12 gap-4 items-start border-t pt-6">
                 <div className="col-span-2 flex flex-col items-center justify-center py-4">
-                  <div className="w-20 h-20 bg-black rounded-lg flex items-center justify-center mb-2 p-2">
+                  <div className="mb-2 flex h-20 w-20 items-center justify-center rounded-lg border border-gray-200 bg-white p-2">
                     <Image
                       src="/logos/tiendanube-logo.png"
                       alt="Tienda Nube Logo"
                       width={64}
                       height={64}
-                      className="object-contain w-full h-full"
+                      className="h-full w-full object-contain"
                     />
                   </div>
                   <span className="text-sm font-semibold">tiendanube</span>
@@ -742,6 +742,9 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
                         className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-[#6B46FF] focus:outline-none"
                         placeholder="https://mitienda.mitiendanube.com"
                       />
+                      <p className="mt-1 text-[11px] text-gray-500">
+                        Escribí la URL, hacé <strong>GUARDAR</strong> y volvé a abrir el vendedor: ahí aparece el botón para generar el link de vinculación.
+                      </p>
                     </div>
                     {/* Botón SYNC: solo se muestra si la URL está guardada en la BD */}
                     {(clienteCompleto?.tiendanubeUrl || editingClient?.tiendanubeUrl) && editingClient?.id && (
@@ -772,6 +775,7 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
                         >
                           SYNC
                         </button>
+                        <span className="text-xs text-gray-500">Copia el link para que el dueño de la tienda autorice.</span>
                       </div>
                     )}
                     {/* Método de envío: solo se muestra si el cliente está vinculado (tiene accessToken o storeId) */}
@@ -832,6 +836,9 @@ export function NewClientModal({ open, onOpenChange, onSave, editingClient }: Ne
                       className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-[#6B46FF] focus:outline-none"
                       placeholder="https://mitienda.myshopify.com"
                     />
+                    <p className="mt-1 text-[11px] text-gray-500">
+                      Usá la URL <strong>.myshopify.com</strong>, hacé <strong>GUARDAR</strong> y reabrí el vendedor para ver el botón SYNC.
+                    </p>
                   </div>
                   {/* Botón SYNC: solo se muestra si la URL está guardada en la BD */}
                   {(clienteCompleto?.shopifyUrl || editingClient?.shopifyUrl) && editingClient?.id && (

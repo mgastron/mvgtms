@@ -189,8 +189,8 @@ public class EnvioServiceVtex {
         // Impreso: "NO"
         envioDTO.setImpreso("NO");
         
-        // Colectado: false
-        envioDTO.setColectado(false);
+        // Retirado: false
+        envioDTO.setRetirado(false);
         
         // Método de envío desde shippingData.logisticsInfo
         if (pedidoJson.has("shippingData") && pedidoJson.get("shippingData").has("logisticsInfo")) {
@@ -206,7 +206,8 @@ public class EnvioServiceVtex {
         }
         
         // Calcular zona de entrega
-        envioDTO.setZonaEntrega(determinarZonaEntrega(envioDTO.getCodigoPostal()));
+        envioDTO.setZonaEntrega(com.zetallegue.tms.util.ZonaEntregaUtil.determinar(
+                envioDTO.getCodigoPostal(), envioDTO.getLocalidad()));
         
         // Calcular costo de envío desde lista de precios
         String codigoPostal = envioDTO.getCodigoPostal();
@@ -239,6 +240,9 @@ public class EnvioServiceVtex {
         
         // Convertir DTO a Entity y guardar
         Envio envio = toEntity(envioDTO);
+        if (envio.getOrganizacionId() == null && cliente.getOrganizacionId() != null) {
+            envio.setOrganizacionId(cliente.getOrganizacionId());
+        }
         
         log.info("Guardando envío en base de datos - Tracking: {}, Origen: {}, FechaLlegue: {}, Estado: {}", 
             envio.getTracking(), envio.getOrigen(), envio.getFechaLlegue(), envio.getEstado());
@@ -419,15 +423,16 @@ public class EnvioServiceVtex {
     
     private Envio toEntity(EnvioDTO dto) {
         Envio envio = new Envio();
+        envio.setOrganizacionId(com.zetallegue.tms.tenant.TenantContext.getOrganizacionId());
         LocalDateTime ahora = LocalDateTime.now();
         
         envio.setFecha(dto.getFecha() != null ? dto.getFecha() : ahora);
         envio.setFechaVenta(dto.getFechaVenta());
         envio.setFechaLlegue(dto.getFechaLlegue() != null ? dto.getFechaLlegue() : ahora);
         envio.setFechaEntregado(dto.getFechaEntregado());
-        envio.setFechaAsignacion(dto.getFechaAsignacion());
+        envio.setFechaAdjudicacion(dto.getFechaAdjudicacion());
         envio.setFechaDespacho(dto.getFechaDespacho());
-        envio.setFechaColecta(dto.getFechaColecta());
+        envio.setFechaRetiro(dto.getFechaRetiro());
         envio.setFechaAPlanta(dto.getFechaAPlanta());
         envio.setFechaCancelado(dto.getFechaCancelado());
         envio.setFechaUltimoMovimiento(dto.getFechaUltimoMovimiento() != null ? dto.getFechaUltimoMovimiento() : ahora);
@@ -451,10 +456,10 @@ public class EnvioServiceVtex {
         
         envio.setEstado(dto.getEstado() != null ? dto.getEstado() : "A retirar");
         envio.setEliminado(dto.getEliminado() != null ? dto.getEliminado() : false);
-        envio.setColectado(dto.getColectado() != null ? dto.getColectado() : false);
+        envio.setRetirado(dto.getRetirado() != null ? dto.getRetirado() : false);
         
-        envio.setChoferAsignadoId(dto.getChoferAsignadoId());
-        envio.setChoferAsignadoNombre(dto.getChoferAsignadoNombre());
+        envio.setChoferAdjudicadoId(dto.getChoferAdjudicadoId());
+        envio.setChoferAdjudicadoNombre(dto.getChoferAdjudicadoNombre());
         
         envio.setRolRecibio(dto.getRolRecibio());
         envio.setNombreRecibio(dto.getNombreRecibio());
@@ -478,9 +483,9 @@ public class EnvioServiceVtex {
         dto.setFechaVenta(envio.getFechaVenta());
         dto.setFechaLlegue(envio.getFechaLlegue());
         dto.setFechaEntregado(envio.getFechaEntregado());
-        dto.setFechaAsignacion(envio.getFechaAsignacion());
+        dto.setFechaAdjudicacion(envio.getFechaAdjudicacion());
         dto.setFechaDespacho(envio.getFechaDespacho());
-        dto.setFechaColecta(envio.getFechaColecta());
+        dto.setFechaRetiro(envio.getFechaRetiro());
         dto.setFechaAPlanta(envio.getFechaAPlanta());
         dto.setFechaCancelado(envio.getFechaCancelado());
         dto.setFechaUltimoMovimiento(envio.getFechaUltimoMovimiento());
@@ -502,9 +507,9 @@ public class EnvioServiceVtex {
         dto.setQrData(envio.getQrData());
         dto.setEstado(envio.getEstado());
         dto.setEliminado(envio.getEliminado());
-        dto.setColectado(envio.getColectado());
-        dto.setChoferAsignadoId(envio.getChoferAsignadoId());
-        dto.setChoferAsignadoNombre(envio.getChoferAsignadoNombre());
+        dto.setRetirado(envio.getRetirado());
+        dto.setChoferAdjudicadoId(envio.getChoferAdjudicadoId());
+        dto.setChoferAdjudicadoNombre(envio.getChoferAdjudicadoNombre());
         dto.setRolRecibio(envio.getRolRecibio());
         dto.setNombreRecibio(envio.getNombreRecibio());
         dto.setDniRecibio(envio.getDniRecibio());

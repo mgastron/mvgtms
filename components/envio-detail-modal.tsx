@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { getFechaOperativaLabel } from "@/lib/tenant"
 import { cn } from "@/lib/utils"
 import { logDev, warnDev, errorDev } from "@/lib/logger"
 import { OsmMap } from "@/components/osm-map"
@@ -1216,7 +1217,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className={lbl}>Fecha de llegada</label>
+                      <label className={lbl}>{getFechaOperativaLabel()}</label>
                       <Input
                         value={envio.fechaLlegue ? new Date(envio.fechaLlegue).toLocaleDateString("es-AR") : "—"}
                         className={cn(fld, "shadow-sm")}

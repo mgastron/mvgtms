@@ -22,7 +22,7 @@ public class ImagenEnvio {
     private Long envioId;
 
     @Lob
-    @Column(name = "url_imagen", nullable = false, columnDefinition = "CLOB")
+    @Column(name = "url_imagen", nullable = false, columnDefinition = "TEXT")
     private String urlImagen;
 
     @Column(name = "fecha", nullable = false)

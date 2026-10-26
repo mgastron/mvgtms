@@ -8,8 +8,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Solicitud de informe de pedidos colectados.
- * - Pedidos colectados = envíos con fechaColecta en el rango [fechaDesde, fechaHasta].
+ * Solicitud de informe de pedidos retirados.
+ * - Pedidos retirados = envíos con fechaRetiro en el rango [fechaDesde, fechaHasta].
  * - tipoDestinatario: GRUPOS, CUENTAS, TODOS_GRUPOS, TODAS_CUENTAS.
  * - Si GRUPOS/CUENTAS se usan idsGrupos o idsCuentas (IDs de grupo o de cliente).
  * - formato: EXCEL o PDF.

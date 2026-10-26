@@ -12,6 +12,6 @@ import java.util.List;
 public class GrupoDTO {
     private Long id;
     private String nombre;
-    /** Clientes asignados a este grupo (solo para lectura en listado/detalle) */
+    /** Clientes del grupo a este grupo (solo para lectura en listado/detalle) */
     private List<ClienteDTO> clientes;
 }

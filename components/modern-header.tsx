@@ -12,6 +12,7 @@ import {
   X,
   Layers,
   FileBarChart,
+  LayoutDashboard,
   Settings,
   Briefcase,
   Store,
@@ -21,6 +22,8 @@ import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { UserProfile } from "@/components/user-profile"
 import { Montserrat } from "next/font/google"
+import { getApiBaseUrl } from "@/lib/api-config"
+import { getLocalTenantBranding, loadTenantBranding, type TenantBranding } from "@/lib/tenant"
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -53,6 +56,7 @@ const allMenuItems = [
     label: "Administración",
     hasSubmenu: true,
     submenu: [
+      { icon: LayoutDashboard, label: "Dashboard", path: "/administracion/dashboard" },
       { icon: FileBarChart, label: "Informes", path: "/administracion/informes" },
       { icon: DollarSign, label: "Tarifa", path: "/administracion/tarifa" },
     ],
@@ -73,10 +77,12 @@ export function ModernHeader() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userProfile, setUserProfile] = useState<string | null>(null)
+  const [tenant, setTenant] = useState<TenantBranding>(getLocalTenantBranding())
 
   useEffect(() => {
     const profile = sessionStorage.getItem("userProfile")
     setUserProfile(profile)
+    loadTenantBranding(getApiBaseUrl()).then(setTenant)
   }, [])
 
   useEffect(() => {
@@ -109,6 +115,7 @@ export function ModernHeader() {
   const getActiveItem = () => {
     if (pathname?.includes("/configuracion/usuarios")) return "Usuarios"
     if (pathname?.includes("/configuracion/grupos")) return "Grupos"
+    if (pathname?.includes("/administracion/dashboard")) return "Dashboard"
     if (pathname?.includes("/administracion/informes")) return "Informes"
     if (pathname?.includes("/administracion/tarifa")) return "Tarifa"
     if (pathname?.includes("/configuracion/vendedores")) return "Vendedores"
@@ -133,7 +140,11 @@ export function ModernHeader() {
     ) {
       return "Configuración"
     }
-    if (pathname?.includes("/administracion/informes") || pathname?.includes("/administracion/tarifa")) {
+    if (
+      pathname?.includes("/administracion/dashboard") ||
+      pathname?.includes("/administracion/informes") ||
+      pathname?.includes("/administracion/tarifa")
+    ) {
       return "Administración"
     }
     if (pathname?.includes("/repartidores")) return "Repartidores"
@@ -147,6 +158,7 @@ export function ModernHeader() {
   const handleMainNavClick = (item: (typeof allMenuItems)[number]) => {
     const firstPath = item.submenu?.[0]?.path
     if (firstPath) router.push(firstPath)
+    setMobileMenuOpen(false)
   }
 
   const handleSubmenuClick = (path: string) => {
@@ -158,9 +170,16 @@ export function ModernHeader() {
     <>
       <header className="sticky top-0 z-50 w-full bg-[#f7f8fc]">
         <div className={`mx-auto w-full max-w-[1700px] px-3 pt-3 ${montserrat.className}`}>
-          <div className="flex h-[60px] items-center justify-between rounded-2xl bg-[#1459e9] px-4 md:h-[72px] md:px-6">
+          <div
+            className="flex h-[60px] items-center justify-between rounded-2xl px-4 md:h-[72px] md:px-6"
+            style={{ backgroundColor: tenant.colorPrimario || "#1459e9" }}
+          >
             <button onClick={() => router.push("/pedidos")} className="hover:opacity-90 transition-opacity">
-              <img src="/logos/nexo-logo-white.png" alt="nexo" className="h-auto w-[102px]" />
+              <img
+                src={tenant.logoUrl}
+                alt={tenant.nombre}
+                className={tenant.slug === "nexo" ? "h-auto w-[102px]" : "h-[46px] w-[46px] rounded-full bg-white p-[2px] md:h-[54px] md:w-[54px]"}
+              />
             </button>
 
             {userProfile !== "Chofer" && (

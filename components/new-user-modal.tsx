@@ -41,7 +41,7 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
   const totalSteps = 3
   const isEditing = !!editingUser
 
-  // Vendedor (tipo Cliente): cargar grupos de clientes para asignar el usuario al grupo
+  // Vendedor (tipo Cliente): cargar grupos de clientes para adjudicar el usuario al grupo
   const tipoUsuario = formData.tipoUsuario
   useEffect(() => {
     if (!isOpen) {

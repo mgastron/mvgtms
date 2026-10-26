@@ -1,23 +1,33 @@
 package com.zetallegue.tms.model;
 
+import com.zetallegue.tms.tenant.TenantAware;
+import com.zetallegue.tms.tenant.TenantEntityListener;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Filter;
 
 @Entity
-@Table(name = "clientes")
+@Table(name = "clientes", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_clientes_org_codigo", columnNames = {"organizacion_id", "codigo"})
+})
+@EntityListeners(TenantEntityListener.class)
+@Filter(name = "tenantFilter", condition = "organizacion_id = :organizacionId")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Cliente {
+public class Cliente implements TenantAware {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "organizacion_id")
+    private Long organizacionId;
+
     /** Código interno (legado / integraciones). Se genera automáticamente si no se informa. */
-    @Column(name = "codigo", unique = true, nullable = false, length = 50)
+    @Column(name = "codigo", nullable = false, length = 50)
     private String codigo;
 
     @Column(name = "nombre_fantasia", length = 200)

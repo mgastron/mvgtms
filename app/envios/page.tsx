@@ -6,12 +6,13 @@ import { ModernHeader } from "@/components/modern-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { SearchableCombobox, type ComboboxOption } from "@/components/searchable-combobox"
+import { MultiSelectFilter, type MultiSelectOption } from "@/components/multi-select-filter"
 import { ChevronDown, ChevronUp, Download } from "lucide-react"
 import { QRThumbnail } from "@/components/qr-thumbnail"
 import { EnvioDetailModal } from "@/components/envio-detail-modal"
 import * as XLSX from "xlsx"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { getFechaOperativaLabel } from "@/lib/tenant"
 import { logDev, warnDev, errorDev } from "@/lib/logger"
 import { toast } from "sonner"
 import { Montserrat } from "next/font/google"
@@ -27,9 +28,9 @@ interface Envio {
   fechaVenta?: string
   fechaLlegue?: string
   fechaEntregado?: string
-  fechaAsignacion?: string
+  fechaAdjudicacion?: string
   fechaDespacho?: string
-  fechaColecta?: string
+  fechaRetiro?: string
   fechaAPlanta?: string
   fechaCancelado?: string
   fechaUltimoMovimiento?: string
@@ -52,8 +53,8 @@ interface Envio {
   trackingToken?: string
   estado?: string // Estado del envío
   eliminado?: boolean // Indica si el envío ha sido eliminado
-  choferAsignadoId?: number
-  choferAsignadoNombre?: string
+  choferAdjudicadoId?: number
+  choferAdjudicadoNombre?: string
   deadline?: string
   idml?: string
   metodoEnvio?: string
@@ -68,8 +69,38 @@ const estadosEnvio = [
   "Nadie",
   "Cancelado",
   "Rechazado por el comprador",
-  "reprogramado por comprador",
+  "Reprogramado por comprador",
 ]
+
+const estadoFilterOptions: MultiSelectOption[] = [
+  { value: "Pendientes", label: "Pendientes" },
+  { value: "Eliminados", label: "Eliminados" },
+  ...estadosEnvio.map((e) => ({ value: e, label: e })),
+]
+
+const origenFilterOptions: MultiSelectOption[] = [
+  { value: "Directo", label: "Directo" },
+  { value: "Tienda Nube", label: "Tienda Nube" },
+  { value: "Shopify", label: "Shopify" },
+  { value: "Vtex", label: "Vtex" },
+  { value: "Mercado Libre", label: "Mercado Libre" },
+]
+
+function labelOrigen(origen?: string) {
+  if (!origen) return "—"
+  if (origen === "Flex") return "Mercado Libre"
+  return origen
+}
+
+function appendMultiParams(params: URLSearchParams, key: string, values: string[]) {
+  for (const v of values) {
+    if (v?.trim()) params.append(key, v.trim())
+  }
+}
+
+function appendIfFilter(params: URLSearchParams, key: string, value: string) {
+  if (value && value !== "todos") params.append(key, value)
+}
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -98,13 +129,13 @@ export default function EnviosPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [enviosCache, setEnviosCache] = useState<Envio[]>([]) // Cache para última semana
   const [grupos, setGrupos] = useState<GrupoOption[]>([])
-  const [vendedorOptions, setVendedorOptions] = useState<ComboboxOption[]>([])
+  const [vendedorOptions, setVendedorOptions] = useState<MultiSelectOption[]>([])
   const [filters, setFilters] = useState({
     tipoFecha: "fechaLlegue",
     fechaDesde: "",
     fechaHasta: "",
-    estado: "todos",
-    origen: "todos",
+    estados: [] as string[],
+    origenes: [] as string[],
     tracking: "",
     idVenta: "",
     logisticaInversa: "todos",
@@ -112,9 +143,9 @@ export default function EnviosPage() {
     zonasEntrega: "",
     envioTurbo: "todos",
     fotos: "todos",
-    asignado: "todos",
-    grupoId: "",
-    nombreFantasia: "",
+    adjudicado: "todos",
+    grupoIds: [] as string[],
+    nombresFantasia: [] as string[],
     destinoNombre: "",
     destinoDireccion: "",
     codigoPostal: "",
@@ -202,7 +233,7 @@ export default function EnviosPage() {
           return
         }
         const seen = new Set<string>()
-        const opts: ComboboxOption[] = []
+        const opts: MultiSelectOption[] = []
         for (const c of rows) {
           const n = String(c.nombreFantasia ?? "").trim()
           if (!n) continue
@@ -221,7 +252,7 @@ export default function EnviosPage() {
     loadVendedores()
   }, [userProfile])
 
-  const grupoComboboxOptions = useMemo<ComboboxOption[]>(
+  const grupoMultiOptions = useMemo<MultiSelectOption[]>(
     () => grupos.map((g) => ({ value: String(g.id), label: g.nombre })),
     [grupos]
   )
@@ -237,11 +268,8 @@ export default function EnviosPage() {
         page: page.toString(),
         size: size.toString(),
         tipoFecha: filters.tipoFecha || "fechaLlegue",
-        estado: filters.estado || "todos",
-        origen: filters.origen || "todos",
         tracking: filters.tracking || "",
         idVenta: filters.idVenta || "",
-        nombreFantasia: filters.nombreFantasia || "",
         destinoNombre: filters.destinoNombre || "",
         destinoDireccion: filters.destinoDireccion || "",
         codigoPostal: filters.codigoPostal || "",
@@ -249,9 +277,16 @@ export default function EnviosPage() {
         fechaDesde: filters.fechaDesde || "",
         fechaHasta: filters.fechaHasta || "",
       })
-      if (filters.grupoId?.trim()) {
-        params.append("grupoId", filters.grupoId.trim())
-      }
+      appendMultiParams(params, "estados", filters.estados)
+      appendMultiParams(params, "origenes", filters.origenes)
+      appendMultiParams(params, "nombresFantasia", filters.nombresFantasia)
+      appendMultiParams(params, "grupoIds", filters.grupoIds)
+      appendIfFilter(params, "logisticaInversa", filters.logisticaInversa)
+      appendIfFilter(params, "domicilio", filters.domicilio)
+      appendIfFilter(params, "envioTurbo", filters.envioTurbo)
+      appendIfFilter(params, "fotos", filters.fotos)
+      appendIfFilter(params, "adjudicado", filters.adjudicado)
+      appendIfFilter(params, "cobranzas", filters.cobranzas)
 
       if (userProfile === "Cliente") {
         if (userGrupoId != null) {
@@ -264,7 +299,7 @@ export default function EnviosPage() {
         }
       }
 
-      // Si el usuario es Chofer, agregar filtro para ver solo sus envíos asignados
+      // Si el usuario es Chofer, agregar filtro para ver solo sus envíos adjudicados
       if (userProfile === "Chofer" && choferId != null) {
         params.append("choferId", String(choferId))
       }
@@ -276,15 +311,22 @@ export default function EnviosPage() {
       const sinFiltros =
         !filters.fechaDesde &&
         !filters.fechaHasta &&
-        filters.estado === "todos" &&
-        filters.origen === "todos" &&
+        filters.estados.length === 0 &&
+        filters.origenes.length === 0 &&
         !filters.tracking?.trim() &&
         !filters.idVenta?.trim() &&
-        !filters.grupoId?.trim() &&
-        !filters.nombreFantasia?.trim() &&
+        filters.grupoIds.length === 0 &&
+        filters.nombresFantasia.length === 0 &&
         !filters.destinoNombre?.trim() &&
         !filters.destinoDireccion?.trim() &&
         !filters.codigoPostal?.trim() &&
+        !filters.zonasEntrega?.trim() &&
+        filters.logisticaInversa === "todos" &&
+        filters.domicilio === "todos" &&
+        filters.envioTurbo === "todos" &&
+        filters.fotos === "todos" &&
+        filters.adjudicado === "todos" &&
+        filters.cobranzas === "todos" &&
         !clienteUsaGrupo
 
       if (page === 0 && enviosCache.length > 0 && sinFiltros) {
@@ -296,7 +338,7 @@ export default function EnviosPage() {
           })
         }
         if (userProfile === "Chofer" && choferId != null) {
-          enviosFiltrados = enviosFiltrados.filter((envio: any) => envio.choferAsignadoId === choferId)
+          enviosFiltrados = enviosFiltrados.filter((envio: any) => envio.choferAdjudicadoId === choferId)
         }
         enviosFiltrados = enviosFiltrados.filter((envio: any) => !envio.eliminado)
         const enviosPaginados = enviosFiltrados.slice(0, size)
@@ -339,14 +381,14 @@ export default function EnviosPage() {
         })
       }
       if (userProfile === "Chofer" && choferId != null) {
-        enviosFiltrados = enviosFiltrados.filter((envio: any) => envio.choferAsignadoId === choferId)
+        enviosFiltrados = enviosFiltrados.filter((envio: any) => envio.choferAdjudicadoId === choferId)
       }
       
       // Filtrar por eliminados
-      if (filters.estado !== "Eliminados") {
-        enviosFiltrados = enviosFiltrados.filter((envio: any) => !envio.eliminado)
-      } else {
+      if (filters.estados.includes("Eliminados") && filters.estados.length === 1) {
         enviosFiltrados = enviosFiltrados.filter((envio: any) => envio.eliminado === true)
+      } else if (!filters.estados.includes("Eliminados")) {
+        enviosFiltrados = enviosFiltrados.filter((envio: any) => !envio.eliminado)
       }
       
       // Aplicar paginación local
@@ -445,7 +487,7 @@ export default function EnviosPage() {
       setClienteAuthResolved(true)
     }
 
-    // Si el usuario es Chofer, obtener su ID (para filtrar solo sus envíos asignados)
+    // Si el usuario es Chofer, obtener su ID (para filtrar solo sus envíos adjudicados)
     if (profile === "Chofer") {
       const loadChoferId = async () => {
         const username = sessionStorage.getItem("username")
@@ -479,7 +521,7 @@ export default function EnviosPage() {
   const filteredEnvios = envios
   const paginatedEnvios = envios // Ya vienen paginados del backend
 
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = (key: string, value: string | string[]) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
     setCurrentPage(0) // Resetear a la primera página al filtrar (backend usa 0-indexed)
   }
@@ -489,8 +531,8 @@ export default function EnviosPage() {
       tipoFecha: "fechaLlegue",
       fechaDesde: "",
       fechaHasta: "",
-      estado: "todos",
-      origen: "todos",
+      estados: [],
+      origenes: [],
       tracking: "",
       idVenta: "",
       logisticaInversa: "todos",
@@ -498,9 +540,9 @@ export default function EnviosPage() {
       zonasEntrega: "",
       envioTurbo: "todos",
       fotos: "todos",
-      asignado: "todos",
-      grupoId: "",
-      nombreFantasia: "",
+      adjudicado: "todos",
+      grupoIds: [],
+      nombresFantasia: [],
       destinoNombre: "",
       destinoDireccion: "",
       codigoPostal: "",
@@ -524,7 +566,7 @@ export default function EnviosPage() {
 
     const estadoActual = envio.estado || "A retirar"
     if (estadoActual === "A retirar" && nuevoEstado !== "Retirado") {
-      toast.error("Desde 'A retirar' solo se puede pasar a 'Retirado'. Primero hay que marcar el envío como colectado.")
+      toast.error("Desde 'A retirar' solo se puede pasar a 'Retirado'. Primero hay que marcar el envío como retirado.")
       return false
     }
 
@@ -583,7 +625,7 @@ export default function EnviosPage() {
           // usar mensaje por defecto
         }
         if (mensaje.includes("A retirar") && mensaje.includes("Retirado")) {
-          mensaje = "Desde 'A retirar' solo se puede pasar a 'Retirado'. Primero hay que marcar el envío como colectado."
+          mensaje = "Desde 'A retirar' solo se puede pasar a 'Retirado'. Primero hay que marcar el envío como retirado."
         }
         toast.error(mensaje)
       }
@@ -639,11 +681,8 @@ export default function EnviosPage() {
       // Construir parámetros de filtro (igual que loadEnvios)
       const params = new URLSearchParams({
         tipoFecha: filters.tipoFecha || "fechaLlegue",
-        estado: filters.estado || "todos",
-        origen: filters.origen || "todos",
         tracking: filters.tracking || "",
         idVenta: filters.idVenta || "",
-        nombreFantasia: filters.nombreFantasia || "",
         destinoNombre: filters.destinoNombre || "",
         destinoDireccion: filters.destinoDireccion || "",
         codigoPostal: filters.codigoPostal || "",
@@ -651,9 +690,16 @@ export default function EnviosPage() {
         fechaDesde: filters.fechaDesde || "",
         fechaHasta: filters.fechaHasta || "",
       })
-      if (filters.grupoId?.trim()) {
-        params.append("grupoId", filters.grupoId.trim())
-      }
+      appendMultiParams(params, "estados", filters.estados)
+      appendMultiParams(params, "origenes", filters.origenes)
+      appendMultiParams(params, "nombresFantasia", filters.nombresFantasia)
+      appendMultiParams(params, "grupoIds", filters.grupoIds)
+      appendIfFilter(params, "logisticaInversa", filters.logisticaInversa)
+      appendIfFilter(params, "domicilio", filters.domicilio)
+      appendIfFilter(params, "envioTurbo", filters.envioTurbo)
+      appendIfFilter(params, "fotos", filters.fotos)
+      appendIfFilter(params, "adjudicado", filters.adjudicado)
+      appendIfFilter(params, "cobranzas", filters.cobranzas)
 
       if (userProfile === "Cliente") {
         if (userGrupoId != null) {
@@ -664,6 +710,10 @@ export default function EnviosPage() {
         } else if (userCodigoCliente) {
           params.append("codigoCliente", userCodigoCliente)
         }
+      }
+
+      if (userProfile === "Chofer" && choferId != null) {
+        params.append("choferId", String(choferId))
       }
 
       // OPTIMIZACIÓN: Obtener TODOS los envíos que cumplan los filtros (sin paginación)
@@ -741,8 +791,8 @@ export default function EnviosPage() {
         "ID venta ML",
         "Usuario ML ID",
         "Fecha Venta",
-        "Fecha Colecta",
-        "Fecha Zeta Llegue",
+        "Fecha de retiro",
+        getFechaOperativaLabel(),
         "Método de envío",
         "Cod.Cuenta",
         "Razon Social",
@@ -761,7 +811,7 @@ export default function EnviosPage() {
         "Quien estado",
         "Costo Envio",
         "Cadete",
-        "Fecha de asignación",
+        "Fecha de adjudicación",
         "Zonas",
         "Origen",
         "Observaciones"
@@ -773,10 +823,10 @@ export default function EnviosPage() {
       // Mapeo de tipos de fecha a etiquetas
       const tipoFechaLabels: Record<string, string> = {
         fechaVenta: "Fecha de venta",
-        fechaLlegue: "Fecha Zeta Llegue",
+        fechaLlegue: getFechaOperativaLabel(),
         fechaEntregado: "Fecha Entregado",
-        fechaAsignacion: "Fecha Asignación",
-        fechaColecta: "Fecha Colecta",
+        fechaAdjudicacion: "Fecha de adjudicación",
+        fechaRetiro: "Fecha de retiro",
         fechaCancelado: "Fecha Cancelado",
         fechaUltimoMovimiento: "Fecha último movimiento"
       }
@@ -796,12 +846,12 @@ export default function EnviosPage() {
         filtrosAplicados.push(`${tipoFechaLabel} hasta: ${filters.fechaHasta}`)
       }
       
-      if (filters.estado && filters.estado !== "todos") {
-        filtrosAplicados.push(`Estado: ${filters.estado}`)
+      if (filters.estados.length > 0) {
+        filtrosAplicados.push(`Estado: ${filters.estados.join(", ")}`)
       }
       
-      if (filters.origen && filters.origen !== "todos") {
-        filtrosAplicados.push(`Origen: ${filters.origen}`)
+      if (filters.origenes.length > 0) {
+        filtrosAplicados.push(`Origen: ${filters.origenes.join(", ")}`)
       }
       
       if (filters.tracking) {
@@ -812,13 +862,35 @@ export default function EnviosPage() {
         filtrosAplicados.push(`ID venta / ID pack: ${filters.idVenta}`)
       }
       
-      if (filters.nombreFantasia) {
-        filtrosAplicados.push(`Vendedor (nombre): ${filters.nombreFantasia}`)
+      if (filters.nombresFantasia.length > 0) {
+        filtrosAplicados.push(`Vendedor (nombre): ${filters.nombresFantasia.join(", ")}`)
       }
 
-      if (filters.grupoId?.trim()) {
-        const g = grupos.find((x) => String(x.id) === filters.grupoId.trim())
-        filtrosAplicados.push(`Grupo: ${g?.nombre ?? filters.grupoId}`)
+      if (filters.grupoIds.length > 0) {
+        const nombres = filters.grupoIds.map((id) => {
+          const g = grupos.find((x) => String(x.id) === id)
+          return g?.nombre ?? id
+        })
+        filtrosAplicados.push(`Grupo: ${nombres.join(", ")}`)
+      }
+
+      if (filters.logisticaInversa !== "todos") {
+        filtrosAplicados.push(`Logística inversa: ${filters.logisticaInversa}`)
+      }
+      if (filters.domicilio !== "todos") {
+        filtrosAplicados.push(`Domicilio: ${filters.domicilio}`)
+      }
+      if (filters.envioTurbo !== "todos") {
+        filtrosAplicados.push(`Pedido turbo: ${filters.envioTurbo}`)
+      }
+      if (filters.fotos !== "todos") {
+        filtrosAplicados.push(`Foto: ${filters.fotos}`)
+      }
+      if (filters.adjudicado !== "todos") {
+        filtrosAplicados.push(`Adjudicado: ${filters.adjudicado}`)
+      }
+      if (filters.cobranzas !== "todos") {
+        filtrosAplicados.push(`Cobranzas: ${filters.cobranzas}`)
       }
       
       if (filters.destinoNombre) {
@@ -905,7 +977,7 @@ export default function EnviosPage() {
           envio.idml || "",
           envio.idml || "", // Usuario ML ID - usando idml como aproximación
           formatFechaExcel(envio.fechaVenta),
-          formatFechaExcel(envio.fechaColecta),
+          formatFechaExcel(envio.fechaRetiro),
           formatFechaExcel(envio.fechaLlegue),
           envio.metodoEnvio || "",
           clienteInfo.codigo,
@@ -924,10 +996,10 @@ export default function EnviosPage() {
           historialInfo.fecha,
           historialInfo.quien,
           envio.costoEnvio || "",
-          envio.choferAsignadoNombre || "",
-          formatFechaExcel(envio.fechaAsignacion),
+          envio.choferAdjudicadoNombre || "",
+          formatFechaExcel(envio.fechaAdjudicacion),
           envio.zonaEntrega || "",
-          envio.origen || "",
+          labelOrigen(envio.origen),
           envio.observaciones || ""
         ])
       })
@@ -1053,10 +1125,10 @@ export default function EnviosPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="fechaVenta">Fecha de venta</SelectItem>
-                      <SelectItem value="fechaLlegue">Fecha Zeta Llegue</SelectItem>
+                      <SelectItem value="fechaLlegue">{getFechaOperativaLabel()}</SelectItem>
                       <SelectItem value="fechaEntregado">Fecha Entregado</SelectItem>
-                      <SelectItem value="fechaAsignacion">Fecha Asignación</SelectItem>
-                      <SelectItem value="fechaColecta">Fecha Colecta</SelectItem>
+                      <SelectItem value="fechaAdjudicacion">Fecha de adjudicación</SelectItem>
+                      <SelectItem value="fechaRetiro">Fecha de retiro</SelectItem>
                       <SelectItem value="fechaCancelado">Fecha Cancelado</SelectItem>
                       <SelectItem value="fechaUltimoMovimiento">Fecha últi. movimiento</SelectItem>
                     </SelectContent>
@@ -1085,44 +1157,24 @@ export default function EnviosPage() {
 
                 <div className="space-y-1.5">
                   <label className="block text-[14px] font-medium text-[#4d5571]">Estado del pedido</label>
-                  <Select
-                    value={filters.estado}
-                    onValueChange={(value) => handleFilterChange("estado", value)}
-                  >
-                    <SelectTrigger className="h-11 text-[14px] font-normal text-[#525b76]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos</SelectItem>
-                      <SelectItem value="Pendientes">Pendientes</SelectItem>
-                      <SelectItem value="Eliminados">Eliminados</SelectItem>
-                      {estadosEnvio.map((estado) => (
-                        <SelectItem key={estado} value={estado}>
-                          {estado}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MultiSelectFilter
+                    values={filters.estados}
+                    onValuesChange={(next) => handleFilterChange("estados", next)}
+                    options={estadoFilterOptions}
+                    emptyLabel="Todos"
+                    placeholder="Seleccioná estados"
+                  />
                 </div>
 
                 <div className="space-y-1.5" suppressHydrationWarning>
                   <label className="block text-[14px] font-medium text-[#4d5571]">Origen</label>
-                  <Select
-                    value={filters.origen}
-                    onValueChange={(value) => handleFilterChange("origen", value)}
-                  >
-                    <SelectTrigger className="h-11 text-[14px] font-normal text-[#525b76]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos</SelectItem>
-                      <SelectItem value="Directo">Directo</SelectItem>
-                      <SelectItem value="Tienda Nube">Tienda Nube</SelectItem>
-                      <SelectItem value="Shopify">Shopify</SelectItem>
-                      <SelectItem value="Vtex">Vtex</SelectItem>
-                      <SelectItem value="Mercado Libre">Mercado Libre</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <MultiSelectFilter
+                    values={filters.origenes}
+                    onValuesChange={(next) => handleFilterChange("origenes", next)}
+                    options={origenFilterOptions}
+                    emptyLabel="Todos"
+                    placeholder="Seleccioná orígenes"
+                  />
                 </div>
 
                 <div className="space-y-1.5" suppressHydrationWarning>
@@ -1136,7 +1188,6 @@ export default function EnviosPage() {
                 </div>
               </div>
 
-              {/* Filtros avanzados (mostrar/ocultar) */}
               {showAdvancedFilters && (
                 <div className="space-y-3 border-gray-200">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -1231,10 +1282,10 @@ export default function EnviosPage() {
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 2xl:grid-cols-7">
                     <div className="space-y-1">
-                      <label className="block text-[14px] font-medium text-[#4d5571]">Asignado</label>
+                      <label className="block text-[14px] font-medium text-[#4d5571]">Adjudicado</label>
                       <Select
-                        value={filters.asignado}
-                        onValueChange={(value) => handleFilterChange("asignado", value)}
+                        value={filters.adjudicado}
+                        onValueChange={(value) => handleFilterChange("adjudicado", value)}
                       >
                         <SelectTrigger className="h-11 text-[14px]">
                           <SelectValue />
@@ -1250,12 +1301,13 @@ export default function EnviosPage() {
                     {userProfile !== "Cliente" ? (
                       <div className="space-y-1">
                         <label className="block text-[14px] font-medium text-[#4d5571]">Grupos (nombre)</label>
-                        <SearchableCombobox
-                          value={filters.grupoId?.trim() ?? ""}
-                          onValueChange={(v) => handleFilterChange("grupoId", v)}
-                          options={grupoComboboxOptions}
-                          clearLabel="Todos los grupos"
+                        <MultiSelectFilter
+                          values={filters.grupoIds}
+                          onValuesChange={(next) => handleFilterChange("grupoIds", next)}
+                          options={grupoMultiOptions}
+                          emptyLabel="Todos los grupos"
                           placeholder="Buscar grupo…"
+                          searchable
                           className="text-[14px]"
                         />
                       </div>
@@ -1266,12 +1318,13 @@ export default function EnviosPage() {
                     {userProfile !== "Cliente" ? (
                       <div className="space-y-1">
                         <label className="block text-[14px] font-medium text-[#4d5571]">Vendedor (nombre)</label>
-                        <SearchableCombobox
-                          value={filters.nombreFantasia}
-                          onValueChange={(v) => handleFilterChange("nombreFantasia", v)}
+                        <MultiSelectFilter
+                          values={filters.nombresFantasia}
+                          onValuesChange={(next) => handleFilterChange("nombresFantasia", next)}
                           options={vendedorOptions}
-                          clearLabel="Todos los vendedores"
+                          emptyLabel="Todos los vendedores"
                           placeholder="Buscar vendedor…"
+                          searchable
                           className="text-[14px]"
                         />
                       </div>
@@ -1368,7 +1421,7 @@ export default function EnviosPage() {
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '120px' }}>Tracking</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '60px' }}>Origen</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '130px' }}>Vendedor</th>
-                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Fecha Colecta</th>
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '110px' }}>Fecha de retiro</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '200px' }}>Dirección</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '130px' }}>Destino nombre</th>
                       <th className="px-2 py-3 text-left text-xs font-semibold text-[#5f6680] uppercase tracking-tight" style={{ width: '70px' }}>CP</th>
@@ -1428,12 +1481,12 @@ export default function EnviosPage() {
                           <td className="px-2 py-3 text-sm font-mono text-gray-700 whitespace-normal break-words">{envio.tracking}</td>
                           <td className="px-2 py-3 text-sm">
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {envio.origen}
+                              {labelOrigen(envio.origen)}
                             </span>
                           </td>
                           <td className="px-2 py-3 text-sm font-medium text-gray-900 whitespace-normal break-words">{envio.cliente}</td>
                           <td className="px-2 py-3 text-sm text-gray-600 whitespace-normal break-words">
-                            {formatFechaSoloDia(envio.fechaColecta)}
+                            {formatFechaSoloDia(envio.fechaRetiro)}
                           </td>
                           <td className="px-2 py-3 text-sm text-gray-700 whitespace-normal break-words">{envio.direccion || "—"}</td>
                           <td className="px-2 py-3 text-sm font-medium text-gray-900 whitespace-normal break-words">{envio.nombreDestinatario}</td>
@@ -1446,7 +1499,7 @@ export default function EnviosPage() {
                             </span>
                           </td>
                           <td className="px-2 py-3 text-sm text-gray-700 font-medium whitespace-normal break-words">
-                            {envio.choferAsignadoNombre || "-"}
+                            {envio.choferAdjudicadoNombre || "-"}
                           </td>
                           <td className="px-2 py-3 text-right">
                             <div className="inline-flex justify-end">

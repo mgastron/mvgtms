@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import jsPDF from "jspdf"
 import QRCode from "qrcode"
 import { getApiBaseUrl } from "@/lib/api-config"
+import { getFechaOperativaLabel } from "@/lib/tenant"
 import { getLabelIconDataUrls } from "@/lib/pdf-label-assets"
 import { warnDev, errorDev } from "@/lib/logger"
 import { Montserrat } from "next/font/google"
@@ -1057,7 +1058,7 @@ export default function ReimprimirNoflexPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="fechaVenta">Fecha de venta</SelectItem>
-                      <SelectItem value="fechaLlegue">Fecha Llegué</SelectItem>
+                      <SelectItem value="fechaLlegue">{getFechaOperativaLabel()}</SelectItem>
                       <SelectItem value="fechaEntregado">Fecha entregado</SelectItem>
                     </SelectContent>
                   </Select>

@@ -90,14 +90,15 @@ public class InformeService {
 
         LocalDateTime desde = req.getFechaDesde().atStartOfDay();
         LocalDateTime hasta = req.getFechaHasta().atTime(23, 59, 59, 999_000_000);
-        List<Envio> todosColectados = envioRepository.findEnviosColectadosEntreFechas(desde, hasta);
+        List<Envio> todosRetirados = com.zetallegue.tms.tenant.TenantQuery.ofCurrentOrg(
+                envioRepository.findEnviosRetiradosEntreFechas(desde, hasta));
 
-        log.info("[Informe] Fechas desde={} hasta={}; envíos colectados en rango: {}", desde, hasta, todosColectados.size());
-        if (!todosColectados.isEmpty()) {
-            for (int i = 0; i < Math.min(5, todosColectados.size()); i++) {
-                Envio e = todosColectados.get(i);
-                log.info("[Informe] Muestra envío id={} cliente='{}' fechaColecta={} estado={}",
-                        e.getId(), e.getCliente(), e.getFechaColecta(), e.getEstado());
+        log.info("[Informe] Fechas desde={} hasta={}; envíos retirados en rango: {}", desde, hasta, todosRetirados.size());
+        if (!todosRetirados.isEmpty()) {
+            for (int i = 0; i < Math.min(5, todosRetirados.size()); i++) {
+                Envio e = todosRetirados.get(i);
+                log.info("[Informe] Muestra envío id={} cliente='{}' fechaRetiro={} estado={}",
+                        e.getId(), e.getCliente(), e.getFechaRetiro(), e.getEstado());
             }
         }
 
@@ -123,10 +124,10 @@ public class InformeService {
         String sufijoFechas = req.getFechaDesde().format(FMT_ARCHIVO) + "_" + req.getFechaHasta().format(FMT_ARCHIVO);
 
         for (Target target : targets) {
-            List<Envio> envios = filtrarEnviosParaTarget(todosColectados, target, tomarEnvios);
+            List<Envio> envios = filtrarEnviosParaTarget(todosRetirados, target, tomarEnvios);
             List<Envio> rechazadosCancelados = Collections.emptyList();
             if (TOMAR_RETIRADOS_EXCEPTO.equals(tomarEnvios)) {
-                rechazadosCancelados = todosColectados.stream()
+                rechazadosCancelados = todosRetirados.stream()
                         .filter(e -> perteneceATarget(e.getCliente(), target))
                         .filter(e -> ESTADO_RECHAZADO.equals(e.getEstado()) || ESTADO_CANCELADO.equals(e.getEstado()))
                         .collect(Collectors.toList());
@@ -205,7 +206,7 @@ public class InformeService {
                 }
                 break;
             case TIPO_TODOS_GRUPOS:
-                for (Grupo g : grupoRepository.findAll()) {
+                for (Grupo g : com.zetallegue.tms.tenant.TenantQuery.ofCurrentOrg(grupoRepository.findAll())) {
                     List<Cliente> clientes = clienteRepository.findByGrupoId(g.getId());
                     Set<String> codigos = new java.util.HashSet<>();
                     Set<String> textosCliente = new java.util.HashSet<>();
@@ -219,7 +220,7 @@ public class InformeService {
                 }
                 break;
             case TIPO_TODAS_CUENTAS:
-                for (Cliente c : clienteRepository.findAll()) {
+                for (Cliente c : com.zetallegue.tms.tenant.TenantQuery.ofCurrentOrg(clienteRepository.findAll())) {
                     if (c.getCodigo() == null) continue;
                     String nombre = c.getCodigo() + (c.getNombreFantasia() != null ? " - " + c.getNombreFantasia() : "");
                     Set<String> textos = new java.util.HashSet<>();
@@ -316,9 +317,9 @@ public class InformeService {
         return out;
     }
 
-    /** Fecha de colecta efectiva: fechaColecta si existe, si no fechaUltimoMovimiento (envíos retirados sin fecha guardada). */
-    private static LocalDateTime fechaColectaEfectiva(Envio e) {
-        return e.getFechaColecta() != null ? e.getFechaColecta() : e.getFechaUltimoMovimiento();
+    /** Fecha de retiro efectiva: fechaRetiro si existe, si no fechaUltimoMovimiento (envíos retirados sin fecha guardada). */
+    private static LocalDateTime fechaRetiroEfectiva(Envio e) {
+        return e.getFechaRetiro() != null ? e.getFechaRetiro() : e.getFechaUltimoMovimiento();
     }
 
     private ResumenData buildResumen(List<Envio> envios) {
@@ -333,7 +334,7 @@ public class InformeService {
             if (e.getTotalACobrar() != null && !e.getTotalACobrar().trim().isEmpty()) {
                 efectivo += parseDouble(e.getTotalACobrar(), 0);
             }
-            LocalDateTime fec = fechaColectaEfectiva(e);
+            LocalDateTime fec = fechaRetiroEfectiva(e);
             LocalDate dia = fec != null ? fec.toLocalDate() : null;
             final String zona = (e.getZonaEntrega() != null && !e.getZonaEntrega().trim().isEmpty()) ? e.getZonaEntrega().trim() : "Sin Zona";
             if (dia != null) {
@@ -366,14 +367,14 @@ public class InformeService {
 
             // Título
             Row titulo = detalle.createRow(rowNum++);
-            titulo.createCell(0).setCellValue("Informe de pedidos colectados - " + nombreDestinatario);
+            titulo.createCell(0).setCellValue("Informe de pedidos retirados - " + nombreDestinatario);
             rowNum++;
             Row subtitulo = detalle.createRow(rowNum++);
-            subtitulo.createCell(0).setCellValue("Colectados desde " + fechaDesde.format(FMT_DATE) + " hasta " + fechaHasta.format(FMT_DATE));
+            subtitulo.createCell(0).setCellValue("Retirados desde " + fechaDesde.format(FMT_DATE) + " hasta " + fechaHasta.format(FMT_DATE));
             rowNum++;
 
             // Headers detalle
-            String[] headers = {"Tracking", "Cliente", "Fecha colecta", "Estado", "Zona", "Destinatario", "Dirección", "Costo envío", "Total a cobrar"};
+            String[] headers = {"Tracking", "Cliente", "Fecha de retiro", "Estado", "Zona", "Destinatario", "Dirección", "Costo envío", "Total a cobrar"};
             Row headerRow = detalle.createRow(rowNum++);
             for (int i = 0; i < headers.length; i++) {
                 Cell c = headerRow.createCell(i);
@@ -388,7 +389,7 @@ public class InformeService {
                 Row r = detalle.createRow(rowNum++);
                 r.createCell(0).setCellValue(e.getTracking() != null ? e.getTracking() : "");
                 r.createCell(1).setCellValue(e.getCliente() != null ? e.getCliente() : "");
-                r.createCell(2).setCellValue(fechaColectaEfectiva(e) != null ? fechaColectaEfectiva(e).format(FMT_DATETIME) : "");
+                r.createCell(2).setCellValue(fechaRetiroEfectiva(e) != null ? fechaRetiroEfectiva(e).format(FMT_DATETIME) : "");
                 r.createCell(3).setCellValue(e.getEstado() != null ? e.getEstado() : "");
                 r.createCell(4).setCellValue(e.getZonaEntrega() != null ? e.getZonaEntrega() : "");
                 r.createCell(5).setCellValue(e.getNombreDestinatario() != null ? e.getNombreDestinatario() : "");
@@ -400,18 +401,18 @@ public class InformeService {
             Row totalRow = detalle.createRow(rowNum++);
             totalRow.createCell(0).setCellValue("Total envíos: " + envios.size());
             totalRow.createCell(7).setCellValue("Precio total: " + String.format("%.2f", resumen.precioTotal));
-            totalRow.createCell(8).setCellValue("Plata retirada en efectivo: " + String.format("%.2f", resumen.efectivo));
+            totalRow.createCell(8).setCellValue("Cobros a destino (efectivo): " + String.format("%.2f", resumen.efectivo));
 
             // Hoja Resumen
             int rResumen = 0;
             crearCelda(hojaResumen.createRow(rResumen++), 0, "RESUMEN - " + nombreDestinatario);
-            crearCelda(hojaResumen.createRow(rResumen++), 0, "Pedidos colectados desde " + fechaDesde.format(FMT_DATE) + " hasta " + fechaHasta.format(FMT_DATE));
+            crearCelda(hojaResumen.createRow(rResumen++), 0, "Pedidos retirados desde " + fechaDesde.format(FMT_DATE) + " hasta " + fechaHasta.format(FMT_DATE));
             rResumen++;
             crearCelda(hojaResumen.createRow(rResumen++), 0, "Total envíos");
             crearCelda(hojaResumen.createRow(rResumen - 1), 1, String.valueOf(resumen.cantidadEnvios));
             crearCelda(hojaResumen.createRow(rResumen++), 0, "Precio total");
             crearCelda(hojaResumen.createRow(rResumen - 1), 1, String.format("%.2f", resumen.precioTotal));
-            crearCelda(hojaResumen.createRow(rResumen++), 0, "Plata retirada en efectivo");
+            crearCelda(hojaResumen.createRow(rResumen++), 0, "Cobros a destino (efectivo)");
             crearCelda(hojaResumen.createRow(rResumen - 1), 1, String.format("%.2f", resumen.efectivo));
             rResumen++;
             crearCelda(hojaResumen.createRow(rResumen++), 0, "Por día y zona");
@@ -435,12 +436,12 @@ public class InformeService {
                 Sheet hojaRC = wb.createSheet("Rechazados y cancelados");
                 int rRC = 0;
                 crearCelda(hojaRC.createRow(rRC++), 0, "Rechazados por el comprador y cancelados");
-                crearCelda(hojaRC.createRow(rRC++), 0, "Envíos colectados en el período que quedaron en estado rechazado o cancelado.");
+                crearCelda(hojaRC.createRow(rRC++), 0, "Envíos retirados en el período que quedaron en estado rechazado o cancelado.");
                 rRC++;
                 Row headerRC = hojaRC.createRow(rRC++);
                 String[] headersRC = esInformeGrupo
-                        ? new String[]{"Tracking", "Fecha colecta", "Cliente", "Dirección", "Estado final"}
-                        : new String[]{"Tracking", "Fecha colecta", "Dirección", "Estado final"};
+                        ? new String[]{"Tracking", "Fecha de retiro", "Cliente", "Dirección", "Estado final"}
+                        : new String[]{"Tracking", "Fecha de retiro", "Dirección", "Estado final"};
                 for (int i = 0; i < headersRC.length; i++) {
                     Cell c = headerRC.createCell(i);
                     c.setCellValue(headersRC[i]);
@@ -449,7 +450,7 @@ public class InformeService {
                 for (Envio e : rechazadosCancelados) {
                     Row rowRC = hojaRC.createRow(rRC++);
                     rowRC.createCell(0).setCellValue(e.getTracking() != null ? e.getTracking() : "");
-                    rowRC.createCell(1).setCellValue(fechaColectaEfectiva(e) != null ? fechaColectaEfectiva(e).format(FMT_DATETIME) : "");
+                    rowRC.createCell(1).setCellValue(fechaRetiroEfectiva(e) != null ? fechaRetiroEfectiva(e).format(FMT_DATETIME) : "");
                     int col = 2;
                     if (esInformeGrupo) {
                         rowRC.createCell(col++).setCellValue(e.getCliente() != null ? e.getCliente() : "");
@@ -523,7 +524,7 @@ public class InformeService {
         barraCell.setPaddingRight(16);
         Paragraph pMarca = new Paragraph("NEXO", fontMarca);
         pMarca.add(new Chunk("\n"));
-        pMarca.add(new Phrase("Informe de pedidos colectados", fontTagline));
+        pMarca.add(new Phrase("Informe de pedidos retirados", fontTagline));
         barraCell.addElement(pMarca);
         headerBar.addCell(barraCell);
         doc.add(headerBar);
@@ -548,7 +549,7 @@ public class InformeService {
         introBox.setSpacingBefore(0);
         introBox.setSpacingAfter(20);
         PdfPCell introCell = new PdfPCell(new Paragraph(
-                "El presente informe detalla los envíos colectados en el período indicado: tarifas acordadas por zona, desglose por zona y detalle de cada envío. "
+                "El presente informe detalla los envíos retirados en el período indicado: tarifas acordadas por zona, desglose por zona y detalle de cada envío. "
                         + "Al final se incluye el detalle de cobros a destino, cuando corresponda.",
                 fontNormal));
         introCell.setBackgroundColor(COLOR_GRIS_CLARO);
@@ -645,7 +646,7 @@ public class InformeService {
             int numColsDetalle = mostrarColumnaCliente ? 6 : 5;
             float[] widthsDetalle = mostrarColumnaCliente ? new float[]{2f, 1.2f, 2f, 2.5f, 1.5f, 1.2f} : new float[]{2.2f, 1.2f, 2.8f, 2f, 1.2f};
 
-            addSectionTitle(doc, fontSeccion, fontSubtituloSeccion, "Detalle de envíos", "Listado de envíos con tracking, fecha de colecta, dirección y precio.");
+            addSectionTitle(doc, fontSeccion, fontSubtituloSeccion, "Detalle de envíos", "Listado de envíos con tracking, fecha de retiro, dirección y precio.");
             com.lowagie.text.Font fontCelda = FontFactory.getFont(FontFactory.HELVETICA, 9);
             fontCelda.setColor(COLOR_GRIS_TEXTO);
 
@@ -663,7 +664,7 @@ public class InformeService {
 
             double sumaPrecio = 0;
             for (Envio e : envios) {
-                LocalDateTime fec = fechaColectaEfectiva(e);
+                LocalDateTime fec = fechaRetiroEfectiva(e);
                 String fechaStr = fec != null ? fec.toLocalDate().format(FMT_DATE) : "—";
                 double precio = parseDouble(e.getCostoEnvio(), 0);
                 sumaPrecio += precio;
@@ -712,7 +713,7 @@ public class InformeService {
 
             double sumaCobros = 0;
             for (Envio e : conCobro) {
-                LocalDateTime fec = fechaColectaEfectiva(e);
+                LocalDateTime fec = fechaRetiroEfectiva(e);
                 String fechaStr = fec != null ? fec.toLocalDate().format(FMT_DATE) : "—";
                 double cobro = parseDouble(e.getTotalACobrar(), 0);
                 sumaCobros += cobro;
@@ -765,7 +766,7 @@ public class InformeService {
         // Tabla de rechazados por el comprador y cancelados (solo cuando la opción fue "todos los retirados excepto...")
         if (rechazadosCancelados != null && !rechazadosCancelados.isEmpty()) {
             doc.add(Chunk.NEWLINE);
-            addSectionTitle(doc, fontSeccion, fontSubtituloSeccion, "Rechazados por el comprador y cancelados", "Envíos colectados en el período que quedaron en estado rechazado o cancelado.");
+            addSectionTitle(doc, fontSeccion, fontSubtituloSeccion, "Rechazados por el comprador y cancelados", "Envíos retirados en el período que quedaron en estado rechazado o cancelado.");
             boolean mostrarColCliente = esInformeGrupo;
             int numColsRC = mostrarColCliente ? 5 : 4;
             float[] widthsRC = mostrarColCliente ? new float[]{2f, 1.2f, 2f, 2.5f, 1.8f} : new float[]{2.2f, 1.2f, 2.8f, 1.8f};
@@ -782,7 +783,7 @@ public class InformeService {
             com.lowagie.text.Font fontCeldaRC = FontFactory.getFont(FontFactory.HELVETICA, 9);
             fontCeldaRC.setColor(COLOR_GRIS_TEXTO);
             for (Envio e : rechazadosCancelados) {
-                LocalDateTime fec = fechaColectaEfectiva(e);
+                LocalDateTime fec = fechaRetiroEfectiva(e);
                 String fechaStr = fec != null ? fec.toLocalDate().format(FMT_DATE) : "—";
                 String estadoFinal = e.getEstado() != null ? e.getEstado() : "—";
                 addBodyCell(tablaRC, e.getTracking() != null ? e.getTracking() : "—", fontCeldaRC);
@@ -868,7 +869,7 @@ public class InformeService {
         try (Workbook wb = new XSSFWorkbook()) {
             Sheet sh = wb.createSheet("Resumen");
             int r = 0;
-            sh.createRow(r++).createCell(0).setCellValue("Resumen por cliente/grupo - Colectados desde " + fechaDesde.format(FMT_DATE) + " hasta " + fechaHasta.format(FMT_DATE));
+            sh.createRow(r++).createCell(0).setCellValue("Resumen por cliente/grupo - Retirados desde " + fechaDesde.format(FMT_DATE) + " hasta " + fechaHasta.format(FMT_DATE));
             r++;
             Row header = sh.createRow(r++);
             header.createCell(0).setCellValue("Cliente / Grupo");

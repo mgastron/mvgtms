@@ -7,11 +7,17 @@ import com.zetallegue.tms.dto.ObservacionEnvioDTO;
 import com.zetallegue.tms.dto.ImagenEnvioDTO;
 import com.zetallegue.tms.dto.PageResponseDTO;
 import com.zetallegue.tms.service.EnvioService;
+import com.zetallegue.tms.service.PodPdfService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +29,7 @@ import java.util.Map;
 public class EnvioController {
 
     private final EnvioService envioService;
+    private final PodPdfService podPdfService;
     private final com.zetallegue.tms.service.EnvioServiceTiendaNube envioServiceTiendaNube;
     private final com.zetallegue.tms.service.EnvioServiceVtex envioServiceVtex;
     private final com.zetallegue.tms.service.EnvioServiceShopify envioServiceShopify;
@@ -239,28 +246,40 @@ public class EnvioController {
         Double lat = body.get("lat") != null ? ((Number) body.get("lat")).doubleValue() : null;
         Double lng = body.get("lng") != null ? ((Number) body.get("lng")).doubleValue() : null;
         String direccion = body.get("direccion") != null ? body.get("direccion").toString() : null;
+        String usuarioNombre = body.get("usuarioNombre") != null ? body.get("usuarioNombre").toString() : null;
         if (lat == null || lng == null) {
             return ResponseEntity.badRequest().build();
         }
-        EnvioDTO envio = envioService.actualizarGeolocalizacion(id, lat, lng, direccion);
+        EnvioDTO envio = envioService.actualizarGeolocalizacion(id, lat, lng, direccion, usuarioNombre);
         return ResponseEntity.ok(envio);
     }
 
     @PatchMapping("/{id}/estado")
-    public ResponseEntity<EnvioDTO> actualizarEstado(
+    public ResponseEntity<?> actualizarEstado(
             @PathVariable Long id,
             @RequestBody ActualizarEstadoRequest request) {
-        EnvioDTO envio = envioService.actualizarEstado(
-                id,
-                request.getEstado(),
-                request.getUsuarioNombre(),
-                request.getObservaciones(),
-                request.getFoto(),
-                request.getRolRecibio(),
-                request.getNombreRecibio(),
-                request.getDniRecibio()
-        );
-        return ResponseEntity.ok(envio);
+        try {
+            EnvioDTO envio = envioService.actualizarEstado(
+                    id,
+                    request.getEstado(),
+                    request.getUsuarioNombre(),
+                    request.getObservaciones(),
+                    request.getFoto(),
+                    request.getRolRecibio(),
+                    request.getNombreRecibio(),
+                    request.getDniRecibio(),
+                    request.getLatitud(),
+                    request.getLongitud(),
+                    request.getDestinoLat(),
+                    request.getDestinoLng(),
+                    request.getUbicacionDireccion()
+            );
+            return ResponseEntity.ok(envio);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage() != null ? e.getMessage() : "Error al actualizar estado"
+            ));
+        }
     }
 
     // Clase interna para el request
@@ -272,6 +291,11 @@ public class EnvioController {
         private String rolRecibio;
         private String nombreRecibio;
         private String dniRecibio;
+        private Double latitud;
+        private Double longitud;
+        private Double destinoLat;
+        private Double destinoLng;
+        private String ubicacionDireccion;
 
         public String getEstado() { return estado; }
         public void setEstado(String estado) { this.estado = estado; }
@@ -287,6 +311,16 @@ public class EnvioController {
         public void setNombreRecibio(String nombreRecibio) { this.nombreRecibio = nombreRecibio; }
         public String getDniRecibio() { return dniRecibio; }
         public void setDniRecibio(String dniRecibio) { this.dniRecibio = dniRecibio; }
+        public Double getLatitud() { return latitud; }
+        public void setLatitud(Double latitud) { this.latitud = latitud; }
+        public Double getLongitud() { return longitud; }
+        public void setLongitud(Double longitud) { this.longitud = longitud; }
+        public Double getDestinoLat() { return destinoLat; }
+        public void setDestinoLat(Double destinoLat) { this.destinoLat = destinoLat; }
+        public Double getDestinoLng() { return destinoLng; }
+        public void setDestinoLng(Double destinoLng) { this.destinoLng = destinoLng; }
+        public String getUbicacionDireccion() { return ubicacionDireccion; }
+        public void setUbicacionDireccion(String ubicacionDireccion) { this.ubicacionDireccion = ubicacionDireccion; }
     }
 
     @DeleteMapping("/{id}")
@@ -314,22 +348,44 @@ public class EnvioController {
         }
     }
 
-    @PostMapping("/{id}/colectar")
-    public ResponseEntity<EnvioDTO> colectarEnvio(
+    @PostMapping("/{id}/retirar")
+    public ResponseEntity<EnvioDTO> retirarEnvio(
             @PathVariable Long id,
             @RequestBody(required = false) String usuarioNombre) {
         try {
-            EnvioDTO envio = envioService.colectarEnvio(id, usuarioNombre != null ? usuarioNombre : "Usuario");
+            EnvioDTO envio = envioService.retirarEnvio(id, usuarioNombre != null ? usuarioNombre : "Usuario");
             return ResponseEntity.ok(envio);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    /** Retiro + adjudicar al chofer y pasar a En camino (sin estado intermedio Retirado). */
+    @PostMapping("/{id}/retirar-en-ruta")
+    public ResponseEntity<?> retirarYAdjudicarEnCamino(
+            @PathVariable Long id,
+            @RequestBody RetirarEnRutaRequest request) {
+        try {
+            if (request == null || request.getChoferId() == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "choferId es requerido"));
+            }
+            EnvioDTO envio = envioService.retirarYAdjudicarEnCamino(
+                    id,
+                    request.getChoferId(),
+                    request.getChoferNombre(),
+                    request.getUsuarioNombre() != null ? request.getUsuarioNombre() : "Usuario"
+            );
+            return ResponseEntity.ok(envio);
+        } catch (RuntimeException e) {
+            log.error("Error retirar-en-ruta id={}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Error"));
+        }
+    }
     
-    @PostMapping("/colectar-flex")
-    public ResponseEntity<?> colectarEnvioFlex(
-            @RequestBody(required = false) ColectarFlexRequest request) {
-        log.info("=== RECIBIDA PETICIÓN COLECTAR-FLEX ===");
+    @PostMapping("/retirar-flex")
+    public ResponseEntity<?> retirarEnvioFlex(
+            @RequestBody(required = false) RetirarFlexRequest request) {
+        log.info("=== RECIBIDA PETICIÓN RETIRAR-FLEX ===");
         
         if (request == null) {
             log.error("Request body es null");
@@ -345,18 +401,18 @@ public class EnvioController {
         }
         
         try {
-            EnvioDTO envio = envioService.colectarEnvioFlex(
+            EnvioDTO envio = envioService.retirarEnvioFlex(
                 request.getQrData(), 
                 request.getUsuarioNombre() != null ? request.getUsuarioNombre() : "Usuario"
             );
-            log.info("Envío colectado exitosamente: ID {}", envio.getId());
+            log.info("Envío retirado exitosamente: ID {}", envio.getId());
             return ResponseEntity.ok(envio);
         } catch (RuntimeException e) {
-            log.error("Error al colectar envío Flex: {}", e.getMessage(), e);
+            log.error("Error al retirar envío Flex: {}", e.getMessage(), e);
             e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
-            log.error("Error inesperado al colectar envío Flex: {}", e.getMessage(), e);
+            log.error("Error inesperado al retirar envío Flex: {}", e.getMessage(), e);
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor: " + e.getMessage()));
         }
@@ -403,7 +459,7 @@ public class EnvioController {
     }
     
     // Clase interna para el request
-    public static class ColectarFlexRequest {
+    public static class RetirarFlexRequest {
         private String qrData;
         private String usuarioNombre;
 
@@ -445,39 +501,87 @@ public class EnvioController {
         return ResponseEntity.ok(imagenes);
     }
 
+    /** PDF de prueba de entrega / constancia de intento (PoD). Opcional: historialId para Nadie/Rechazado. */
+    @GetMapping("/{id}/pod")
+    public void descargarPod(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long historialId,
+            HttpServletResponse response) throws IOException {
+        try {
+            PodPdfService.PodPdfResult result = podPdfService.generar(id, historialId);
+            String filename = result.nombreArchivo();
+            String encoded = URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.setContentType("application/pdf");
+            response.setContentLength(result.contenido().length);
+            response.setHeader("Content-Disposition",
+                    "attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + encoded);
+            response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+            response.getOutputStream().write(result.contenido());
+            response.getOutputStream().flush();
+        } catch (IllegalArgumentException e) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            log.error("Error generando PoD envio {}", id, e);
+            if (!response.isCommitted()) {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error al generar el PoD");
+            }
+        }
+    }
+
     @GetMapping("/chofer/{choferId}/ruta")
     public ResponseEntity<List<EnvioDTO>> obtenerEnviosParaRuta(@PathVariable Long choferId) {
         List<EnvioDTO> envios = envioService.obtenerEnviosParaRuta(choferId);
         return ResponseEntity.ok(envios);
     }
 
-    @PostMapping("/{id}/asignar")
-    public ResponseEntity<?> asignarEnvio(
-            @PathVariable Long id,
-            @RequestBody AsignarEnvioRequest request) {
-        log.info("POST /asignar envioId={} choferId={} choferNombre={} usuarioAsignador={}",
-                id, request.getChoferId(), request.getChoferNombre(), request.getUsuarioAsignador());
+    /** Historial de pedidos del chofer (Entregado / Rechazado / Nadie) por rango de fechas. */
+    @GetMapping("/chofer/{choferId}/historial")
+    public ResponseEntity<?> obtenerHistorialChofer(
+            @PathVariable Long choferId,
+            @RequestParam String desde,
+            @RequestParam String hasta,
+            @RequestParam(required = false) String q) {
         try {
-            EnvioDTO envio = envioService.asignarEnvio(
+            LocalDate dDesde = LocalDate.parse(desde);
+            LocalDate dHasta = LocalDate.parse(hasta);
+            return ResponseEntity.ok(envioService.obtenerHistorialChofer(choferId, dDesde, dHasta, q));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage() != null ? e.getMessage() : "Error al obtener historial"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Fechas inválidas. Usá formato YYYY-MM-DD."));
+        }
+    }
+
+    @PostMapping("/{id}/adjudicar")
+    public ResponseEntity<?> adjudicarEnvio(
+            @PathVariable Long id,
+            @RequestBody AdjudicarEnvioRequest request) {
+        log.info("POST /adjudicar envioId={} choferId={} choferNombre={} usuarioAdjudicador={}",
+                id, request.getChoferId(), request.getChoferNombre(), request.getUsuarioAdjudicador());
+        try {
+            EnvioDTO envio = envioService.adjudicarEnvio(
                     id,
                     request.getChoferId(),
                     request.getChoferNombre(),
-                    request.getUsuarioAsignador(),
+                    request.getUsuarioAdjudicador(),
                     request.getOrigen() != null ? request.getOrigen() : "WEB"
             );
-            log.info("Asignación OK envioId={} choferNombre={}", id, request.getChoferNombre());
+            log.info("Adjudicación OK envioId={} choferNombre={}", id, request.getChoferNombre());
             return ResponseEntity.ok(envio);
         } catch (Exception e) {
             Throwable cause = e.getCause();
             String msg = e.getMessage();
             if (msg == null || msg.isEmpty()) {
-                msg = cause != null && cause.getMessage() != null ? cause.getMessage() : "Error al asignar";
+                msg = cause != null && cause.getMessage() != null ? cause.getMessage() : "Error al adjudicar";
             }
             // Marcar respuesta para confirmar que es el backend nuevo (si ves "[backend v2]" en el alert, el deploy está vivo)
-            if ("Error al asignar".equals(msg)) {
-                msg = "Error al asignar [backend v2]";
+            if ("Error al adjudicar".equals(msg)) {
+                msg = "Error al adjudicar [backend v2]";
             }
-            log.error("Error al asignar envío id={} choferId={} choferNombre={} | exception={} message={}",
+            log.error("Error al adjudicar envío id={} choferId={} choferNombre={} | exception={} message={}",
                     id, request.getChoferId(), request.getChoferNombre(), e.getClass().getSimpleName(), msg, e);
             return ResponseEntity.badRequest().body(java.util.Map.of("message", msg));
         }
@@ -486,7 +590,7 @@ public class EnvioController {
     /** Para verificar que el backend desplegado es el nuevo: abrí en el navegador https://api.mvgtms.com.ar/api/envios/deploy-version */
     @GetMapping("/deploy-version")
     public ResponseEntity<Map<String, String>> deployVersion() {
-        return ResponseEntity.ok(java.util.Map.of("version", "asignar-v2", "texto", "Si ves esto, el backend con logs y fix de asignar está desplegado."));
+        return ResponseEntity.ok(java.util.Map.of("version", "adjudicar-v2", "texto", "Si ves esto, el backend con logs y fix de adjudicar está desplegado."));
     }
 
     @PostMapping("/verificar-existentes")
@@ -510,18 +614,32 @@ public class EnvioController {
     }
 
     // Clase interna para el request
-    public static class AsignarEnvioRequest {
+    public static class RetirarEnRutaRequest {
         private Long choferId;
         private String choferNombre;
-        private String usuarioAsignador;
+        private String usuarioNombre;
+
+        public Long getChoferId() { return choferId; }
+        public void setChoferId(Long choferId) { this.choferId = choferId; }
+        public String getChoferNombre() { return choferNombre; }
+        public void setChoferNombre(String choferNombre) { this.choferNombre = choferNombre; }
+        public String getUsuarioNombre() { return usuarioNombre; }
+        public void setUsuarioNombre(String usuarioNombre) { this.usuarioNombre = usuarioNombre; }
+    }
+
+    // Clase interna para el request
+    public static class AdjudicarEnvioRequest {
+        private Long choferId;
+        private String choferNombre;
+        private String usuarioAdjudicador;
         private String origen; // "APP" o "WEB"
 
         public Long getChoferId() { return choferId; }
         public void setChoferId(Long choferId) { this.choferId = choferId; }
         public String getChoferNombre() { return choferNombre; }
         public void setChoferNombre(String choferNombre) { this.choferNombre = choferNombre; }
-        public String getUsuarioAsignador() { return usuarioAsignador; }
-        public void setUsuarioAsignador(String usuarioAsignador) { this.usuarioAsignador = usuarioAsignador; }
+        public String getUsuarioAdjudicador() { return usuarioAdjudicador; }
+        public void setUsuarioAdjudicador(String usuarioAdjudicador) { this.usuarioAdjudicador = usuarioAdjudicador; }
         public String getOrigen() { return origen; }
         public void setOrigen(String origen) { this.origen = origen; }
     }

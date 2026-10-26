@@ -12,6 +12,7 @@ import {
   Printer,
   Layers,
   FileBarChart,
+  LayoutDashboard,
   Settings,
   Briefcase,
   Store,
@@ -41,6 +42,7 @@ const configuracionSubmenu = [
 ]
 
 const administracionSubmenu = [
+  { icon: LayoutDashboard, label: "Dashboard" },
   { icon: FileBarChart, label: "Informes" },
   { icon: DollarSign, label: "Tarifa" },
 ]
@@ -88,6 +90,7 @@ export function Sidebar() {
   const getActiveItem = () => {
     if (pathname?.includes("/configuracion/usuarios")) return "Usuarios"
     if (pathname?.includes("/configuracion/grupos")) return "Grupos"
+    if (pathname?.includes("/administracion/dashboard")) return "Dashboard"
     if (pathname?.includes("/administracion/informes")) return "Informes"
     if (pathname?.includes("/administracion/tarifa")) return "Tarifa"
     if (pathname?.includes("/configuracion/vendedores")) return "Vendedores"
@@ -117,6 +120,7 @@ export function Sidebar() {
       setConfiguracionOpen(true)
     }
     if (
+      pathname?.includes("/administracion/dashboard") ||
       pathname?.includes("/administracion/informes") ||
       pathname?.includes("/administracion/tarifa") ||
       pathname?.includes("/administracion/estado-ordenes")
@@ -291,7 +295,9 @@ export function Sidebar() {
                       <button
                         key={subItem.label}
                         onClick={() => {
-                          if (subItem.label === "Informes") {
+                          if (subItem.label === "Dashboard") {
+                            router.push("/administracion/dashboard")
+                          } else if (subItem.label === "Informes") {
                             router.push("/administracion/informes")
                           } else if (subItem.label === "Tarifa") {
                             router.push("/administracion/tarifa")

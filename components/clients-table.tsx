@@ -695,7 +695,7 @@ export function ClientsTable({
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-lg font-semibold text-[#1f2433]">¿Eliminar cliente?</AlertDialogTitle>
+            <AlertDialogTitle className="text-lg font-semibold text-[#1f2433]">¿Eliminar vendedor?</AlertDialogTitle>
             <AlertDialogDescription className="text-[14px] leading-relaxed text-[#5d6578]">
               ¿Estás seguro de que deseas eliminar al cliente{" "}
               <span className="font-semibold text-[#1f2433]">

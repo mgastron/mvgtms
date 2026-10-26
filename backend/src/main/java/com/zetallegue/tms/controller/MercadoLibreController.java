@@ -15,6 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/mercadolibre")
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 @Slf4j
 public class MercadoLibreController {
@@ -51,6 +52,7 @@ public class MercadoLibreController {
             for (com.fasterxml.jackson.databind.JsonNode envioML : enviosML) {
                 try {
                     EnvioDTO envioDTO = mercadoLibreService.mapearEnvioFlex(envioML, cliente);
+                    envioService.normalizarDireccionFlexAmba(envioDTO);
                     
                     // Verificar si el envío ya existe (por tracking)
                     java.util.Optional<com.zetallegue.tms.model.Envio> envioExistenteOpt = 
@@ -60,6 +62,18 @@ public class MercadoLibreController {
                         // Actualizar envío existente
                         com.zetallegue.tms.model.Envio envioExistente = envioExistenteOpt.get();
                         if (!envioExistente.getEliminado()) {
+                            // No pisar una dirección real con "Dirección pendiente" ni resetear fecha de ingreso
+                            envioDTO.setFecha(null);
+                            if (mercadoLibreService.direccionIncompleta(envioDTO.getDireccion())
+                                    && !mercadoLibreService.direccionIncompleta(envioExistente.getDireccion())) {
+                                envioDTO.setDireccion(null);
+                                envioDTO.setLocalidad(null);
+                                envioDTO.setCodigoPostal(null);
+                                envioDTO.setZonaEntrega(null);
+                                envioDTO.setNombreDestinatario(null);
+                                envioDTO.setTelefono(null);
+                                envioDTO.setCostoEnvio(null);
+                            }
                             envioService.actualizarEnvio(envioExistente.getId(), envioDTO);
                             actualizados++;
                             log.debug("Envío actualizado: {}", envioDTO.getTracking());
@@ -81,11 +95,19 @@ public class MercadoLibreController {
                 }
             }
             
+            int geocodificados = 0;
+            try {
+                geocodificados = envioService.corregirFlexFueraDeAmba(50);
+            } catch (Exception geoEx) {
+                log.warn("Geocodificación AMBA post-sync: {}", geoEx.getMessage());
+            }
+
             response.put("success", true);
             response.put("total", enviosML.size());
             response.put("nuevos", nuevos);
             response.put("actualizados", actualizados);
             response.put("errores", errores);
+            response.put("geocodificados", geocodificados);
             response.put("message", String.format(
                 "Sincronización completada: %d nuevos, %d actualizados, %d errores",
                 nuevos, actualizados, errores

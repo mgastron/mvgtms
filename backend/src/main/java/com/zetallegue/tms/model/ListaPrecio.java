@@ -1,22 +1,30 @@
 package com.zetallegue.tms.model;
 
+import com.zetallegue.tms.tenant.TenantAware;
+import com.zetallegue.tms.tenant.TenantEntityListener;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Filter;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "lista_precios")
+@EntityListeners(TenantEntityListener.class)
+@Filter(name = "tenantFilter", condition = "organizacion_id = :organizacionId")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ListaPrecio {
+public class ListaPrecio implements TenantAware {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "organizacion_id")
+    private Long organizacionId;
 
     @Column(name = "codigo", length = 50)
     private String codigo;

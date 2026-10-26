@@ -25,5 +25,8 @@ public class UsuarioDTO {
     private Double longitud;
     private LocalDateTime ultimaActualizacionUbicacion;
     private Integer bateria; // Porcentaje de batería (0-100)
+    private Long organizacionId;
+    private String organizacionSlug;
+    private String organizacionNombre;
 }
 

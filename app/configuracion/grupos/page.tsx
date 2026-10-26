@@ -158,7 +158,7 @@ export default function GruposPage() {
                       Nombre
                     </th>
                     <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
-                      Clientes asignados
+                      Clientes del grupo
                     </th>
                     <th className="w-24 px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-[#5d6578] sm:px-5">
                       Acciones

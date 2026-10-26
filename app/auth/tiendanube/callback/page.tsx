@@ -1,13 +1,12 @@
 "use client"
 
 import { Suspense, useEffect, useState } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { errorDev } from "@/lib/logger"
 
 function TiendaNubeCallbackContent() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const code = searchParams.get("code")
   const state = searchParams.get("state")
   const error = searchParams.get("error")
@@ -28,35 +27,30 @@ function TiendaNubeCallbackContent() {
       return
     }
 
-    // Intercambiar código por tokens
     const intercambiarTokens = async () => {
       try {
         const apiBaseUrl = getApiBaseUrl()
-        const response = await fetch(`${apiBaseUrl}/clientes/tiendanube/callback?code=${code}&state=${state}`)
-        
+        const response = await fetch(
+          `${apiBaseUrl}/clientes/tiendanube/callback?code=${code}&state=${state}`
+        )
+
         if (response.ok) {
-          const data = await response.json()
           setStatus("success")
           setMessage("Integración vinculada correctamente.")
-          
-          // Redirigir a la página de cuentas después de 2 segundos
-          setTimeout(() => {
-            router.push("/configuracion/vendedores")
-          }, 2000)
         } else {
           const errorData = await response.json().catch(() => ({ message: "Error desconocido" }))
           setStatus("error")
           setMessage(errorData.message || "No fue posible vincular la integración.")
         }
-      } catch (error: any) {
-        errorDev("Error:", error)
+      } catch (err: any) {
+        errorDev("Error:", err)
         setStatus("error")
         setMessage("Error de conexión. Reintente.")
       }
     }
 
     intercambiarTokens()
-  }, [code, state, error, router])
+  }, [code, state, error])
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -77,8 +71,10 @@ function TiendaNubeCallbackContent() {
               </svg>
             </div>
             <h2 className="text-xl font-semibold text-gray-800 mb-2">¡Éxito!</h2>
-            <p className="text-gray-600 mb-4">{message}</p>
-            <p className="text-sm text-gray-500">Redirigiendo a la página de cuentas…</p>
+            <p className="text-gray-600 mb-2">{message}</p>
+            <p className="text-sm text-gray-500">
+              Ya podés cerrar esta ventana. El equipo de Nexo verá la tienda vinculada al reabrir el vendedor.
+            </p>
           </>
         )}
 
@@ -91,12 +87,7 @@ function TiendaNubeCallbackContent() {
             </div>
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Error</h2>
             <p className="text-gray-600 mb-4">{message}</p>
-            <button
-              onClick={() => router.push("/configuracion/vendedores")}
-              className="bg-[#6B46FF] hover:bg-[#5a3ae6] text-white font-semibold py-2 px-6 rounded-lg transition-colors"
-            >
-              Volver a Vendedores
-            </button>
+            <p className="text-sm text-gray-500">Cerrá esta ventana y pedí un link de vinculación nuevo.</p>
           </>
         )}
       </div>

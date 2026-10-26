@@ -23,7 +23,11 @@ public class GrupoService {
 
     @Transactional(readOnly = true)
     public List<GrupoDTO> listarTodos() {
-        return grupoRepository.findAll().stream()
+        Long orgId = com.zetallegue.tms.tenant.TenantContext.getOrganizacionId();
+        List<Grupo> grupos = orgId != null
+                ? grupoRepository.findByOrganizacionId(orgId)
+                : grupoRepository.findAll();
+        return grupos.stream()
                 .map(this::toDTOWithClientes)
                 .collect(Collectors.toList());
     }
@@ -32,6 +36,7 @@ public class GrupoService {
     public GrupoDTO obtenerPorId(Long id) {
         Grupo grupo = grupoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Grupo no encontrado con id: " + id));
+        com.zetallegue.tms.tenant.TenantQuery.assertCurrentOrg(grupo.getOrganizacionId());
         return toDTOWithClientes(grupo);
     }
 
@@ -41,6 +46,7 @@ public class GrupoService {
             throw new RuntimeException("El nombre del grupo es obligatorio");
         }
         Grupo grupo = new Grupo();
+        grupo.setOrganizacionId(com.zetallegue.tms.tenant.TenantContext.getOrganizacionId());
         grupo.setNombre(dto.getNombre().trim());
         grupo = grupoRepository.save(grupo);
         return toDTO(grupo);

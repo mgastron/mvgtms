@@ -1,6 +1,7 @@
 package com.zetallegue.tms.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.zetallegue.tms.dto.EnvioDTO;
 import com.zetallegue.tms.model.Cliente;
 import com.zetallegue.tms.model.Envio;
 import com.zetallegue.tms.model.HistorialEnvio;
@@ -36,6 +37,7 @@ public class FlexPollingService {
     private final ClienteRepository clienteRepository;
     private final HistorialEnvioRepository historialEnvioRepository;
     private final MercadoLibreService mercadoLibreService;
+    private final EnvioService envioService;
 
     /**
      * Polling sincronizado cada 5 minutos (00:00-21:00) o cada 1 minuto (21:00-24:00)
@@ -79,13 +81,13 @@ public class FlexPollingService {
             log.info("Encontrados {} envíos Flex para sincronizar", enviosFlex.size());
             
             // Obtener todos los clientes vinculados con Flex una sola vez
-            Map<String, Cliente> clientesPorCodigo = clienteRepository.findAll().stream()
+            Map<String, Cliente> clientesPorOrgYCodigo = clienteRepository.findAll().stream()
                     .filter(c -> c.getFlexIdVendedor() != null && !c.getFlexIdVendedor().isEmpty())
                     .filter(c -> c.getFlexRefreshToken() != null && !c.getFlexRefreshToken().isEmpty())
                     .collect(Collectors.toMap(
-                            Cliente::getCodigo,
+                            c -> (c.getOrganizacionId() != null ? c.getOrganizacionId() : 0L) + "::" + c.getCodigo(),
                             c -> c,
-                            (c1, c2) -> c1 // En caso de duplicados, tomar el primero
+                            (c1, c2) -> c1
                     ));
             
             // Agrupar envíos por cliente para optimizar las llamadas a la API
@@ -94,14 +96,16 @@ public class FlexPollingService {
                         String clienteStr = e.getCliente();
                         if (clienteStr != null && clienteStr.contains(" - ")) {
                             String codigoCliente = clienteStr.split(" - ")[0].trim();
-                            return clientesPorCodigo.containsKey(codigoCliente);
+                            String key = (e.getOrganizacionId() != null ? e.getOrganizacionId() : 0L) + "::" + codigoCliente;
+                            return clientesPorOrgYCodigo.containsKey(key);
                         }
                         return false;
                     })
                     .collect(Collectors.groupingBy(e -> {
                         String clienteStr = e.getCliente();
                         String codigoCliente = clienteStr.split(" - ")[0].trim();
-                        return clientesPorCodigo.get(codigoCliente);
+                        String key = (e.getOrganizacionId() != null ? e.getOrganizacionId() : 0L) + "::" + codigoCliente;
+                        return clientesPorOrgYCodigo.get(key);
                     }));
             
             int sincronizados = 0;
@@ -139,17 +143,31 @@ public class FlexPollingService {
     private void sincronizarEstadoEnvio(Envio envio, Cliente cliente) throws Exception {
         String mlShipmentId = envio.getMlShipmentId();
         if (mlShipmentId == null || mlShipmentId.isEmpty()) {
-            log.warn("Envío {} no tiene mlShipmentId, saltando...", envio.getId());
+            mlShipmentId = envio.getTracking();
+        }
+        if (mlShipmentId == null || mlShipmentId.isEmpty()) {
+            log.warn("Envío {} no tiene mlShipmentId ni tracking, saltando...", envio.getId());
             return;
+        }
+        if (envio.getMlShipmentId() == null || envio.getMlShipmentId().isEmpty()) {
+            envio.setMlShipmentId(mlShipmentId);
         }
         
         log.debug("Sincronizando estado del envío {} (shipment: {})", envio.getId(), mlShipmentId);
         
-        // Obtener el estado actual desde MercadoLibre
-        JsonNode shipmentData = mercadoLibreService.obtenerShipmentPorId(mlShipmentId, cliente);
+        JsonNode shipmentData = mercadoLibreService.obtenerDetalleShipmentFlex(
+                mlShipmentId, envio.getIdml(), cliente);
+        if (shipmentData == null) {
+            log.warn("No se pudo obtener detalle del shipment {}, saltando...", mlShipmentId);
+            return;
+        }
+
+        completarDireccionSiFalta(envio, cliente, shipmentData);
+        completarGeocodificacionSiFalta(envio);
         
         if (!shipmentData.has("status")) {
             log.warn("Shipment {} no tiene campo 'status', saltando...", mlShipmentId);
+            envioRepository.save(envio);
             return;
         }
         
@@ -176,8 +194,8 @@ public class FlexPollingService {
                     }
                     break;
                 case "En camino al destinatario":
-                    if (envio.getFechaAsignacion() == null) {
-                        envio.setFechaAsignacion(ahora);
+                    if (envio.getFechaAdjudicacion() == null) {
+                        envio.setFechaAdjudicacion(ahora);
                     }
                     break;
             }
@@ -197,8 +215,51 @@ public class FlexPollingService {
             log.info("Estado del envío {} actualizado: {} -> {} (shipment: {})", 
                     envio.getId(), estadoAnterior, nuevoEstado, mlShipmentId);
         } else {
+            envioRepository.save(envio);
             log.debug("Estado del envío {} sin cambios: {} (shipment: {})", 
                     envio.getId(), nuevoEstado, mlShipmentId);
+        }
+    }
+
+    private void completarDireccionSiFalta(Envio envio, Cliente cliente, JsonNode shipmentData) {
+        try {
+            if (!mercadoLibreService.direccionIncompleta(envio.getDireccion())) {
+                return;
+            }
+            EnvioDTO mapped = mercadoLibreService.mapearEnvioFlex(shipmentData, cliente);
+            if (mercadoLibreService.direccionIncompleta(mapped.getDireccion())) {
+                return;
+            }
+            envioService.normalizarDireccionFlexAmba(mapped);
+            envio.setDireccion(mapped.getDireccion());
+            envio.setLocalidad(mapped.getLocalidad());
+            envio.setCodigoPostal(mapped.getCodigoPostal());
+            envio.setZonaEntrega(mapped.getZonaEntrega());
+            if (mapped.getNombreDestinatario() != null
+                    && !"Destinatario pendiente".equalsIgnoreCase(mapped.getNombreDestinatario())) {
+                envio.setNombreDestinatario(mapped.getNombreDestinatario());
+            }
+            if (mapped.getTelefono() != null && !mapped.getTelefono().isBlank()) {
+                envio.setTelefono(mapped.getTelefono());
+            }
+            if (mapped.getCostoEnvio() != null) {
+                envio.setCostoEnvio(mapped.getCostoEnvio());
+            }
+            if (mapped.getIdml() != null) {
+                envio.setIdml(mapped.getIdml());
+            }
+            log.info("Dirección Flex completada para envío {} ({}): {} / zona {}",
+                    envio.getId(), envio.getTracking(), mapped.getDireccion(), mapped.getZonaEntrega());
+        } catch (Exception e) {
+            log.warn("No se pudo completar dirección del envío {}: {}", envio.getId(), e.getMessage());
+        }
+    }
+
+    private void completarGeocodificacionSiFalta(Envio envio) {
+        try {
+            envioService.completarGeocodificacion(envio);
+        } catch (Exception e) {
+            log.warn("No se pudo geocodificar envío {}: {}", envio.getId(), e.getMessage());
         }
     }
 }

@@ -104,7 +104,7 @@ public class UsuarioController {
 
     @GetMapping("/choferes-con-envios")
     public ResponseEntity<List<com.zetallegue.tms.dto.ChoferConUbicacionDTO>> obtenerChoferesConEnvios() {
-        List<com.zetallegue.tms.dto.ChoferConUbicacionDTO> choferes = envioService.obtenerChoferesConEnviosAsignados();
+        List<com.zetallegue.tms.dto.ChoferConUbicacionDTO> choferes = envioService.obtenerChoferesConEnviosAdjudicados();
         return ResponseEntity.ok(choferes);
     }
 }

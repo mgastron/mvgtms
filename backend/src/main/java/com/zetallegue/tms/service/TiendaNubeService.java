@@ -36,6 +36,7 @@ public class TiendaNubeService {
     public List<JsonNode> obtenerPedidosTiendaNube(Long clienteId) throws Exception {
         Cliente cliente = clienteRepository.findById(clienteId)
             .orElseThrow(() -> new RuntimeException("Cliente no encontrado con id: " + clienteId));
+        com.zetallegue.tms.tenant.TenantQuery.assertCurrentOrg(cliente);
         
         if (cliente.getTiendanubeAccessToken() == null || cliente.getTiendanubeAccessToken().isEmpty()) {
             throw new RuntimeException("El cliente no tiene token de acceso de Tienda Nube");
@@ -158,7 +159,8 @@ public class TiendaNubeService {
      */
     @Transactional(readOnly = true)
     public List<JsonNode> obtenerTodosLosPedidosTiendaNube() throws Exception {
-        List<Cliente> clientesVinculados = clienteRepository.findByTiendanubeAccessTokenIsNotNull();
+        List<Cliente> clientesVinculados = com.zetallegue.tms.tenant.TenantQuery.ofCurrentOrg(
+                clienteRepository.findByTiendanubeAccessTokenIsNotNull());
         
         log.info("=== OBTENIENDO PEDIDOS TIENDA NUBE ===");
         log.info("Clientes vinculados encontrados: {}", clientesVinculados.size());

@@ -30,15 +30,15 @@ public interface EnvioRepository extends JpaRepository<Envio, Long>, JpaSpecific
     // Buscar por cliente (índice)
     Page<Envio> findByClienteContainingIgnoreCaseAndEliminadoFalse(String cliente, Pageable pageable);
     
-    // Buscar por QR data (solo envíos colectados y no eliminados - para vistas)
+    // Buscar por QR data (solo envíos retirados y no eliminados - para vistas)
     Envio findByQrDataAndEliminadoFalse(String qrData);
     
-    // Buscar por QR data sin filtrar por colectado (para permitir escanear envíos Flex no colectados)
-    Envio findByQrDataAndEliminadoFalseAndColectadoTrue(String qrData);
+    // Buscar por QR data sin filtrar por retirado (para permitir escanear envíos Flex no retirados)
+    Envio findByQrDataAndEliminadoFalseAndRetiradoTrue(String qrData);
     
-    // Buscar por QR data sin filtrar por colectado (para el proceso de colectar)
+    // Buscar por QR data sin filtrar por retirado (para el proceso de retirar)
     @Query("SELECT e FROM Envio e WHERE e.qrData = :qrData AND e.eliminado = false")
-    Envio findByQrDataParaColectar(@Param("qrData") String qrData);
+    Envio findByQrDataParaRetirar(@Param("qrData") String qrData);
     
     // Buscar por tracking (para evitar duplicados)
     List<Envio> findByTrackingAndEliminadoFalse(String tracking);
@@ -46,33 +46,59 @@ public interface EnvioRepository extends JpaRepository<Envio, Long>, JpaSpecific
     // Buscar por id_mvg (para evitar duplicados y para búsqueda)
     List<Envio> findByIdMvgAndEliminadoFalse(String idMvg);
 
-    // Buscar por tracking o id_mvg (p. ej. QR colector; el buscador web solo usa id_mvg)
+    // Buscar por tracking o id_mvg (p. ej. QR de retiro; el buscador web solo usa id_mvg)
     @Query("SELECT e FROM Envio e WHERE (e.tracking = :param OR e.idMvg = :param) AND e.eliminado = false")
     List<Envio> findByTrackingOrIdMvgAndEliminadoFalse(@Param("param") String param);
     
-    // Buscar envíos asignados a un chofer en estado específico (solo colectados o NULL)
-    @Query("SELECT e FROM Envio e WHERE e.choferAsignadoId = :choferId AND e.estado = :estado AND e.eliminado = false AND (e.colectado = true OR e.colectado IS NULL)")
-    List<Envio> findByChoferAsignadoIdAndEstadoAndEliminadoFalseAndColectadoTrue(@Param("choferId") Long choferAsignadoId, @Param("estado") String estado);
+    // Buscar envíos adjudicados a un chofer en estado específico (solo retirados o NULL)
+    @Query("SELECT e FROM Envio e WHERE e.choferAdjudicadoId = :choferId AND e.estado = :estado AND e.eliminado = false AND (e.retirado = true OR e.retirado IS NULL)")
+    List<Envio> findByChoferAdjudicadoIdAndEstadoAndEliminadoFalseAndRetiradoTrue(@Param("choferId") Long choferAdjudicadoId, @Param("estado") String estado);
+
+    /** Historial de resultados del chofer en un rango (Entregado / Rechazado / Nadie). */
+    @Query("SELECT e FROM Envio e WHERE e.choferAdjudicadoId = :choferId AND e.eliminado = false " +
+           "AND e.estado IN :estados " +
+           "AND COALESCE(e.fechaEntregado, e.fechaUltimoMovimiento) >= :desde " +
+           "AND COALESCE(e.fechaEntregado, e.fechaUltimoMovimiento) <= :hasta " +
+           "ORDER BY COALESCE(e.fechaEntregado, e.fechaUltimoMovimiento) ASC")
+    List<Envio> findHistorialChofer(
+            @Param("choferId") Long choferId,
+            @Param("estados") List<String> estados,
+            @Param("desde") LocalDateTime desde,
+            @Param("hasta") LocalDateTime hasta);
     
-    // Obtener IDs únicos de choferes con envíos en estado específico (solo colectados o NULL)
-    @Query("SELECT DISTINCT e.choferAsignadoId FROM Envio e WHERE e.estado = :estado AND e.eliminado = false AND (e.colectado = true OR e.colectado IS NULL) AND e.choferAsignadoId IS NOT NULL")
+    // Obtener IDs únicos de choferes con envíos en estado específico (solo retirados o NULL)
+    @Query("SELECT DISTINCT e.choferAdjudicadoId FROM Envio e WHERE e.estado = :estado AND e.eliminado = false AND (e.retirado = true OR e.retirado IS NULL) AND e.choferAdjudicadoId IS NOT NULL")
     List<Long> findChoferIdsConEnviosEnEstado(@Param("estado") String estado);
     
-    // Contar envíos por chofer y fecha para cierre (solo colectados o NULL)
-    @Query("SELECT e.choferAsignadoId, COUNT(e) FROM Envio e " +
+    // Contar envíos por chofer y fecha para cierre (solo retirados o NULL)
+    @Query("SELECT e.choferAdjudicadoId, COUNT(e) FROM Envio e " +
            "WHERE e.estado = 'En camino al destinatario' " +
            "AND e.eliminado = false " +
-           "AND (e.colectado = true OR e.colectado IS NULL) " +
+           "AND (e.retirado = true OR e.retirado IS NULL) " +
            "AND CAST(e.fecha AS date) = :fecha " +
-           "AND e.choferAsignadoId IS NOT NULL " +
+           "AND e.choferAdjudicadoId IS NOT NULL " +
            "AND (:soloFlex = false OR e.cliente LIKE '%Flex%' OR e.origen = 'Flex') " +
-           "GROUP BY e.choferAsignadoId")
+           "GROUP BY e.choferAdjudicadoId")
     List<Object[]> countEnviosPorChoferYFecha(@Param("fecha") LocalDate fecha, @Param("soloFlex") boolean soloFlex);
     
+    @Query("SELECT e FROM Envio e WHERE e.eliminado = false " +
+           "AND e.latDestino IS NULL " +
+           "AND e.direccion IS NOT NULL AND e.direccion <> '' " +
+           "AND e.direccion <> 'Dirección pendiente' " +
+           "ORDER BY e.id DESC")
+    List<Envio> findEnviosSinGeocode(org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT e FROM Envio e WHERE e.origen = 'Flex' AND e.eliminado = false " +
+           "AND e.direccion IS NOT NULL AND e.direccion <> '' AND e.direccion <> 'Dirección pendiente' " +
+           "AND (e.zonaEntrega IS NULL OR e.zonaEntrega NOT IN ('CABA', 'Zona 1', 'Zona 2', 'Zona 3')) " +
+           "ORDER BY e.id DESC")
+    List<Envio> findFlexFueraDeAmba(org.springframework.data.domain.Pageable pageable);
+
     // Obtener envíos Flex para polling (no eliminados, no en estados finales, con mlShipmentId)
     @Query("SELECT e FROM Envio e WHERE e.origen = 'Flex' " +
            "AND e.eliminado = false " +
-           "AND e.mlShipmentId IS NOT NULL AND e.mlShipmentId != '' " +
+           "AND ((e.mlShipmentId IS NOT NULL AND e.mlShipmentId != '') " +
+           "     OR (e.tracking IS NOT NULL AND e.tracking != '')) " +
            "AND e.estado NOT IN ('Entregado', 'Cancelado', 'Rechazado por el comprador')")
     List<Envio> findEnviosFlexParaPolling();
     
@@ -111,16 +137,23 @@ public interface EnvioRepository extends JpaRepository<Envio, Long>, JpaSpecific
     );
 
     /**
-     * Envíos colectados en el rango de fechas, no eliminados.
-     * Incluye: (1) con fechaColecta en rango; (2) colectado=true sin fechaColecta pero con fechaUltimoMovimiento en rango
-     * (envíos pasados a Retirado desde la web antes de que se guardara fechaColecta).
+     * Envíos retirados en el rango de fechas, no eliminados.
+     * Incluye: (1) con fechaRetiro en rango; (2) retirado=true sin fechaRetiro pero con fechaUltimoMovimiento en rango
+     * (envíos pasados a Retirado desde la web antes de que se guardara fechaRetiro).
      */
     @Query("SELECT e FROM Envio e WHERE e.eliminado = false AND (" +
-           "(e.fechaColecta IS NOT NULL AND e.fechaColecta >= :desde AND e.fechaColecta <= :hasta) " +
-           "OR (e.colectado = true AND e.fechaColecta IS NULL AND e.fechaUltimoMovimiento IS NOT NULL " +
+           "(e.fechaRetiro IS NOT NULL AND e.fechaRetiro >= :desde AND e.fechaRetiro <= :hasta) " +
+           "OR (e.retirado = true AND e.fechaRetiro IS NULL AND e.fechaUltimoMovimiento IS NOT NULL " +
            "AND e.fechaUltimoMovimiento >= :desde AND e.fechaUltimoMovimiento <= :hasta)) " +
            "ORDER BY e.id")
-    List<Envio> findEnviosColectadosEntreFechas(
+    List<Envio> findEnviosRetiradosEntreFechas(
+        @Param("desde") LocalDateTime desde,
+        @Param("hasta") LocalDateTime hasta
+    );
+
+    /** Envíos no eliminados cuya fecha de carga cae en el rango (dashboard). */
+    @Query("SELECT e FROM Envio e WHERE e.eliminado = false AND e.fecha >= :desde AND e.fecha <= :hasta ORDER BY e.fecha ASC")
+    List<Envio> findParaDashboard(
         @Param("desde") LocalDateTime desde,
         @Param("hasta") LocalDateTime hasta
     );
