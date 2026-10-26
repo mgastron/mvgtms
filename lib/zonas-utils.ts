@@ -67,57 +67,6 @@ export function determinarZonaEntrega(codigoPostal: string | number | undefined 
     return "Zona 3"
   }
 
-  const provincia = provinciaPorCodigoPostal(cpNumero)
-  if (provincia) {
-    return provincia
-  }
-  if (localidad && String(localidad).trim()) {
-    return String(localidad).trim()
-  }
   return "Sin Zona"
-}
-
-function provinciaPorCodigoPostal(cp: number): string | null {
-  const rangos: [number, number, string][] = [
-    [1000, 1499, "CABA"],
-    [1500, 1999, "Buenos Aires"],
-    [2000, 2409, "Santa Fe"],
-    [2413, 2599, "Santa Fe"],
-    [2600, 2639, "Santa Fe"],
-    [2700, 2941, "Buenos Aires"],
-    [3000, 3061, "Santa Fe"],
-    [3100, 3289, "Entre Ríos"],
-    [3300, 3388, "Misiones"],
-    [3400, 3486, "Corrientes"],
-    [3500, 3569, "Chaco"],
-    [3600, 3636, "Formosa"],
-    [4000, 4197, "Tucumán"],
-    [4200, 4353, "Santiago del Estero"],
-    [4400, 4550, "Salta"],
-    [4600, 4655, "Jujuy"],
-    [4700, 4753, "Catamarca"],
-    [5000, 5299, "Córdoba"],
-    [5300, 5380, "La Rioja"],
-    [5400, 5467, "San Juan"],
-    [5500, 5637, "Mendoza"],
-    [5700, 5779, "San Luis"],
-    [5800, 5988, "Córdoba"],
-    [6000, 6244, "Buenos Aires"],
-    [6300, 6389, "La Pampa"],
-    [6400, 6761, "Buenos Aires"],
-    [7000, 7550, "Buenos Aires"],
-    [7600, 7675, "Buenos Aires"],
-    [8000, 8187, "Buenos Aires"],
-    [8300, 8375, "Neuquén"],
-    [8400, 8534, "Río Negro"],
-    [9040, 9053, "Santa Cruz"],
-    [9000, 9220, "Chubut"],
-    [9400, 9405, "Santa Cruz"],
-    [9410, 9420, "Tierra del Fuego"],
-  ]
-  for (const [desde, hasta, nombre] of rangos) {
-    if (cp >= desde && cp <= hasta) return nombre
-  }
-  return null
 }
 

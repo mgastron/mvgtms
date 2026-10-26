@@ -577,8 +577,13 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       }
       try {
         const params = new URLSearchParams({ direccion: envio.direccion })
-        if (envio.localidad) params.set("localidad", envio.localidad)
-        if (envio.codigoPostal) params.set("codigoPostal", envio.codigoPostal)
+        const esFlex = (envio.origen || "").toLowerCase() === "flex"
+        if (esFlex) {
+          params.set("ambito", "amba")
+        } else {
+          if (envio.localidad) params.set("localidad", envio.localidad)
+          if (envio.codigoPostal) params.set("codigoPostal", envio.codigoPostal)
+        }
         const res = await fetch(`${getApiBaseUrl()}/geocode?${params.toString()}`)
         if (!res.ok) {
           if (!cancelled) setGeolocalizacionEncontrada(false)
