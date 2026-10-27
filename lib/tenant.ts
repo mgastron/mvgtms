@@ -88,7 +88,7 @@ export function getDriverInstallUrl(): string {
 
 const DEFAULT_APK_URLS: Record<string, string> = {
   mensajerialdp:
-    "https://expo.dev/artifacts/eas/abJrnPZEYV_U2yrjp6fs_9vxC7-YNlEwpWFrIC7t93E.apk?v=2",
+    "https://expo.dev/artifacts/eas/u_Ncr2JlrylAtYfBqlwTikvfTc7QyfsjMA3THwBIX4Q.apk?v=3",
 }
 
 export function getDriverApkUrl(slug?: string): string {

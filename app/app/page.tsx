@@ -148,7 +148,7 @@ export default function DriverAppInstallPage() {
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#1459e9] px-4 text-[14px] font-semibold text-white hover:bg-[#1048c2]"
                 >
                   <Download className="h-4 w-4" />
-                  Descargar app Android (v2)
+                  Descargar app Android (v3)
                 </a>
               ) : (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-[13px] text-amber-900">
