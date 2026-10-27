@@ -15,7 +15,7 @@ import { getApiBaseUrl } from "@/lib/api-config"
 import { getFechaOperativaLabel } from "@/lib/tenant"
 import { logDev, warnDev, errorDev } from "@/lib/logger"
 import { toast } from "sonner"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 
 interface GrupoOption {
   id: number
@@ -102,10 +102,6 @@ function appendIfFilter(params: URLSearchParams, key: string, value: string) {
   if (value && value !== "todos") params.append(key, value)
 }
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-})
 
 export default function EnviosPage() {
   const router = useRouter()

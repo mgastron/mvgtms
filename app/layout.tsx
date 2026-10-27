@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import "./globals.css"
+import { montserrat } from "@/lib/fonts"
 import { RouteGuardClient } from "@/components/route-guard-client"
 import { Toaster } from "sonner"
 
@@ -14,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" className={montserrat.variable} suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>

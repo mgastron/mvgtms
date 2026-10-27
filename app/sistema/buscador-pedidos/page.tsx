@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Search, AlertCircle, ExternalLink, Package } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { errorDev } from "@/lib/logger"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,10 +18,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-})
 
 export default function BuscadorPedidosPage() {
   const [idNx, setIdNx] = useState("")

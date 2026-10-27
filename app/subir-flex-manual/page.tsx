@@ -6,12 +6,8 @@ import { ModernHeader } from "@/components/modern-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { getApiBaseUrl } from "@/lib/api-config"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-})
 
 export default function SubirFlexManualPage() {
   const router = useRouter()

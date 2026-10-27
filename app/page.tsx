@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { EyeOff } from "lucide-react"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { getApiBaseUrl } from "@/lib/api-config"
@@ -16,10 +16,6 @@ import {
 } from "@/lib/tenant"
 import { BrandLockup } from "@/components/brand-lockup"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-})
 
 function persistSession(user: {
   usuario?: string

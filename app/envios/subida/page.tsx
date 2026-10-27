@@ -1,14 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 import { ModernHeader } from "@/components/modern-header"
 import { FileUp, Upload, ArrowRight, X } from "lucide-react"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-})
 
 const cardClass =
   "rounded-2xl border border-[#e6eaf4] bg-white p-5 shadow-sm transition-colors hover:bg-[#f7faff]"

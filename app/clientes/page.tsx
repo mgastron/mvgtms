@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 import { ModernHeader } from "@/components/modern-header"
 import { ClientsTable } from "@/components/clients-table"
 import { NewClientModal } from "@/components/new-client-modal"
@@ -13,10 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-})
 
 const filterAsideInputClass =
   "h-9 rounded-lg border border-slate-200 bg-slate-50/80 text-[13px] font-medium text-slate-800 shadow-none placeholder:font-normal placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:ring-1 focus-visible:ring-slate-300 focus-visible:ring-offset-0"

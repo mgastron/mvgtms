@@ -12,12 +12,8 @@ import QRCode from "qrcode"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev, errorDev } from "@/lib/logger"
 import { cn } from "@/lib/utils"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-})
 
 interface Cliente {
   id: number

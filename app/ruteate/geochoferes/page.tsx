@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 import { Search, X } from "lucide-react"
 import { ModernHeader } from "@/components/modern-header"
 import { Input } from "@/components/ui/input"
@@ -10,10 +10,6 @@ import { getApiBaseUrl } from "@/lib/api-config"
 import { errorDev } from "@/lib/logger"
 import { OsmMap } from "@/components/osm-map"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-})
 
 const searchInputClass =
   "h-10 rounded-xl border border-[#e6eaf4] bg-white pl-9 pr-8 text-[14px] font-medium text-[#1f2433] shadow-sm placeholder:font-normal placeholder:text-[#8890a8] focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"

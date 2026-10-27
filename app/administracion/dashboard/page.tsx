@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { cn } from "@/lib/utils"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 import {
   AlertTriangle,
   ArrowDownRight,
@@ -33,10 +33,6 @@ import {
   YAxis,
 } from "recharts"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-})
 
 type DashboardData = {
   fechaDesde: string

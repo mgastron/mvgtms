@@ -14,7 +14,7 @@ import { geocodeAndGetPostalCode } from "@/lib/geocode-cp"
 import { getLabelIconDataUrls } from "@/lib/pdf-label-assets"
 import { drawA4Label, drawSmallLabel, type EnvioLabel } from "@/lib/pdf-label-draw"
 import { warnDev, errorDev } from "@/lib/logger"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 
 interface Cliente {
   id: number
@@ -22,10 +22,6 @@ interface Cliente {
   nombreFantasia: string
 }
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-})
 
 export default function SubirEnvioPage() {
   const router = useRouter()

@@ -21,15 +21,11 @@ import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { UserProfile } from "@/components/user-profile"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { getLocalTenantBranding, loadTenantBranding, type TenantBranding } from "@/lib/tenant"
 import { BrandLockup } from "@/components/brand-lockup"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-})
 
 const allMenuItems = [
   {

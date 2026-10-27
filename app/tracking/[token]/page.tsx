@@ -14,7 +14,7 @@ import {
   Clock,
   Truck,
 } from "lucide-react"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { logDev, warnDev, errorDev } from "@/lib/logger"
 import { cn } from "@/lib/utils"
@@ -22,10 +22,6 @@ import { ModernHeader } from "@/components/modern-header"
 import { getLocalTenantBranding } from "@/lib/tenant"
 import { BrandLockup } from "@/components/brand-lockup"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-})
 
 interface Envio {
   id: number

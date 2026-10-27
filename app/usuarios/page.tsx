@@ -11,12 +11,8 @@ import { NewUserModal } from "@/components/new-user-modal"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { getDriverInstallUrl } from "@/lib/tenant"
 import { warnDev, errorDev } from "@/lib/logger"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-})
 import {
   AlertDialog,
   AlertDialogAction,

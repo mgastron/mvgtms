@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 
 interface Cliente {
   id: number
@@ -34,10 +34,6 @@ interface ListaPrecio {
   listaPrecioSeleccionada?: string
 }
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-})
 
 export default function ListaPreciosEnvioPage() {
   const router = useRouter()

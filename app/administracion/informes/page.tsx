@@ -10,12 +10,8 @@ import { FileBarChart, Download, Search } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
 import { cn } from "@/lib/utils"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-})
 
 const fieldLabelClass = "block text-[14px] font-medium text-[#4d5571]"
 const inputClass =

@@ -8,12 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Pencil, Layers } from "lucide-react"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev } from "@/lib/logger"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-})
 
 const inputEditClass =
   "h-10 max-w-xs rounded-xl border border-[#e6eaf4] bg-white text-[14px] font-medium text-[#1f2433] shadow-sm focus-visible:border-[#1570ef] focus-visible:ring-2 focus-visible:ring-[#1570ef]/20 focus-visible:ring-offset-0"

@@ -1,17 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 import { ModernHeader } from "@/components/modern-header"
 import { Clock, Home, Inbox, Package } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { errorDev } from "@/lib/logger"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-})
 
 interface ChoferCierre {
   id: number

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import QRCode from "qrcode"
 import { Check, Copy, Download, Smartphone } from "lucide-react"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 import { BrandLockup } from "@/components/brand-lockup"
 import {
   getDriverApkUrl,
@@ -12,10 +12,6 @@ import {
   type TenantBranding,
 } from "@/lib/tenant"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-})
 
 export default function DriverAppInstallPage() {
   const [tenant, setTenant] = useState<TenantBranding>({
@@ -152,7 +148,7 @@ export default function DriverAppInstallPage() {
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#1459e9] px-4 text-[14px] font-semibold text-white hover:bg-[#1048c2]"
                 >
                   <Download className="h-4 w-4" />
-                  Descargar app Android
+                  Descargar app Android (v2)
                 </a>
               ) : (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-[13px] text-amber-900">

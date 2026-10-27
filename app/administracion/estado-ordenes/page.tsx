@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RefreshCw, Eye, CheckCircle2, XCircle, AlertCircle, Inbox } from "lucide-react"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { logDev, errorDev, warnDev } from "@/lib/logger"
 import { EnvioDetailModal } from "@/components/envio-detail-modal"
@@ -21,10 +21,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-})
 
 interface PedidoTiendaNube {
   pedido: any // JSON del pedido de Tienda Nube

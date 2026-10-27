@@ -20,12 +20,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { warnDev, errorDev } from "@/lib/logger"
-import { Montserrat } from "next/font/google"
+import { montserrat } from "@/lib/fonts"
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-})
 
 const filterAsideInputClass =
   "h-9 rounded-lg border border-slate-200 bg-slate-50/80 text-[13px] font-medium text-slate-800 shadow-none placeholder:font-normal placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:ring-1 focus-visible:ring-slate-300 focus-visible:ring-offset-0"
