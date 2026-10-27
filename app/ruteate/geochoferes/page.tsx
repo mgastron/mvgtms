@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { montserrat } from "@/lib/fonts"
 import { Search, X } from "lucide-react"
@@ -108,24 +108,32 @@ export default function GeochoferesPage() {
     }
   }
 
-  const mapMarkers = [
-    {
-      lat: deposito.lat,
-      lng: deposito.lng,
-      title: "Depósito",
-      popup: deposito.address,
-      color: "#dc2626",
-    },
-    ...choferesFiltrados
-      .filter((c) => c.latitud != null && c.longitud != null)
-      .map((c) => ({
-        lat: c.latitud as number,
-        lng: c.longitud as number,
-        title: c.nombreCompleto,
-        popup: `${c.cantidadEnvios} pedidos en ruta`,
-        color: "#1570ef",
-      })),
-  ]
+  const mapCenter = useMemo(
+    () => ({ lat: deposito.lat, lng: deposito.lng }),
+    [deposito.lat, deposito.lng]
+  )
+
+  const mapMarkers = useMemo(
+    () => [
+      {
+        lat: deposito.lat,
+        lng: deposito.lng,
+        title: "Depósito",
+        popup: deposito.address,
+        color: "#dc2626",
+      },
+      ...choferesFiltrados
+        .filter((c) => c.latitud != null && c.longitud != null)
+        .map((c) => ({
+          lat: c.latitud as number,
+          lng: c.longitud as number,
+          title: c.nombreCompleto,
+          popup: `${c.cantidadEnvios} pedidos en ruta`,
+          color: "#1570ef",
+        })),
+    ],
+    [deposito.address, deposito.lat, deposito.lng, choferesFiltrados]
+  )
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f7f8fc] md:h-screen">
@@ -234,7 +242,7 @@ export default function GeochoferesPage() {
         <div className="relative min-h-[48vh] min-w-0 flex-1 md:min-h-0">
           <OsmMap
             className="h-full min-h-[48vh] w-full md:min-h-0"
-            center={{ lat: deposito.lat, lng: deposito.lng }}
+            center={mapCenter}
             zoom={12}
             markers={mapMarkers}
             mapRefOut={(api) => {
