@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { errorDev } from "@/lib/logger"
 import { OsmMap } from "@/components/osm-map"
+import { getTenantDepot, type TenantDepot } from "@/lib/tenant"
 
 
 const searchInputClass =
@@ -27,23 +28,21 @@ interface ChoferConUbicacion {
   envios: any[]
 }
 
-const DEPOSITO = { lat: -34.6445136, lng: -58.4057873 }
-
 export default function GeochoferesPage() {
   const router = useRouter()
   const mapApiRef = useRef<{ setView: (lat: number, lng: number, zoom?: number) => void } | null>(null)
+  const [deposito, setDeposito] = useState<TenantDepot>(() => getTenantDepot("nexo"))
   const [choferes, setChoferes] = useState<ChoferConUbicacion[]>([])
   const [choferesFiltrados, setChoferesFiltrados] = useState<ChoferConUbicacion[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [countdown, setCountdown] = useState(30)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Verificar autenticación
   useEffect(() => {
+    setDeposito(getTenantDepot())
     const isAuthenticated = sessionStorage.getItem("isAuthenticated")
     if (!isAuthenticated) {
       router.push("/")
-      return
     }
   }, [router])
 
@@ -111,10 +110,10 @@ export default function GeochoferesPage() {
 
   const mapMarkers = [
     {
-      lat: DEPOSITO.lat,
-      lng: DEPOSITO.lng,
+      lat: deposito.lat,
+      lng: deposito.lng,
       title: "Depósito",
-      popup: "José C. Paz 3108",
+      popup: deposito.address,
       color: "#dc2626",
     },
     ...choferesFiltrados
@@ -235,7 +234,7 @@ export default function GeochoferesPage() {
         <div className="relative min-h-[48vh] min-w-0 flex-1 md:min-h-0">
           <OsmMap
             className="h-full min-h-[48vh] w-full md:min-h-0"
-            center={DEPOSITO}
+            center={{ lat: deposito.lat, lng: deposito.lng }}
             zoom={12}
             markers={mapMarkers}
             mapRefOut={(api) => {

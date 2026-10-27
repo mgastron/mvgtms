@@ -1,8 +1,26 @@
+export type TenantDepot = {
+  address: string
+  lat: number
+  lng: number
+}
+
 export type TenantBranding = {
   slug: string
   nombre: string
   logoUrl: string
   colorPrimario: string
+}
+
+const NEXO_DEPOT: TenantDepot = {
+  address: "José C. Paz 3108, Parque Patricios, CABA",
+  lat: -34.6445136,
+  lng: -58.4057873,
+}
+
+const LDP_DEPOT: TenantDepot = {
+  address: "Jean Jaures 737, Abasto, CABA",
+  lat: -34.6017065,
+  lng: -58.4079449,
 }
 
 const NEXO: TenantBranding = {
@@ -51,6 +69,12 @@ export function isNexoTenant(): boolean {
 
 export function isLdpTenant(): boolean {
   return getTenantSlug() === LDP.slug
+}
+
+export function getTenantDepot(slug?: string): TenantDepot {
+  const current = slug ?? getTenantSlug()
+  if (current === LDP.slug) return LDP_DEPOT
+  return NEXO_DEPOT
 }
 
 export function getDriverInstallPath(): string {
