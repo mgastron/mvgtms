@@ -11,6 +11,7 @@ import jsPDF from "jspdf"
 import QRCode from "qrcode"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { getFechaOperativaLabel } from "@/lib/tenant"
+import { formatFechaHoraAR } from "@/lib/datetime-ar"
 import { getLabelIconDataUrls } from "@/lib/pdf-label-assets"
 import { warnDev, errorDev } from "@/lib/logger"
 import { montserrat } from "@/lib/fonts"
@@ -382,15 +383,7 @@ export default function ReimprimirNoflexPage() {
     }
   }
 
-  const formatFecha = (fechaISO: string) => {
-    const fecha = new Date(fechaISO)
-    const dia = fecha.getDate().toString().padStart(2, "0")
-    const mes = (fecha.getMonth() + 1).toString().padStart(2, "0")
-    const año = fecha.getFullYear()
-    const horas = fecha.getHours().toString().padStart(2, "0")
-    const minutos = fecha.getMinutes().toString().padStart(2, "0")
-    return `${dia}/${mes}/${año} ${horas}:${minutos}`
-  }
+  const formatFecha = (fechaISO: string) => formatFechaHoraAR(fechaISO)
 
   const handleReimprimirA4 = async (envioIds: number[]) => {
     try {
@@ -1029,7 +1022,7 @@ export default function ReimprimirNoflexPage() {
                   <SelectItem value="__todos__">Todos los del grupo</SelectItem>
                   {grupoClientesVendedor.map((c) => (
                     <SelectItem key={c.codigo} value={c.codigo}>
-                      {c.nombreFantasia ? `${c.nombreFantasia} (${c.codigo})` : c.codigo}
+                      {c.nombreFantasia?.trim() || c.codigo}
                     </SelectItem>
                   ))}
                 </SelectContent>

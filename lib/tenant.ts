@@ -18,9 +18,9 @@ const NEXO_DEPOT: TenantDepot = {
 }
 
 const LDP_DEPOT: TenantDepot = {
-  address: "Jean Jaures 737, Abasto, CABA",
-  lat: -34.6017065,
-  lng: -58.4079449,
+  address: "Jean Jaures 743, Abasto, CABA",
+  lat: -34.6016593,
+  lng: -58.4079275,
 }
 
 const NEXO: TenantBranding = {

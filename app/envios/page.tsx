@@ -13,6 +13,7 @@ import { EnvioDetailModal } from "@/components/envio-detail-modal"
 import * as XLSX from "xlsx"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { getFechaOperativaLabel } from "@/lib/tenant"
+import { formatFechaAR, formatFechaHoraAR } from "@/lib/datetime-ar"
 import { logDev, warnDev, errorDev } from "@/lib/logger"
 import { toast } from "sonner"
 import { montserrat } from "@/lib/fonts"
@@ -742,17 +743,7 @@ export default function EnviosPage() {
       // Función auxiliar para formatear fechas
       const formatFechaExcel = (fechaISO: string | undefined) => {
         if (!fechaISO) return ""
-        try {
-          const fecha = new Date(fechaISO)
-          const dia = fecha.getDate().toString().padStart(2, "0")
-          const mes = (fecha.getMonth() + 1).toString().padStart(2, "0")
-          const año = fecha.getFullYear()
-          const horas = fecha.getHours().toString().padStart(2, "0")
-          const minutos = fecha.getMinutes().toString().padStart(2, "0")
-          return `${dia}/${mes}/${año} ${horas}:${minutos}`
-        } catch {
-          return fechaISO
-        }
+        return formatFechaHoraAR(fechaISO) || fechaISO
       }
       
       // Función auxiliar para determinar provincia basada en código postal
@@ -1023,25 +1014,9 @@ export default function EnviosPage() {
     }
   }
 
-  const formatFecha = (fechaISO: string) => {
-    if (!fechaISO) return ""
-    const fecha = new Date(fechaISO)
-    const dia = fecha.getDate().toString().padStart(2, "0")
-    const mes = (fecha.getMonth() + 1).toString().padStart(2, "0")
-    const año = fecha.getFullYear()
-    const horas = fecha.getHours().toString().padStart(2, "0")
-    const minutos = fecha.getMinutes().toString().padStart(2, "0")
-    return `${dia}/${mes}/${año} ${horas}:${minutos}`
-  }
-
   const formatFechaSoloDia = (fechaISO?: string) => {
     if (!fechaISO) return "—"
-    const fecha = new Date(fechaISO)
-    if (Number.isNaN(fecha.getTime())) return "—"
-    const dia = fecha.getDate().toString().padStart(2, "0")
-    const mes = (fecha.getMonth() + 1).toString().padStart(2, "0")
-    const año = fecha.getFullYear()
-    return `${dia}/${mes}/${año}`
+    return formatFechaAR(fechaISO) || "—"
   }
 
   const getZonaBadgeClasses = (zona: string) => {
@@ -1096,7 +1071,7 @@ export default function EnviosPage() {
                     <SelectItem value="__todos__">Todos los del grupo</SelectItem>
                     {grupoClientesVendedor.map((c) => (
                       <SelectItem key={c.codigo} value={c.codigo}>
-                        {c.nombreFantasia ? `${c.nombreFantasia} (${c.codigo})` : c.codigo}
+                        {c.nombreFantasia?.trim() || c.codigo}
                       </SelectItem>
                     ))}
                   </SelectContent>

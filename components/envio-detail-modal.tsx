@@ -12,6 +12,7 @@ import { getApiBaseUrl } from "@/lib/api-config"
 import { getFechaOperativaLabel } from "@/lib/tenant"
 import { cn } from "@/lib/utils"
 import { logDev, warnDev, errorDev } from "@/lib/logger"
+import { formatFechaAR, formatFechaHoraAR, formatHoraAR, nowTimeInputAR, todayDateInputAR } from "@/lib/datetime-ar"
 import { OsmMap } from "@/components/osm-map"
 import {
   AlertDialog,
@@ -128,6 +129,21 @@ const tblRow = "border-b border-slate-100/80 transition-colors hover:bg-teal-50/
 const panelBar = "border-b border-slate-200/80 bg-slate-100/80 px-4 py-2.5"
 const panelBarTitle = "text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
 
+function mapHistorialApi(item: any): HistorialItem {
+  return {
+    id: item.id,
+    estado: item.estado,
+    fecha: formatFechaAR(item.fecha) || "",
+    horaEstimada: formatHoraAR(item.fecha) || "",
+    quien: item.quien || "Usuario",
+    observaciones: item.observaciones,
+    origen: item.origen,
+    latitud: item.latitud ?? null,
+    longitud: item.longitud ?? null,
+    ubicacionDireccion: item.ubicacionDireccion ?? null,
+  }
+}
+
 type EnvioDetailTab = "general" | "historial" | "observaciones" | "imagenes" | "adjudicacion"
 
 const DETAIL_NAV: { id: EnvioDetailTab; label: string; Icon: LucideIcon }[] = [
@@ -237,23 +253,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       const response = await fetch(`${apiBaseUrl}/envios/${envio.id}/historial`)
       if (response.ok) {
         const historialData = await response.json()
-        const historialFormateado: HistorialItem[] = historialData.map((item: any) => {
-          const fecha = new Date(item.fecha)
-          const fechaFormateada = fecha.toLocaleDateString("es-AR")
-          const horaFormateada = fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
-          return {
-            id: item.id,
-            estado: item.estado,
-            fecha: fechaFormateada,
-            horaEstimada: horaFormateada,
-            quien: item.quien || "Usuario",
-            observaciones: item.observaciones,
-            origen: item.origen,
-            latitud: item.latitud ?? null,
-            longitud: item.longitud ?? null,
-            ubicacionDireccion: item.ubicacionDireccion ?? null,
-          }
-        })
+        const historialFormateado: HistorialItem[] = historialData.map((item: any) => mapHistorialApi(item))
         const historialFiltrado: HistorialItem[] = []
         let ultimoEstado: string | null = null
         for (const item of historialFormateado) {
@@ -300,11 +300,9 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       if (response.ok) {
         const observacionesData = await response.json()
         const observacionesFormateadas: ObservacionItem[] = observacionesData.map((item: any) => {
-          const fecha = new Date(item.fecha)
-          const fechaFormateada = fecha.toLocaleDateString("es-AR")
           return {
             id: item.id,
-            fecha: fechaFormateada,
+            fecha: formatFechaHoraAR(item.fecha) || "",
             observacion: item.observacion,
             quien: item.quien || "Usuario",
           }
@@ -332,12 +330,10 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       if (response.ok) {
         const imagenesData = await response.json()
         const imagenesFormateadas = imagenesData.map((item: any) => {
-          const fecha = new Date(item.fecha)
-          const fechaFormateada = fecha.toLocaleDateString("es-AR")
           return {
             id: item.id,
             url: item.urlImagen,
-            fecha: fechaFormateada,
+            fecha: formatFechaHoraAR(item.fecha) || "",
             quien: item.quien || "Usuario",
           }
         })
@@ -651,8 +647,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
         margin: 1,
       })
 
-      const fecha = envio.fecha ? new Date(envio.fecha) : new Date()
-      const fechaFormateada = `${fecha.getDate().toString().padStart(2, "0")}/${(fecha.getMonth() + 1).toString().padStart(2, "0")}/${fecha.getFullYear()}`
+      const fechaFormateada = formatFechaAR(envio.fecha || new Date()) || ""
 
       const bulletR = 1.4
       const bulletX = marginLeft + bulletR + 1
@@ -789,9 +784,8 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
   }
 
   const handleOpenAddEstado = () => {
-    const now = new Date()
-    const fecha = now.toISOString().split("T")[0]
-    const horario = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`
+    const fecha = todayDateInputAR()
+    const horario = nowTimeInputAR()
     const estadoActual = envio?.estado || "A retirar"
     // Si está "A retirar", el único siguiente permitido es "Retirado"
     const estadoPorDefecto = estadoActual === "A retirar" ? "Retirado" : "Retirado"
@@ -832,7 +826,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
     }
 
     // Fallback: solo actualizar historial local (sin backend)
-    const fechaFormateada = new Date(nuevoEstado.fecha).toLocaleDateString("es-AR")
+    const fechaFormateada = formatFechaAR(nuevoEstado.fecha)
     const nuevoItem: HistorialItem = {
       id: Date.now(),
       estado: nuevoEstado.estado,
@@ -869,7 +863,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
 
     // Obtener fecha y hora actual
     const now = new Date()
-    const fechaFormateada = now.toLocaleDateString("es-AR")
+    const fechaFormateada = formatFechaHoraAR(now)
     const username = sessionStorage.getItem("username") || "Usuario"
 
     // Crear nueva observación
@@ -966,21 +960,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       const historialResponse = await fetch(`${apiBaseUrl}/envios/${envio.id}/historial`)
       if (historialResponse.ok) {
         const historialData = await historialResponse.json()
-        const historialFormateado: HistorialItem[] = historialData.map((item: any) => {
-          const fecha = new Date(item.fecha)
-          return {
-            id: item.id,
-            estado: item.estado,
-            fecha: fecha.toLocaleDateString("es-AR"),
-            horaEstimada: fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
-            quien: item.quien || "Usuario",
-            observaciones: item.observaciones,
-            origen: item.origen,
-            latitud: item.latitud ?? null,
-            longitud: item.longitud ?? null,
-            ubicacionDireccion: item.ubicacionDireccion ?? null,
-          }
-        })
+        const historialFormateado: HistorialItem[] = historialData.map((item: any) => mapHistorialApi(item))
         setHistorial(historialFormateado)
       }
     } catch (error) {
@@ -1042,21 +1022,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
       const historialResponse = await fetch(`${apiBaseUrl}/envios/${envio.id}/historial`)
       if (historialResponse.ok) {
         const historialData = await historialResponse.json()
-        const historialFormateado: HistorialItem[] = historialData.map((item: any) => {
-          const fecha = new Date(item.fecha)
-          return {
-            id: item.id,
-            estado: item.estado,
-            fecha: fecha.toLocaleDateString("es-AR"),
-            horaEstimada: fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
-            quien: item.quien || "Usuario",
-            observaciones: item.observaciones,
-            origen: item.origen,
-            latitud: item.latitud ?? null,
-            longitud: item.longitud ?? null,
-            ubicacionDireccion: item.ubicacionDireccion ?? null,
-          }
-        })
+        const historialFormateado: HistorialItem[] = historialData.map((item: any) => mapHistorialApi(item))
         setHistorial(historialFormateado)
       }
 
@@ -1203,7 +1169,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                     <div className="space-y-1.5">
                       <label className={lbl}>Fecha Ingreso</label>
                       <Input
-                        value={envio.fecha ? new Date(envio.fecha).toLocaleDateString("es-AR") : "—"}
+                        value={envio.fecha ? formatFechaAR(envio.fecha) || "—" : "—"}
                         className={cn(fld, "shadow-sm")}
                         readOnly
                       />
@@ -1211,7 +1177,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                     <div className="space-y-1.5">
                       <label className={lbl}>Fecha Venta</label>
                       <Input
-                        value={envio.fechaVenta ? new Date(envio.fechaVenta).toLocaleString("es-AR") : "—"}
+                        value={envio.fechaVenta ? formatFechaHoraAR(envio.fechaVenta) || "—" : "—"}
                         className={cn(fld, "shadow-sm")}
                         readOnly
                       />
@@ -1219,7 +1185,7 @@ export function EnvioDetailModal({ isOpen, onClose, envio, onDelete, onAssignSuc
                     <div className="space-y-1.5">
                       <label className={lbl}>{getFechaOperativaLabel()}</label>
                       <Input
-                        value={envio.fechaLlegue ? new Date(envio.fechaLlegue).toLocaleDateString("es-AR") : "—"}
+                        value={envio.fechaLlegue ? formatFechaAR(envio.fechaLlegue) || "—" : "—"}
                         className={cn(fld, "shadow-sm")}
                         readOnly
                       />

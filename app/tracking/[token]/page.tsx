@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
@@ -16,11 +16,13 @@ import {
 } from "lucide-react"
 import { montserrat } from "@/lib/fonts"
 import { getApiBaseUrl } from "@/lib/api-config"
-import { logDev, warnDev, errorDev } from "@/lib/logger"
+import { errorDev } from "@/lib/logger"
 import { cn } from "@/lib/utils"
 import { ModernHeader } from "@/components/modern-header"
 import { getLocalTenantBranding } from "@/lib/tenant"
 import { BrandLockup } from "@/components/brand-lockup"
+import { OsmMap } from "@/components/osm-map"
+import { formatFechaAR, formatFechaHoraAR, formatHoraAR } from "@/lib/datetime-ar"
 
 
 interface Envio {
@@ -36,6 +38,9 @@ interface Envio {
   cliente?: string
   fechaLlegue?: string
   fecha?: string
+  latDestino?: number | null
+  lngDestino?: number | null
+  origen?: string
 }
 
 interface HistorialItem {
@@ -89,13 +94,8 @@ export default function TrackingPage() {
   const [historial, setHistorial] = useState<HistorialItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  /** Evita mostrar “sin geolocalización” antes de que termine el geocoder */
   const [geoLookupStatus, setGeoLookupStatus] = useState<"idle" | "pending" | "ok" | "fail">("idle")
-  const mapRef = useRef<HTMLDivElement>(null)
-  const mapInstanceRef = useRef<google.maps.Map | null>(null)
-  const markerRef = useRef<google.maps.Marker | null>(null)
-  const checkRefIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const checkScriptIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [useAppHeader, setUseAppHeader] = useState(false)
 
   useEffect(() => {
@@ -126,14 +126,14 @@ export default function TrackingPage() {
             const historialData = await historialResponse.json()
             const historialFormateado: HistorialItem[] = historialData
               .map((item: { id: number; estado: string; fecha: string; quien?: string }) => {
-                const fecha = new Date(item.fecha)
+                const ts = item.fecha ? new Date(/T/.test(item.fecha) && !/[zZ+-]/.test(item.fecha) ? `${item.fecha}Z` : item.fecha).getTime() : 0
                 return {
                   id: item.id,
                   estado: item.estado,
-                  fecha: fecha.toLocaleDateString("es-AR"),
-                  horaEstimada: fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
+                  fecha: formatFechaAR(item.fecha),
+                  horaEstimada: formatHoraAR(item.fecha),
                   quien: item.quien,
-                  fechaTimestamp: fecha.getTime(),
+                  fechaTimestamp: Number.isNaN(ts) ? 0 : ts,
                 }
               })
               .sort((a: { fechaTimestamp: number }, b: { fechaTimestamp: number }) => a.fechaTimestamp - b.fechaTimestamp)
@@ -141,12 +141,11 @@ export default function TrackingPage() {
 
             const estadosEnHistorial = new Set(historialFormateado.map((h) => h.estado))
             if (!estadosEnHistorial.has("A retirar") && envioData.fechaLlegue) {
-              const fechaLlegue = new Date(envioData.fechaLlegue)
               historialFormateado.unshift({
                 id: -1,
                 estado: "A retirar",
-                fecha: fechaLlegue.toLocaleDateString("es-AR"),
-                horaEstimada: fechaLlegue.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
+                fecha: formatFechaAR(envioData.fechaLlegue),
+                horaEstimada: formatHoraAR(envioData.fechaLlegue),
                 quien: "Sistema",
               })
             }
@@ -178,136 +177,52 @@ export default function TrackingPage() {
   }, [token])
 
   useEffect(() => {
-    logDev("[TRACKING MAP] useEffect ejecutado", {
-      tieneEnvio: !!envio,
-      tieneMapRef: !!mapRef.current,
-      envioData: envio
-        ? {
-            direccion: envio.direccion,
-            localidad: envio.localidad,
-            codigoPostal: envio.codigoPostal,
-          }
-        : null,
-    })
-
-    if (!envio) {
-      logDev("[TRACKING MAP] No hay envío, saliendo")
-      return
-    }
-
+    if (!envio) return
+    let cancelled = false
     setGeoLookupStatus("pending")
+    setMapCoords(null)
 
-    if (!mapRef.current) {
-      checkRefIntervalRef.current = setInterval(() => {
-        if (mapRef.current) {
-          if (checkRefIntervalRef.current) clearInterval(checkRefIntervalRef.current)
-          initializeMapLogic()
-        }
-      }, 50)
-    } else {
-      initializeMapLogic()
-    }
-
-    function initializeMapLogic() {
-      if (!envio || !mapRef.current) {
-        logDev("[TRACKING MAP] Condición no cumplida en initializeMapLogic", {
-          tieneEnvio: !!envio,
-          tieneMapRef: !!mapRef.current,
-        })
+    const resolver = async () => {
+      if (envio.latDestino != null && envio.lngDestino != null) {
+        if (cancelled) return
+        setMapCoords({ lat: envio.latDestino, lng: envio.lngDestino })
+        setGeoLookupStatus("ok")
         return
       }
-
-      if (!window.google) {
-        logDev("[TRACKING MAP] Google Maps API no está cargada")
-        const existingScript = document.querySelector('script[src*="maps.googleapis.com"]')
-        if (existingScript) {
-          checkScriptIntervalRef.current = setInterval(() => {
-            if (window.google && window.google.maps) {
-              if (checkScriptIntervalRef.current) clearInterval(checkScriptIntervalRef.current)
-              initializeMap()
-            }
-          }, 100)
-        } else {
-          const script = document.createElement("script")
-          script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY || "YOUR_API_KEY"}&libraries=places,geometry`
-          script.async = true
-          script.defer = true
-          script.id = "google-maps-script-tracking"
-          script.onload = () => initializeMap()
-          script.onerror = () => {
-            errorDev("[TRACKING MAP] Error al cargar Google Maps API")
-            setGeoLookupStatus("fail")
-          }
-          document.head.appendChild(script)
-        }
-      } else {
-        initializeMap()
+      if (!envio.direccion) {
+        setGeoLookupStatus("fail")
+        return
       }
-
-      function initializeMap() {
-        if (!mapRef.current || !envio) {
-          warnDev("[TRACKING MAP] initializeMap: Condición no cumplida", {
-            tieneMapRef: !!mapRef.current,
-            tieneEnvio: !!envio,
-          })
+      try {
+        const params = new URLSearchParams({ direccion: envio.direccion })
+        const esFlex = (envio.origen || "").toLowerCase() === "flex"
+        if (esFlex) {
+          params.set("ambito", "amba")
+        } else {
+          if (envio.localidad) params.set("localidad", envio.localidad)
+          if (envio.codigoPostal) params.set("codigoPostal", envio.codigoPostal)
+        }
+        const res = await fetch(`${getApiBaseUrl()}/geocode?${params.toString()}`)
+        if (!res.ok) {
+          if (!cancelled) setGeoLookupStatus("fail")
           return
         }
-
-        const geocoder = new google.maps.Geocoder()
-        const addressParts = [envio.direccion, envio.localidad, envio.codigoPostal, "Argentina"]
-          .map((p) => (p || "").toString().trim())
-          .filter(Boolean)
-
-        const address = addressParts.join(", ")
-
-        geocoder.geocode({ address }, (results, status) => {
-          if (status === "OK" && results && results[0]) {
-            const location = results[0].geometry.location
-            setGeoLookupStatus("ok")
-
-            const map = new google.maps.Map(mapRef.current!, {
-              zoom: 15,
-              center: location,
-              mapTypeControl: true,
-              streetViewControl: true,
-              fullscreenControl: true,
-            })
-
-            mapInstanceRef.current = map
-
-            const marker = new google.maps.Marker({
-              position: location,
-              map: map,
-              title: address,
-            })
-
-            markerRef.current = marker
-          } else {
-            warnDev("[TRACKING MAP] No se pudo geocodificar la dirección", { status })
-            setGeoLookupStatus("fail")
-            const map = new google.maps.Map(mapRef.current!, {
-              zoom: 10,
-              center: { lat: -34.6037, lng: -58.3816 },
-              mapTypeControl: true,
-              streetViewControl: true,
-              fullscreenControl: true,
-            })
-
-            mapInstanceRef.current = map
-          }
-        })
+        const data = await res.json()
+        if (cancelled || data.lat == null || data.lng == null) {
+          if (!cancelled) setGeoLookupStatus("fail")
+          return
+        }
+        setMapCoords({ lat: data.lat, lng: data.lng })
+        setGeoLookupStatus("ok")
+      } catch (e) {
+        errorDev("[TRACKING MAP] Error al geocodificar:", e)
+        if (!cancelled) setGeoLookupStatus("fail")
       }
     }
 
+    resolver()
     return () => {
-      logDev("[TRACKING MAP] Cleanup ejecutado")
-      if (checkRefIntervalRef.current) clearInterval(checkRefIntervalRef.current)
-      if (checkScriptIntervalRef.current) clearInterval(checkScriptIntervalRef.current)
-      if (markerRef.current) {
-        markerRef.current.setMap(null)
-        markerRef.current = null
-      }
-      setGeoLookupStatus("idle")
+      cancelled = true
     }
   }, [envio])
 
@@ -518,9 +433,7 @@ export default function TrackingPage() {
                     <p className="text-[15px] font-semibold text-[#1f2433]">{estadoActual}</p>
                     <p className="mt-1 flex items-center gap-2 text-[13px] text-[#8890a8]">
                       <Clock className="h-3.5 w-3.5" aria-hidden />
-                      {envio.fechaLlegue
-                        ? `${new Date(envio.fechaLlegue).toLocaleDateString("es-AR")} · ${new Date(envio.fechaLlegue).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`
-                        : `${new Date().toLocaleDateString("es-AR")} · ${new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`}
+                      {envio.fechaLlegue ? formatFechaHoraAR(envio.fechaLlegue) : formatFechaHoraAR(new Date())}
                     </p>
                   </div>
                 </div>
@@ -532,7 +445,18 @@ export default function TrackingPage() {
           <section className={cn(cardClass, "lg:col-span-4")}>
             <h2 className="mb-4 text-[18px] font-semibold text-[#1570ef]">Ubicación en mapa</h2>
             <div className="overflow-hidden rounded-xl border border-[#e6eaf4] bg-[#fafbff]" style={{ height: "380px" }}>
-              <div ref={mapRef} className="h-full w-full min-h-[280px]" />
+              {mapCoords ? (
+                <OsmMap
+                  className="h-full w-full min-h-[280px]"
+                  center={mapCoords}
+                  zoom={16}
+                  markers={[{ lat: mapCoords.lat, lng: mapCoords.lng, title: envio.direccion || "Destino" }]}
+                />
+              ) : (
+                <div className="flex h-full w-full min-h-[280px] items-center justify-center text-[13px] text-[#8890a8]">
+                  {geoLookupStatus === "fail" ? "No se pudo ubicar la dirección" : "Buscando ubicación…"}
+                </div>
+              )}
             </div>
             {geoLookupStatus === "fail" && envio.direccion ? (
               <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] font-medium text-amber-900">

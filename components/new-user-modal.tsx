@@ -310,7 +310,6 @@ export function NewUserModal({ isOpen, onClose, onSave, editingUser }: NewUserMo
                       <SelectItem value="Cliente">Vendedor</SelectItem>
                       <SelectItem value="Chofer">Repartidor</SelectItem>
                       <SelectItem value="Coordinador">Coordinador</SelectItem>
-                      <SelectItem value="Logística Externa">Logística Externa</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

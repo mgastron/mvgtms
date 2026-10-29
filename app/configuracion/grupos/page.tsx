@@ -228,10 +228,7 @@ export default function GruposPage() {
                             >
                               <ul className="space-y-0.5 text-[14px] text-[#5d6578]">
                                 {g.clientes.slice(0, 5).map((c) => (
-                                  <li key={c.id}>
-                                    {c.codigo}
-                                    {c.nombreFantasia ? ` - ${c.nombreFantasia}` : ""}
-                                  </li>
+                                  <li key={c.id}>{c.nombreFantasia?.trim() || c.codigo}</li>
                                 ))}
                                 {g.clientes.length > 5 && (
                                   <li className="pt-0.5 text-[13px] font-medium text-[#1570ef]">
@@ -296,8 +293,7 @@ export default function GruposPage() {
             <ul className="space-y-1.5 text-[14px] text-[#5d6578]">
               {clientesModalGroup?.clientes?.map((c) => (
                 <li key={c.id} className="border-b border-[#eef1f8] py-2 last:border-0">
-                  <span className="font-semibold text-[#1f2433]">{c.codigo}</span>
-                  {c.nombreFantasia ? <span> — {c.nombreFantasia}</span> : null}
+                  <span className="font-semibold text-[#1f2433]">{c.nombreFantasia?.trim() || c.codigo}</span>
                 </li>
               ))}
             </ul>

@@ -480,7 +480,7 @@ export default function SubirEnvioPage() {
                     <SelectContent>
                       {clientes.map((cliente) => (
                         <SelectItem key={cliente.id} value={cliente.codigo}>
-                          {cliente.codigo} - {cliente.nombreFantasia}
+                          {cliente.nombreFantasia?.trim() || cliente.codigo}
                         </SelectItem>
                       ))}
                     </SelectContent>

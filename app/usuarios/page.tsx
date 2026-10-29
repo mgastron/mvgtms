@@ -299,7 +299,6 @@ export default function UsuariosPage() {
                       <SelectItem value="Cliente">Vendedor</SelectItem>
                       <SelectItem value="Chofer">Repartidor</SelectItem>
                       <SelectItem value="Coordinador">Coordinador</SelectItem>
-                      <SelectItem value="Logística Externa">Logística externa</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

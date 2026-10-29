@@ -226,9 +226,25 @@ export function OsmMap({
         })
         lastCenterKeyRef.current = centerKey(startCenter)
         syncMarkers(true)
-        setTimeout(() => {
+        const bump = () => {
           if (!cancelled) map.invalidateSize()
-        }, 80)
+        }
+        bump()
+        requestAnimationFrame(bump)
+        const t1 = setTimeout(bump, 120)
+        const t2 = setTimeout(bump, 400)
+        const t3 = setTimeout(bump, 900)
+        let ro: ResizeObserver | null = null
+        if (typeof ResizeObserver !== "undefined" && containerRef.current) {
+          ro = new ResizeObserver(bump)
+          ro.observe(containerRef.current)
+        }
+        ;(map as any).__nexoCleanupSize = () => {
+          clearTimeout(t1)
+          clearTimeout(t2)
+          clearTimeout(t3)
+          ro?.disconnect()
+        }
       } catch {
         // el contenedor queda vacío; el caller muestra el aviso
       }
@@ -241,6 +257,7 @@ export function OsmMap({
       mapRefOutRef.current?.(null)
       markersByKeyRef.current.clear()
       if (mapRef.current) {
+        mapRef.current.__nexoCleanupSize?.()
         mapRef.current.remove()
         mapRef.current = null
       }

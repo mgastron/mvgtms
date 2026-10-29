@@ -10,6 +10,7 @@ import { RefreshCw, Eye, CheckCircle2, XCircle, AlertCircle, Inbox } from "lucid
 import { montserrat } from "@/lib/fonts"
 import { getApiBaseUrl } from "@/lib/api-config"
 import { logDev, errorDev, warnDev } from "@/lib/logger"
+import { formatFechaAR, formatFechaHoraAR, formatHoraAR } from "@/lib/datetime-ar"
 import { EnvioDetailModal } from "@/components/envio-detail-modal"
 import {
   AlertDialog,
@@ -579,51 +580,9 @@ export default function EstadoOrdenesPage() {
     }
   }, [userProfile, clienteScopeReady])
 
-  // Formatear fecha (solo fecha)
-  const formatFecha = (fechaStr: string | null | undefined) => {
-    if (!fechaStr) return "-"
-    try {
-      const fecha = new Date(fechaStr)
-      return fecha.toLocaleDateString("es-AR", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      })
-    } catch {
-      return fechaStr
-    }
-  }
-
-  // Formatear fecha con hora
-  const formatFechaHora = (fechaStr: string | null | undefined) => {
-    if (!fechaStr) return "-"
-    try {
-      const fecha = new Date(fechaStr)
-      return fecha.toLocaleString("es-AR", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    } catch {
-      return fechaStr
-    }
-  }
-
-  // Formatear hora
-  const formatHora = (fechaStr: string | null | undefined) => {
-    if (!fechaStr) return "-"
-    try {
-      const fecha = new Date(fechaStr)
-      return fecha.toLocaleTimeString("es-AR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    } catch {
-      return "-"
-    }
-  }
+  const formatFecha = (fechaStr: string | null | undefined) => formatFechaAR(fechaStr) || "-"
+  const formatFechaHora = (fechaStr: string | null | undefined) => formatFechaHoraAR(fechaStr) || "-"
+  const formatHora = (fechaStr: string | null | undefined) => formatHoraAR(fechaStr) || "-"
 
   // Obtener estado del pedido
   const getEstadoPedido = (pedido: any) => {
@@ -1312,7 +1271,7 @@ export default function EstadoOrdenesPage() {
                   <SelectItem value="__todos__">Todos los del grupo</SelectItem>
                   {grupoClienteRows.map((c) => (
                     <SelectItem key={c.id} value={c.codigo}>
-                      {c.nombreFantasia ? `${c.nombreFantasia} (${c.codigo})` : c.codigo}
+                      {c.nombreFantasia?.trim() || c.codigo}
                     </SelectItem>
                   ))}
                 </SelectContent>

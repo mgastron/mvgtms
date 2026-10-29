@@ -317,7 +317,7 @@ export default function InformesPage() {
                           type="search"
                           value={filtroCuentas}
                           onChange={(e) => setFiltroCuentas(e.target.value)}
-                          placeholder="Buscar por código o nombre…"
+                          placeholder="Buscar por nombre…"
                           autoComplete="off"
                           aria-label="Filtrar vendedores"
                           className={cn(inputClass, "mt-0 pl-9")}
@@ -334,8 +334,7 @@ export default function InformesPage() {
                             >
                               <Checkbox checked={idsCuentas.includes(c.id)} onCheckedChange={() => toggleCuenta(c.id)} />
                               <span className="text-[14px] text-[#1f2433]">
-                                {c.codigo}
-                                {c.nombreFantasia ? ` - ${c.nombreFantasia}` : ""}
+                                {c.nombreFantasia?.trim() || c.codigo}
                               </span>
                             </label>
                           ))
